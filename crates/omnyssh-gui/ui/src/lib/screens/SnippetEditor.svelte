@@ -56,7 +56,7 @@
     'focus-visible:ring-2 focus-visible:ring-focus placeholder:text-faint';
 </script>
 
-<Modal label={mode === 'add' ? 'New snippet' : 'Edit snippet'} onClose={onCancel}>
+<Modal label={mode === 'add' ? '新建命令片段' : '编辑命令片段'} onClose={onCancel}>
   <form
     onsubmit={(e) => {
       e.preventDefault();
@@ -65,17 +65,17 @@
     class="flex min-h-0 flex-col"
   >
     <header class="border-b border-default px-5 py-3.5">
-      <h2 class="text-sm font-semibold">{mode === 'add' ? 'New snippet' : 'Edit snippet'}</h2>
+      <h2 class="text-sm font-semibold">{mode === 'add' ? '新建命令片段' : '编辑命令片段'}</h2>
     </header>
 
     <div class="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-5 py-4">
       <label class={label}>
-        <span>Name</span>
+        <span>名称</span>
         <input bind:this={nameEl} bind:value={fields.name} class={field} placeholder="restart-service" />
       </label>
 
       <label class={label}>
-        <span>Command</span>
+        <span>命令</span>
         <textarea
           bind:value={fields.command}
           rows="3"
@@ -86,30 +86,30 @@
 
       <div class="grid grid-cols-2 gap-3">
         <label class={label}>
-          <span>Scope</span>
+          <span>作用域</span>
           <Select bind:value={fields.scope} class={field}>
-            <option value="global">global</option>
-            <option value="host">host</option>
+            <option value="global">全局</option>
+            <option value="host">主机</option>
           </Select>
         </label>
         <label class={label}>
-          <span>Host {fields.scope === 'host' ? '(required)' : '(optional)'}</span>
+          <span>主机 {fields.scope === 'host' ? '（必填）' : '（可选）'}</span>
           <input bind:value={fields.host} class={field} placeholder="web-1" />
         </label>
       </div>
 
       <label class={label}>
-        <span>Tags</span>
+        <span>标签</span>
         <input bind:value={fields.tags} class={field} placeholder="ops, deploy" />
       </label>
 
       <div class="space-y-1">
         <label class={label}>
-          <span>Params</span>
+          <span>参数</span>
           <input bind:value={fields.params} class={field} placeholder="service, timeout" />
         </label>
         <p class="text-[0.6875rem] text-faint">
-          Comma-separated names, referenced as {'{{name}}'} in the command.
+          用逗号分隔的名称，在命令中以 {'{{name}}'} 引用。
         </p>
       </div>
 
@@ -119,9 +119,9 @@
     </div>
 
     <footer class="flex justify-end gap-2 border-t border-default px-5 py-3">
-      <Button variant="ghost" onclick={onCancel}>Cancel</Button>
+      <Button variant="ghost" onclick={onCancel}>取消</Button>
       <Button variant="primary" type="submit" disabled={saving}>
-        {mode === 'add' ? 'Add snippet' : 'Save'}
+        {mode === 'add' ? '添加命令片段' : '保存'}
       </Button>
     </footer>
   </form>

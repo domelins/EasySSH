@@ -292,7 +292,7 @@ export function applyOpDone(session: SftpSession, ok: boolean, error?: string): 
     ...session,
     pending: rest,
     refresh: mergeRefresh(session.refresh, front.refresh),
-    error: keep ? session.error : (error ?? 'Operation failed'),
+    error: keep ? session.error : (error ?? '操作失败'),
     transfer: wasTransfer ? undefined : session.transfer
   };
 }
@@ -352,7 +352,7 @@ function createSftp() {
         known = true;
         return { ...s, pending: [...s.pending, op] };
       });
-      if (!known) return Promise.resolve({ ok: false, error: 'SFTP session closed' });
+      if (!known) return Promise.resolve({ ok: false, error: 'SFTP 会话已关闭' });
       return new Promise((resolve) => {
         const queue = waiters.get(id) ?? [];
         queue.push(resolve);
@@ -402,7 +402,7 @@ function createSftp() {
       // The core's cancel op-done races this teardown: drain unresolved waiters so a
       // folder flow awaiting its transfer cannot hang on a session that is gone.
       for (const resolve of waiters.get(id) ?? []) {
-        resolve({ ok: false, error: 'SFTP session closed' });
+        resolve({ ok: false, error: 'SFTP 会话已关闭' });
       }
       waiters.delete(id);
       update((m) => {

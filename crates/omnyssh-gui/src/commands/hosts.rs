@@ -52,7 +52,7 @@ pub async fn reload_hosts(app: AppHandle, state: State<'_, GuiState>) -> Result<
     let hosts = tauri::async_runtime::spawn_blocking(omnyssh_core::config::load_all_hosts)
         .await
         .map_err(|e| CommandError {
-            message: format!("host load task failed: {e}"),
+            message: format!("主机加载任务失败：{e}"),
         })?
         .map_err(|e| CommandError {
             message: e.to_string(),
@@ -186,7 +186,7 @@ async fn persist(mutate: impl FnOnce(&mut Vec<Host>) + Send + 'static) -> Result
     })
     .await
     .map_err(|e| CommandError {
-        message: format!("host save task failed: {e}"),
+        message: format!("主机保存任务失败：{e}"),
     })?
     .map_err(|e| CommandError {
         // `{:#}` keeps the whole anyhow chain: the outer "Failed to write …" alone
@@ -220,7 +220,7 @@ pub async fn export_hosts(path: Option<String>) -> Result<String, CommandError> 
     tauri::async_runtime::spawn_blocking(move || export_hosts_blocking(path.as_deref()))
         .await
         .map_err(|e| CommandError {
-            message: format!("host export task failed: {e}"),
+            message: format!("主机导出任务失败：{e}"),
         })?
 }
 
@@ -248,7 +248,7 @@ pub async fn export_ssh_config(path: Option<String>) -> Result<String, CommandEr
     })
     .await
     .map_err(|e| CommandError {
-        message: format!("host export task failed: {e}"),
+        message: format!("主机导出任务失败：{e}"),
     })?
 }
 
@@ -306,7 +306,7 @@ pub async fn import_hosts(content: String) -> Result<ImportSummary, CommandError
     tauri::async_runtime::spawn_blocking(move || import_hosts_blocking(incoming))
         .await
         .map_err(|e| CommandError {
-            message: format!("host import task failed: {e}"),
+            message: format!("主机导入任务失败：{e}"),
         })?
 }
 
@@ -696,10 +696,9 @@ mod tests {
     #[test]
     fn ssh_config_text_imports_as_manual_and_skips_known_names() {
         let mut hosts = vec![host_with("lin", "10.0.0.1")];
-        let incoming = parse_import(
-            "Host lin\n    HostName 10.0.0.9\n\nHost fresh\n    HostName 10.0.0.8\n",
-        )
-        .expect("ssh config");
+        let incoming =
+            parse_import("Host lin\n    HostName 10.0.0.9\n\nHost fresh\n    HostName 10.0.0.8\n")
+                .expect("ssh config");
         let summary = merge_import(&mut hosts, incoming);
         assert_eq!((summary.added, summary.skipped, summary.failed), (1, 1, 0));
         assert_eq!(hosts[0].hostname, "10.0.0.1");

@@ -546,8 +546,7 @@ mod tests {
             host("m", HostSource::Manual),
             host("s", HostSource::SshConfig),
         ];
-        let parsed =
-            parse_hosts_toml(&hosts_to_toml(&hosts).expect("serialise")).expect("parse");
+        let parsed = parse_hosts_toml(&hosts_to_toml(&hosts).expect("serialise")).expect("parse");
         assert_eq!(names(&parsed), ["m"]);
     }
 }

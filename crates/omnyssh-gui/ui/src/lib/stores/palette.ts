@@ -18,7 +18,7 @@ export type PaletteItem =
 
 type CommandItem = { kind: 'command'; id: 'toggle-streamer'; label: string };
 
-const COMMANDS: CommandItem[] = [{ kind: 'command', id: 'toggle-streamer', label: 'Toggle streamer mode' }];
+const COMMANDS: CommandItem[] = [{ kind: 'command', id: 'toggle-streamer', label: '切换直播模式' }];
 
 function hostHaystack(h: HostDto): string {
   return `${h.name} ${h.hostname} ${h.user} ${h.tags.join(' ')}`.toLowerCase();

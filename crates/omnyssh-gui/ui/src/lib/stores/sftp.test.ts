@@ -423,13 +423,13 @@ describe('op completion promises', () => {
     sftp.open(1, 'web-1');
     const done = sftp.pushOp(1, { kind: 'download', name: 'big', refresh: 'remote' });
     sftp.remove(1);
-    expect(await done).toEqual({ ok: false, error: 'SFTP session closed' });
+    expect(await done).toEqual({ ok: false, error: 'SFTP 会话已关闭' });
   });
 
   it('pushOp on a closed session settles at once instead of hanging', async () => {
     expect(await sftp.pushOp(999, { kind: 'delete', refresh: 'remote' })).toEqual({
       ok: false,
-      error: 'SFTP session closed'
+      error: 'SFTP 会话已关闭'
     });
   });
 

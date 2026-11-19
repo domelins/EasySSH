@@ -50,7 +50,7 @@
   <button
     type="button"
     tabindex="-1"
-    aria-label="Dismiss"
+    aria-label="关闭"
     class="absolute inset-0 bg-overlay"
     onclick={() => backdropCloses && onClose()}
   ></button>

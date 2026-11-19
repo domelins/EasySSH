@@ -17,13 +17,13 @@
   const links: Link[] = [
     {
       icon: 'star',
-      title: 'Star it on GitHub',
+      title: '在 GitHub 上点星',
       locator: 'github.com/timhartmann7/omnyssh',
       url: 'https://github.com/timhartmann7/omnyssh'
     },
     {
       icon: 'telegram',
-      title: 'Follow on Telegram',
+      title: '关注 Telegram 频道',
       locator: '@timhartmanndev',
       url: 'https://t.me/timhartmanndev'
     }
@@ -38,13 +38,13 @@
   }
 </script>
 
-<Modal label="Support OmnySSH" onClose={support.close}>
+<Modal label="支持 OmnySSH" onClose={support.close}>
   <div class="relative p-6">
     <button
       type="button"
       class="absolute right-4 top-4 rounded-full p-1.5 text-muted transition hover:bg-surface-inset hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-      title="Close"
-      aria-label="Close"
+      title="关闭"
+      aria-label="关闭"
       onclick={support.close}
     >
       <Icon name="close" size={16} />
@@ -56,15 +56,14 @@
     </div>
 
     <h2 class="text-xl font-light leading-snug">
-      Free and <span class="font-bold">open source</span>, forever.
+      永久免费，<span class="font-bold">开源</span>。
     </h2>
     <p class="mt-3 text-sm leading-relaxed text-muted">
-      No paid tiers, no ads, no upsells. I build OmnySSH in the open and I do not plan to
-      monetize it.
+      没有付费等级，没有广告，没有推销。OmnySSH 的开发全程公开，我不打算靠它盈利。
     </p>
 
     <p class="mt-5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-faint">
-      Two small things help it grow
+      两件小事就能帮它成长
     </p>
 
     <div class="mt-2.5 space-y-2.5">
@@ -92,7 +91,7 @@
     </div>
 
     <p class="mt-4 text-xs leading-relaxed text-faint">
-      Telegram is where I post release notes and the rest of what I build.
+      我会在 Telegram 上发布更新说明，以及我其他作品的动态。
     </p>
   </div>
 </Modal>

@@ -206,7 +206,7 @@
           e.preventDefault();
           if (term?.hasSelection()) {
             navigator.clipboard.writeText(term.getSelection()).catch((err) => {
-              lastError.set(`Copy failed: ${err instanceof Error ? err.message : String(err)}`);
+              lastError.set(`复制失败：${err instanceof Error ? err.message : String(err)}`);
             });
           }
           return false;
@@ -234,7 +234,7 @@
           term?.input(fallback.data);
         } else {
           terminalPaste().catch((err) => {
-            lastError.set(`Paste failed: ${err instanceof Error ? err.message : String(err)}`);
+            lastError.set(`粘贴失败：${err instanceof Error ? err.message : String(err)}`);
           });
         }
         return false;

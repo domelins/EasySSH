@@ -49,8 +49,8 @@
     >
       <span class="shrink-0 text-muted"><Icon name="download" size={18} /></span>
       <div class="min-w-0">
-        <p class="text-sm font-medium">Update available — v{info.version}</p>
-        <p class="truncate text-xs text-muted">A newer OmnySSH release is ready.</p>
+        <p class="text-sm font-medium">有可用更新 — v{info.version}</p>
+        <p class="truncate text-xs text-muted">OmnySSH 新版本已就绪。</p>
       </div>
       <div class="ml-auto flex shrink-0 items-center gap-1.5">
         <button
@@ -59,7 +59,7 @@
           disabled={busy}
           onclick={() => download(info.url)}
         >
-          Download
+          下载
         </button>
         <button
           type="button"
@@ -67,13 +67,13 @@
           disabled={busy}
           onclick={() => skip(info.version)}
         >
-          Skip
+          跳过此版本
         </button>
         <button
           type="button"
           class="grid h-8 w-8 place-items-center rounded-full text-muted transition hover:bg-surface-inset hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-          title="Dismiss"
-          aria-label="Dismiss update notice"
+          title="忽略"
+          aria-label="忽略更新提示"
           onclick={dismissUpdate}
         >
           <Icon name="close" size={15} />

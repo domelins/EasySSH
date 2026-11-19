@@ -45,14 +45,14 @@ async function bootWithHosts(page: Page, hosts = HOSTS): Promise<void> {
   }, hosts);
   await page.goto('/');
   // The status-bar total confirms `list_hosts` resolved into the store.
-  await expect(page.getByText(`${hosts.length} hosts`)).toBeVisible();
+  await expect(page.getByText(`${hosts.length} 台主机`)).toBeVisible();
 }
 
 test('⌘K navigator jumps to a host by opening a session', async ({ page }) => {
   await bootWithHosts(page);
 
   await page.keyboard.press('Control+k');
-  const dialog = page.getByRole('dialog', { name: 'Command palette' });
+  const dialog = page.getByRole('dialog', { name: '命令面板' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('textbox')).toBeFocused();
 
@@ -60,7 +60,7 @@ test('⌘K navigator jumps to a host by opening a session', async ({ page }) => 
   await page.keyboard.press('Enter');
 
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  const row = page.getByRole('button', { name: 'web-1 · terminal', exact: true });
+  const row = page.getByRole('button', { name: 'web-1 · 终端', exact: true });
   await expect(row).toBeVisible();
   await expect(row).toHaveAttribute('aria-current', 'page');
 });
@@ -69,7 +69,7 @@ test('⌘K toggles the navigator open and closed', async ({ page }) => {
   await bootWithHosts(page);
 
   await page.keyboard.press('Control+k');
-  await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: '命令面板' })).toBeVisible();
 
   await page.keyboard.press('Control+k');
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -80,14 +80,14 @@ test('a spawner opens the host-picker and spawns a session for the chosen host',
 }) => {
   await bootWithHosts(page);
 
-  await page.getByRole('button', { name: 'Terminal' }).click();
-  const picker = page.getByRole('dialog', { name: 'Pick a host' });
+  await page.getByRole('button', { name: '终端', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: '选择主机' });
   await expect(picker).toBeVisible();
 
   await picker.getByRole('button', { name: /db-1/ }).click();
 
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  const row = page.getByRole('button', { name: 'db-1 · terminal', exact: true });
+  const row = page.getByRole('button', { name: 'db-1 · 终端', exact: true });
   await expect(row).toBeVisible();
   await expect(row).toHaveAttribute('aria-current', 'page');
 });
@@ -96,18 +96,18 @@ test('lists a shared host name once, as the host a session opens', async ({ page
   const twin = { ...HOSTS[0], hostname: 'web-1b.example.com', user: 'admin' };
   await bootWithHosts(page, [...HOSTS, twin]);
 
-  await page.getByRole('button', { name: 'Terminal' }).click();
-  const picker = page.getByRole('dialog', { name: 'Pick a host' });
+  await page.getByRole('button', { name: '终端', exact: true }).click();
+  const picker = page.getByRole('dialog', { name: '选择主机' });
   const web = picker.getByRole('button', { name: /web-1/ });
   await expect(web).toHaveCount(1);
   await expect(web).toContainText('deploy@web-1.example.com');
   await picker.getByRole('textbox').fill('web-1b');
-  await expect(picker.getByText('No matching hosts.')).toBeVisible();
+  await expect(picker.getByText('没有匹配的主机。')).toBeVisible();
   await page.keyboard.press('Escape');
 
   await page.keyboard.press('Control+k');
   const listed = page
-    .getByRole('dialog', { name: 'Command palette' })
+    .getByRole('dialog', { name: '命令面板' })
     .getByRole('button', { name: /web-1/ });
   await expect(listed).toHaveCount(1);
   await expect(listed).toContainText('deploy@web-1.example.com');

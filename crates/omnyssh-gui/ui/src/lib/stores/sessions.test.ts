@@ -49,7 +49,7 @@ describe('sessions store', () => {
     const s = sessions.spawn('terminal', 'web-1');
     // Visible label drops the type (the row icon carries it); the title retains it.
     expect(sessionLabel(s)).toBe('web-1');
-    expect(sessionTitle(s)).toBe('web-1 · terminal');
+    expect(sessionTitle(s)).toBe('web-1 · 终端');
     expect(sessionStatusDot.connected).toBe('ok');
     expect(sessionStatusDot.failed).toBe('crit');
     expect(sessionStatusDot.connecting).toBe('unknown');

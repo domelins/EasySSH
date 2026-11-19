@@ -275,7 +275,7 @@
           type="button"
           class="grid h-5 w-5 shrink-0 place-items-center rounded text-faint transition hover:bg-surface-inset hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           title="复制 IP"
-          aria-label="Copy IP for {hostName}"
+          aria-label="复制 {hostName} 的 IP"
           onclick={copyIp}
         >
           <Icon name={copied === 'ip' ? 'check' : 'copy'} size={11} />
@@ -285,7 +285,7 @@
             type="button"
             class="grid h-5 w-5 shrink-0 place-items-center rounded text-faint transition hover:bg-surface-inset hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             title="复制登录密码"
-            aria-label="Copy password for {hostName}"
+            aria-label="复制 {hostName} 的登录密码"
             onclick={copyPassword}
           >
             <Icon name={copied === 'password' ? 'check' : 'key'} size={11} />

@@ -104,7 +104,7 @@ describe('handleCloseRequested', () => {
   it('asks in a window brought out of the taskbar or dock, after holding the close', async () => {
     tunnels.set(new Map([['web-1', { kind: 'up' }]]));
     await close();
-    expect(get(quitPrompt)).toBe('1 tunnel');
+    expect(get(quitPrompt)).toBe('1 条隧道');
     expect(order).toEqual(['preventDefault', 'unminimize', 'setFocus']);
   });
 
@@ -126,12 +126,12 @@ describe('handleCloseRequested', () => {
 describe('describeLiveWork', () => {
   it('lists the counts, singular or plural, with "and" before the last', () => {
     expect(describeLiveWork({ terminals: 2, transfers: 1, tunnels: 1, snippetRuns: 0 })).toBe(
-      '2 terminals, 1 transfer and 1 tunnel'
+      '2 个终端、1 个传输和 1 条隧道'
     );
-    expect(describeLiveWork({ ...NONE, terminals: 1 })).toBe('1 terminal');
-    expect(describeLiveWork({ ...NONE, tunnels: 3, snippetRuns: 1 })).toBe('3 tunnels and 1 snippet run');
+    expect(describeLiveWork({ ...NONE, terminals: 1 })).toBe('1 个终端');
+    expect(describeLiveWork({ ...NONE, tunnels: 3, snippetRuns: 1 })).toBe('3 条隧道和 1 次命令片段运行');
     expect(describeLiveWork({ terminals: 1, transfers: 2, tunnels: 2, snippetRuns: 1 })).toBe(
-      '1 terminal, 2 transfers, 2 tunnels and 1 snippet run'
+      '1 个终端、2 个传输、2 条隧道和 1 次命令片段运行'
     );
   });
 

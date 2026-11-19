@@ -1,7 +1,10 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Window } from '@tauri-apps/api/window';
   import HostTransferModal from './HostTransferModal.svelte';
   import { Icon, StatusDot } from '$lib/theme';
   import type { IconName } from '$lib/theme/icons';
+  import { isWindows } from '$lib/platform';
   import { theme, themeMode } from '$lib/stores/theme';
   import { activeEntity } from '$lib/stores/activeEntity';
   import { sessions, sessionStatusDot, sessionTitle } from '$lib/stores/sessions';
@@ -11,6 +14,46 @@
   import { support } from '$lib/stores/support';
 
   let transferOpen = $state(false);
+
+  // Windows draws the app without a native frame (main.rs set_decorations(false)),
+  // so the bar carries the caption buttons itself. Hidden off Tauri: the first
+  // isMaximized() probe rejects in a plain browser and the controls never appear.
+  let captionWindow = $state<Window | null>(null);
+  let maximized = $state(false);
+
+  onMount(() => {
+    if (!isWindows) return;
+    let disposed = false;
+    let off: (() => void) | undefined;
+    import('@tauri-apps/api/window')
+      .then(async ({ getCurrentWindow }) => {
+        const win = getCurrentWindow();
+        const isMax = await win.isMaximized();
+        if (disposed) return;
+        maximized = isMax;
+        captionWindow = win;
+        const unlisten = await win.onResized(() => {
+          void win
+            .isMaximized()
+            .then((value) => {
+              if (!disposed) maximized = value;
+            })
+            .catch(() => {});
+        });
+        // Unmount may land while the listener registration is in flight; the
+        // cleanup already ran, so release this late registration here.
+        if (disposed) {
+          unlisten();
+          return;
+        }
+        off = unlisten;
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+      off?.();
+    };
+  });
 
   async function openTerminal(): Promise<void> {
     const host = await palette.pickHost();
@@ -27,7 +70,7 @@
   const workspaces: { kind: Workspace; text: string; icon: IconName; label?: string; open: () => void }[] = [
     { kind: 'dashboard', text: 'SSH', icon: 'dashboard', open: () => activeEntity.selectDashboard() },
     { kind: 'tunnels', text: '隧道', icon: 'tunnel', open: () => activeEntity.selectTunnels() },
-    { kind: 'snippets', text: '片段', icon: 'snippets', label: 'Snippets', open: () => activeEntity.selectSnippets() }
+    { kind: 'snippets', text: '片段', icon: 'snippets', label: '命令片段', open: () => activeEntity.selectSnippets() }
   ];
 
   // One tab per host, not per terminal: a second terminal on the same host lives in the
@@ -55,7 +98,14 @@
   data-tauri-drag-region
   class="flex h-[calc(2.75rem+var(--titlebar-h))] shrink-0 items-center gap-1 bg-header pl-[calc(var(--titlebar-left)+0.75rem)] pr-2 pt-[var(--titlebar-h)] text-header-fg"
 >
-  <nav aria-label="Workspace" class="flex shrink-0 items-center gap-0.5">
+  {#if isWindows}
+    <span
+      data-tauri-drag-region
+      class="shrink-0 select-none pl-1 pr-2 text-xs font-semibold tracking-wide text-header-fg"
+      >OmnySSH</span
+    >
+  {/if}
+  <nav aria-label="工作区" class="flex shrink-0 items-center gap-0.5">
     {#each workspaces as item (item.kind)}
       {@const on = $activeEntity.kind === item.kind}
       <button
@@ -73,7 +123,7 @@
 
   <!-- Tabs sit on the bar's bottom edge, so the active one reads as part of the page below. -->
   <nav
-    aria-label="Open sessions"
+    aria-label="已打开会话"
     data-tauri-drag-region
     class="ml-2 flex min-w-0 flex-1 items-end gap-0.5 self-stretch overflow-x-auto"
   >
@@ -81,7 +131,7 @@
       {@const active = entry.rep
         ? $activeEntity.kind === 'session' && $activeEntity.id === entry.rep.id
         : $activeEntity.kind === 'host' && $activeEntity.hostName === entry.hostName}
-      {@const label = entry.rep ? sessionTitle(entry.rep) : `${entry.hostName} · terminal`}
+      {@const label = entry.rep ? sessionTitle(entry.rep) : `${entry.hostName} · 终端`}
       <div
         class="group flex h-9 min-w-24 max-w-48 shrink-0 items-center rounded-t-lg transition {active
           ? 'bg-surface text-fg'
@@ -108,8 +158,8 @@
           class="mr-1.5 grid h-5 w-5 shrink-0 place-items-center rounded opacity-60 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 {active
             ? 'hover:bg-surface-inset focus-visible:ring-focus'
             : 'hover:bg-header-hover focus-visible:ring-header-fg'}"
-          title="Close {entry.hostName}"
-          aria-label="Close {entry.hostName}"
+          title="关闭 {entry.hostName}"
+          aria-label="关闭 {entry.hostName}"
           onclick={() => closeHost(entry.hostName)}
         >
           <Icon name="close" size={12} />
@@ -119,17 +169,17 @@
   </nav>
 
   <div class="flex shrink-0 items-center gap-0.5">
-    <button type="button" class={iconButton} title="Terminal" aria-label="Terminal" onclick={openTerminal}>
+    <button type="button" class={iconButton} title="终端" aria-label="终端" onclick={openTerminal}>
       <Icon name="terminal" size={16} />
     </button>
-    <button type="button" class={iconButton} title="Command palette (⌘K)" aria-label="Search commands" onclick={() => palette.open()}>
+    <button type="button" class={iconButton} title="命令面板 (Ctrl/⌘+K)" aria-label="搜索命令" onclick={() => palette.open()}>
       <Icon name="search" size={16} />
     </button>
     <button
       type="button"
       class="{iconButton} {$streamerMode ? 'bg-header-active text-header-fg' : ''}"
-      title={$streamerMode ? 'Disable streamer mode' : 'Enable streamer mode'}
-      aria-label={$streamerMode ? 'Disable streamer mode' : 'Enable streamer mode'}
+      title={$streamerMode ? '关闭直播模式' : '开启直播模式'}
+      aria-label={$streamerMode ? '关闭直播模式' : '开启直播模式'}
       aria-pressed={$streamerMode}
       onclick={() => streamerMode.toggle()}
     >
@@ -151,24 +201,59 @@
     <button
       type="button"
       class={iconButton}
-      title={themeMode($theme) === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-      aria-label={themeMode($theme) === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+      title={themeMode($theme) === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
+      aria-label={themeMode($theme) === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
       onclick={() => theme.toggle()}
     ><Icon name={themeMode($theme) === 'dark' ? 'sun' : 'moon'} size={16} /></button>
-    <button type="button" class={iconButton} title="Support OmnySSH" aria-label="Support OmnySSH" onclick={() => support.open()}>
+    <button type="button" class={iconButton} title="支持 OmnySSH" aria-label="支持 OmnySSH" onclick={() => support.open()}>
       <Icon name="telegram" size={15} />
     </button>
     <button
       type="button"
       class="{iconButton} {$activeEntity.kind === 'settings' ? 'bg-header-active text-header-fg' : ''}"
-      title="Settings"
-      aria-label="Settings"
+      title="设置"
+      aria-label="设置"
       aria-current={$activeEntity.kind === 'settings' ? 'page' : undefined}
       onclick={() => activeEntity.selectSettings()}
     >
       <Icon name="settings" size={16} />
     </button>
   </div>
+
+  {#if captionWindow}
+    <!-- Caption buttons replace the native Windows frame; no drag attribute here so
+         clicks never start a window drag. Close goes through close() to keep the
+         quit confirmation and tray logic in +layout.svelte. -->
+    <div class="ml-1 flex shrink-0 items-center">
+      <button
+        type="button"
+        class={iconButton}
+        title="最小化"
+        aria-label="最小化"
+        onclick={() => void captionWindow?.minimize().catch(() => {})}
+      >
+        <Icon name="minimize" size={14} />
+      </button>
+      <button
+        type="button"
+        class={iconButton}
+        title={maximized ? '还原' : '最大化'}
+        aria-label={maximized ? '还原' : '最大化'}
+        onclick={() => void captionWindow?.toggleMaximize().catch(() => {})}
+      >
+        <Icon name={maximized ? 'restore' : 'maximize'} size={14} />
+      </button>
+      <button
+        type="button"
+        class="grid h-8 w-8 shrink-0 place-items-center rounded-md text-header-muted transition hover:bg-red-500 hover:text-white {focusRing}"
+        title="关闭"
+        aria-label="关闭"
+        onclick={() => void captionWindow?.close().catch(() => {})}
+      >
+        <Icon name="close" size={14} />
+      </button>
+    </div>
+  {/if}
 </header>
 
 {#if transferOpen}

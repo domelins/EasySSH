@@ -736,7 +736,7 @@ impl App {
                         last_updated: new_metrics.last_updated,
                     }
                 } else {
-                    new_metrics
+                    *new_metrics
                 };
                 state.metrics.insert(host_name, merged);
                 // Clear the "Refreshing metrics…" banner once data arrives.

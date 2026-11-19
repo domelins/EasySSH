@@ -80,7 +80,7 @@
           ? {
               title: '导出主机到…',
               defaultPath: 'omnyssh-hosts.toml',
-              filters: [{ name: 'OmnySSH hosts', extensions: ['toml'] }]
+              filters: [{ name: 'OmnySSH 主机', extensions: ['toml'] }]
             }
           : {
               title: '导出 SSH config 到…',
@@ -187,7 +187,7 @@
         <button
           type="button"
           class={quietButton}
-          aria-label="Import SSH config"
+          aria-label="导入 SSH config"
           disabled={syncing}
           onclick={runSync}
         >

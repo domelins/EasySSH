@@ -35,11 +35,11 @@ describe('paletteItems — filter & sections', () => {
   });
 
   it('matches the streamer command by its label, in the navigator only', () => {
-    const toggle = { kind: 'command', id: 'toggle-streamer', label: 'Toggle streamer mode' };
-    expect(paletteItems('navigate', hosts, sessions, 'streamer')).toEqual([toggle]);
-    expect(paletteItems('navigate', hosts, sessions, 'toggle mode')).toEqual([toggle]);
+    const toggle = { kind: 'command', id: 'toggle-streamer', label: '切换直播模式' };
+    expect(paletteItems('navigate', hosts, sessions, '直播')).toEqual([toggle]);
+    expect(paletteItems('navigate', hosts, sessions, '切换 模式')).toEqual([toggle]);
     expect(paletteItems('navigate', hosts, sessions, 'web')).not.toContainEqual(toggle);
-    expect(paletteItems('pickHost', hosts, sessions, 'streamer')).toEqual([]);
+    expect(paletteItems('pickHost', hosts, sessions, '直播')).toEqual([]);
   });
 
   it('picker lists only hosts', () => {

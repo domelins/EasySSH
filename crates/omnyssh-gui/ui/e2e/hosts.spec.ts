@@ -161,18 +161,18 @@ function hostRow(page: Page, name: string) {
 }
 
 async function openMore(page: Page, name: string): Promise<void> {
-  await page.getByRole('button', { name: `More actions for ${name}`, exact: true }).click();
+  await page.getByRole('button', { name: `${name} 的更多操作`, exact: true }).click();
 }
 
 test('adds a host and it appears as a table row and in the tree', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Add host', exact: true }).click();
-  const editor = page.getByRole('dialog', { name: 'Add host' });
+  await page.getByRole('button', { name: '添加主机', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: '添加主机' });
   await expect(editor).toBeVisible();
-  await editor.getByLabel('Name', { exact: true }).fill('db-1');
-  await editor.getByLabel('Hostname / IP').fill('db-1.example.com');
-  await editor.getByLabel('User').fill('postgres');
-  await editor.getByRole('button', { name: 'Add host' }).click();
+  await editor.getByLabel('名称', { exact: true }).fill('db-1');
+  await editor.getByLabel('主机名 / IP').fill('db-1.example.com');
+  await editor.getByLabel('用户名').fill('postgres');
+  await editor.getByRole('button', { name: '添加主机' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(hostRow(page, 'db-1')).toBeVisible();
   await expect(page.getByRole('complementary').getByText('db-1', { exact: true })).toBeVisible();
@@ -181,12 +181,12 @@ test('adds a host and it appears as a table row and in the tree', async ({ page 
 
 test('edits a manual host in place', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Edit web-1' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
+  await page.getByRole('button', { name: '编辑 web-1' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
   await expect(editor).toBeVisible();
-  await expect(editor.getByLabel(/^Name/)).toHaveAttribute('readonly', '');
-  await editor.getByLabel('Hostname / IP').fill('web-1b.example.com');
-  await editor.getByRole('button', { name: 'Save' }).click();
+  await expect(editor.getByLabel(/^名称/)).toHaveAttribute('readonly', '');
+  await editor.getByLabel('主机名 / IP').fill('web-1b.example.com');
+  await editor.getByRole('button', { name: '保存' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('deploy@web-1b.example.com:22')).toBeVisible();
 });
@@ -196,33 +196,33 @@ test.describe('on Linux', () => {
 
   test('agent forwarding is off until switched on, and stays on', async ({ page }) => {
     await boot(page);
-    await page.getByRole('button', { name: 'Edit web-1' }).click();
-    let editor = page.getByRole('dialog', { name: 'Edit host' });
-    const agent = editor.getByRole('switch', { name: 'Forward SSH agent' });
+    await page.getByRole('button', { name: '编辑 web-1' }).click();
+    let editor = page.getByRole('dialog', { name: '编辑主机' });
+    const agent = editor.getByRole('switch', { name: 'SSH 代理转发' });
     await expect(agent).toHaveAttribute('aria-checked', 'false');
     await agent.click();
-    await editor.getByRole('button', { name: 'Save' }).click();
+    await editor.getByRole('button', { name: '保存' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Edit web-1' }).click();
-    editor = page.getByRole('dialog', { name: 'Edit host' });
-    await expect(editor.getByRole('switch', { name: 'Forward SSH agent' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('button', { name: '编辑 web-1' }).click();
+    editor = page.getByRole('dialog', { name: '编辑主机' });
+    await expect(editor.getByRole('switch', { name: 'SSH 代理转发' })).toHaveAttribute('aria-checked', 'true');
   });
 });
 
 test('agent forwarding says it is not on Windows yet', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Edit web-1' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  await expect(editor.getByRole('switch', { name: 'Forward SSH agent' })).toBeDisabled();
-  await expect(editor.getByText('Not available on Windows yet.')).toBeVisible();
+  await page.getByRole('button', { name: '编辑 web-1' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  await expect(editor.getByRole('switch', { name: 'SSH 代理转发' })).toBeDisabled();
+  await expect(editor.getByText('Windows 上暂不可用。')).toBeVisible();
 });
 
 test('deletes a manual host after confirmation', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Delete host web-1' }).click();
-  const confirm = page.getByRole('dialog', { name: 'Delete host' });
+  await page.getByRole('button', { name: '删除主机 web-1' }).click();
+  const confirm = page.getByRole('dialog', { name: '删除主机' });
   await expect(confirm).toBeVisible();
-  await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+  await confirm.getByRole('button', { name: '删除', exact: true }).click();
   await expect(hostRow(page, 'web-1')).toHaveCount(0);
   await expect(page.getByRole('complementary').getByText('web-1', { exact: true })).toHaveCount(0);
 });
@@ -231,35 +231,35 @@ test('an SSH-config host is adopted by editing it', async ({ page }) => {
   await boot(page);
   await expect(page.getByText('ssh config')).toBeVisible();
   // An import has no local file entry to delete: the row offers no trash button.
-  await expect(page.getByRole('button', { name: 'Delete host imported' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Edit imported' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  await expect(editor.getByText(/never written/)).toBeVisible();
-  await editor.getByLabel('Hostname / IP').fill('adopted.example.com');
-  await editor.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('button', { name: '删除主机 imported' })).toHaveCount(0);
+  await page.getByRole('button', { name: '编辑 imported' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  await expect(editor.getByText(/不会被写入/)).toBeVisible();
+  await editor.getByLabel('主机名 / IP').fill('adopted.example.com');
+  await editor.getByRole('button', { name: '保存' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('root@adopted.example.com:22')).toBeVisible();
   await expect(page.getByText('ssh config')).toHaveCount(0);
   // Adopted: the entry is now manual, so the row can delete it.
-  await expect(page.getByRole('button', { name: 'Delete host imported' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: '删除主机 imported' })).toHaveCount(1);
 });
 
 test('the tree always shows group membership; View options groups the table', async ({ page }) => {
   await boot(page);
   // The tree groups hosts by tag on its own, before any toggle.
-  const prod = page.getByRole('region', { name: 'prod hosts' });
-  const api = page.getByRole('region', { name: 'api hosts' });
+  const prod = page.getByRole('region', { name: 'prod 的主机' });
+  const api = page.getByRole('region', { name: 'api 的主机' });
   await expect(prod.getByText('web-1', { exact: true })).toBeVisible();
   await expect(api.getByText('api-1', { exact: true })).toBeVisible();
 
-  const trigger = page.getByRole('button', { name: 'View options' });
+  const trigger = page.getByRole('button', { name: '视图选项' });
   const dot = trigger.locator('span.bg-accent');
   await expect(dot).toHaveCount(0);
   await trigger.focus();
   await page.keyboard.press('Enter');
-  const panel = page.getByRole('dialog', { name: 'View options' });
+  const panel = page.getByRole('dialog', { name: '视图选项' });
   expect(await panel.evaluate((element) => getComputedStyle(element).backgroundColor)).toMatch(/^rgb\(/);
-  const grouping = panel.getByRole('switch', { name: 'Group by tag' });
+  const grouping = panel.getByRole('switch', { name: '按标签分组' });
   await expect(grouping).toBeFocused();
   await page.keyboard.press('Space');
   await expect(grouping).toHaveAttribute('aria-checked', 'true');
@@ -271,7 +271,7 @@ test('the tree always shows group membership; View options groups the table', as
   await expect(panel).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await page.getByRole('button', { name: 'Refresh metrics' }).click();
+  await page.getByRole('button', { name: '刷新监控指标' }).click();
   await expect(panel).toHaveCount(0);
   await page.keyboard.press('g');
   await expect(dot).toHaveCount(0);
@@ -282,7 +282,7 @@ test('the tree always shows group membership; View options groups the table', as
 
 test('creates, renames and deletes groups while preserving hosts and empty groups', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Manage host groups' }).click();
+  await page.getByRole('button', { name: '管理主机分组' }).click();
   let manager = page.getByRole('dialog', { name: '主机分组' });
   await expect(manager).toBeVisible();
 
@@ -293,55 +293,55 @@ test('creates, renames and deletes groups while preserving hosts and empty group
   await manager.getByRole('checkbox', { name: 'web-1 属于 production' }).check();
   await manager.getByRole('button', { name: '保存分组' }).click();
   await expect(manager).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'empty hosts' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'production hosts' }).getByText('web-1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'empty 的主机' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'production 的主机' }).getByText('web-1', { exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Manage host groups' }).click();
+  await page.getByRole('button', { name: '管理主机分组' }).click();
   await manager.getByRole('button', { name: '重命名分组 production' }).click();
   await manager.getByRole('textbox', { name: '分组名称', exact: true }).fill('核心');
   await manager.getByRole('button', { name: '保存名称' }).click();
   await manager.getByRole('button', { name: '保存分组' }).click();
   await expect(manager).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'production hosts' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: '核心 hosts' }).getByText('web-1', { exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'prod hosts' }).getByText('web-1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'production 的主机' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: '核心 的主机' }).getByText('web-1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'prod 的主机' }).getByText('web-1', { exact: true })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Manage host groups' }).click();
+  await page.getByRole('button', { name: '管理主机分组' }).click();
   await manager.getByRole('button', { name: '删除分组 核心' }).click();
   await manager.getByRole('button', { name: '保存分组' }).click();
   await expect(manager).toHaveCount(0);
-  await expect(page.getByRole('region', { name: '核心 hosts' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'prod hosts' }).getByText('web-1', { exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: '核心 的主机' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'prod 的主机' }).getByText('web-1', { exact: true })).toBeVisible();
   await expect(hostRow(page, 'web-1')).toBeVisible();
 
   await page.reload();
-  await expect(page.getByRole('region', { name: 'empty hosts' })).toBeVisible();
-  await expect(page.getByRole('region', { name: '核心 hosts' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'empty 的主机' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '核心 的主机' })).toHaveCount(0);
 });
 
 test('folded tree sections stay folded across navigation and reload, but search unfolds them', async ({ page }) => {
   await boot(page);
   await page.keyboard.press('g');
-  const prod = page.getByRole('region', { name: 'prod hosts' });
-  await page.getByRole('button', { name: 'Fold prod' }).click();
-  await expect(page.getByRole('button', { name: 'Unfold prod' })).toHaveAttribute('aria-expanded', 'false');
+  const prod = page.getByRole('region', { name: 'prod 的主机' });
+  await page.getByRole('button', { name: '折叠 prod' }).click();
+  await expect(page.getByRole('button', { name: '展开 prod' })).toHaveAttribute('aria-expanded', 'false');
   await expect(prod.getByText('web-1', { exact: true })).toBeHidden();
   await expect(hostRow(page, 'imported')).toBeVisible();
-  await page.getByRole('button', { name: 'Snippets', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Snippets' })).toBeVisible();
-  await page.getByRole('navigation', { name: 'Workspace', exact: true }).getByRole('button', { name: 'SSH', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Unfold prod' })).toHaveAttribute('aria-expanded', 'false');
+  await page.getByRole('button', { name: '命令片段', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '命令片段' })).toBeVisible();
+  await page.getByRole('navigation', { name: '工作区', exact: true }).getByRole('button', { name: 'SSH', exact: true }).click();
+  await expect(page.getByRole('button', { name: '展开 prod' })).toHaveAttribute('aria-expanded', 'false');
   await page.reload();
-  await expect(page.getByRole('button', { name: 'Unfold prod' })).toHaveAttribute('aria-expanded', 'false');
-  await page.getByRole('button', { name: 'Search hosts' }).click();
-  const search = page.getByRole('textbox', { name: 'Search hosts' });
+  await expect(page.getByRole('button', { name: '展开 prod' })).toHaveAttribute('aria-expanded', 'false');
+  await page.getByRole('button', { name: '搜索主机' }).click();
+  const search = page.getByRole('textbox', { name: '搜索主机' });
   await search.fill('web');
   await expect(prod.getByText('web-1', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Unfold prod' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '展开 prod' })).toBeDisabled();
   await search.press('Escape');
   await expect(prod.getByText('web-1', { exact: true })).toBeHidden();
-  await page.getByRole('button', { name: 'Unfold prod' }).click();
-  await expect(page.getByRole('button', { name: 'Fold prod' })).toHaveAttribute('aria-expanded', 'true');
+  await page.getByRole('button', { name: '展开 prod' }).click();
+  await expect(page.getByRole('button', { name: '折叠 prod' })).toHaveAttribute('aria-expanded', 'true');
   await expect(prod.getByText('web-1', { exact: true })).toBeVisible();
 });
 
@@ -349,13 +349,13 @@ test('a host with a repeated tag renders once in that tree group', async ({ page
   const errors: Error[] = [];
   page.on('pageerror', (error) => errors.push(error));
   await boot(page);
-  await page.getByRole('button', { name: 'Edit web-1' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
+  await page.getByRole('button', { name: '编辑 web-1' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
   await editor.getByLabel('标签 / 新分组').fill('prod, prod');
-  await editor.getByRole('button', { name: 'Save' }).click();
+  await editor.getByRole('button', { name: '保存' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('g');
-  const prod = page.getByRole('region', { name: 'prod hosts' });
+  const prod = page.getByRole('region', { name: 'prod 的主机' });
   await expect(prod.getByText('web-1', { exact: true })).toHaveCount(1);
   await expect(prod.getByText('api-1', { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
@@ -364,39 +364,39 @@ test('a host with a repeated tag renders once in that tree group', async ({ page
 test('g is ignored under a modal and while typing', async ({ page }) => {
   await boot(page);
   // `g` toggles the table's grouping; its indicator is the View options dot.
-  const dot = page.getByRole('button', { name: 'View options' }).locator('span.bg-accent');
+  const dot = page.getByRole('button', { name: '视图选项' }).locator('span.bg-accent');
   await expect(dot).toHaveCount(0);
-  await page.getByRole('button', { name: 'Support OmnySSH' }).click();
-  await expect(page.getByRole('dialog', { name: 'Support OmnySSH' })).toBeVisible();
+  await page.getByRole('button', { name: '支持 OmnySSH' }).click();
+  await expect(page.getByRole('dialog', { name: '支持 OmnySSH' })).toBeVisible();
   await page.keyboard.press('g');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.keyboard.press('Control+k');
-  const palette = page.getByRole('dialog', { name: 'Command palette' });
-  await palette.getByText('esc close').click();
+  const palette = page.getByRole('dialog', { name: '命令面板' });
+  await palette.getByText('esc 关闭').click();
   await page.keyboard.press('g');
   await expect(dot).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(palette).toHaveCount(0);
-  await page.getByRole('button', { name: 'Search hosts' }).click();
-  await page.getByRole('textbox', { name: 'Search hosts' }).press('g');
-  await expect(page.getByRole('textbox', { name: 'Search hosts' })).toHaveValue('g');
+  await page.getByRole('button', { name: '搜索主机' }).click();
+  await page.getByRole('textbox', { name: '搜索主机' }).press('g');
+  await expect(page.getByRole('textbox', { name: '搜索主机' })).toHaveValue('g');
   await expect(dot).toHaveCount(0);
-  await page.getByRole('textbox', { name: 'Search hosts' }).press('Escape');
+  await page.getByRole('textbox', { name: '搜索主机' }).press('Escape');
   await page.keyboard.press('g');
   await expect(dot).toHaveCount(1);
 });
 
 async function cardOrder(page: Page): Promise<string[]> {
-  const grips = page.getByRole('button', { name: /^Move / });
+  const grips = page.getByRole('button', { name: /^移动 / });
   return (await grips.evaluateAll((elements) => elements.map((element) => element.getAttribute('aria-label') ?? ''))).map(
-    (label) => label.slice('Move '.length)
+    (label) => label.slice('移动 '.length)
   );
 }
 
 async function dragOnto(page: Page, host: string, onto: string): Promise<void> {
   await hostRow(page, host).hover();
-  const grip = await page.getByRole('button', { name: `Move ${host}` }).boundingBox();
+  const grip = await page.getByRole('button', { name: `移动 ${host}` }).boundingBox();
   const target = await hostRow(page, onto).boundingBox();
   if (!grip || !target) throw new Error('row not on screen');
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
@@ -408,21 +408,21 @@ async function dragOnto(page: Page, host: string, onto: string): Promise<void> {
 test('View options sorts columns with arrow keys and persists the choice', async ({ page }) => {
   await boot(page);
   await expect.poll(() => cardOrder(page)).toEqual(['web-1', 'imported', 'api-1']);
-  await page.getByRole('button', { name: 'View options' }).click();
-  const sort = page.getByRole('radiogroup', { name: 'Sort' });
-  await expect(sort.getByRole('radio', { name: 'Custom' })).toHaveAttribute('aria-checked', 'true');
-  await sort.getByRole('radio', { name: 'Custom' }).focus();
+  await page.getByRole('button', { name: '视图选项' }).click();
+  const sort = page.getByRole('radiogroup', { name: '排序' });
+  await expect(sort.getByRole('radio', { name: '自定义' })).toHaveAttribute('aria-checked', 'true');
+  await sort.getByRole('radio', { name: '自定义' }).focus();
   await page.keyboard.press('ArrowRight');
-  const byName = sort.getByRole('radio', { name: 'Name' });
+  const byName = sort.getByRole('radio', { name: '名称' });
   await expect(byName).toHaveAttribute('aria-checked', 'true');
   await expect(byName).toBeFocused();
   await expect.poll(() => cardOrder(page)).toEqual(['api-1', 'imported', 'web-1']);
   await page.keyboard.press('ArrowRight');
-  await expect(sort.getByRole('radio', { name: 'Status' })).toHaveAttribute('aria-checked', 'true');
+  await expect(sort.getByRole('radio', { name: '状态' })).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('ArrowRight');
-  await expect(sort.getByRole('radio', { name: 'Address' })).toHaveAttribute('aria-checked', 'true');
+  await expect(sort.getByRole('radio', { name: '地址' })).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('ArrowRight');
-  await expect(sort.getByRole('radio', { name: 'Custom' })).toHaveAttribute('aria-checked', 'true');
+  await expect(sort.getByRole('radio', { name: '自定义' })).toHaveAttribute('aria-checked', 'true');
   await byName.click();
   await page.reload();
   await expect.poll(() => cardOrder(page)).toEqual(['api-1', 'imported', 'web-1']);
@@ -432,10 +432,10 @@ test('dragging a row by its grip reorders the table and persists; cancellation s
   await boot(page);
   await dragOnto(page, 'api-1', 'web-1');
   await expect.poll(() => cardOrder(page)).toEqual(['api-1', 'web-1', 'imported']);
-  await expect(page.locator('[aria-live="polite"]', { hasText: 'api-1 moved to position 1 of 3' })).toHaveCount(1);
+  await expect(page.locator('[aria-live="polite"]', { hasText: 'api-1 已移动到第 1 位，共 3 台主机' })).toHaveCount(1);
   await page.reload();
   await expect.poll(() => cardOrder(page)).toEqual(['api-1', 'web-1', 'imported']);
-  const grip = await page.getByRole('button', { name: 'Move imported' }).boundingBox();
+  const grip = await page.getByRole('button', { name: '移动 imported' }).boundingBox();
   if (!grip) throw new Error('grip not on screen');
   await page.mouse.move(grip.x + 5, grip.y + 5);
   await page.mouse.down();
@@ -451,12 +451,12 @@ test('dragging a row by its grip reorders the table and persists; cancellation s
 
 test('a drag while sorted by name starts from the name order', async ({ page }) => {
   await boot(page);
-  const options = page.getByRole('button', { name: 'View options' });
+  const options = page.getByRole('button', { name: '视图选项' });
   await options.click();
-  await page.getByRole('radio', { name: 'Name' }).click();
+  await page.getByRole('radio', { name: '名称' }).click();
   await page.keyboard.press('Escape');
   await expect.poll(() => cardOrder(page)).toEqual(['api-1', 'imported', 'web-1']);
-  const grip = await page.getByRole('button', { name: 'Move web-1' }).boundingBox();
+  const grip = await page.getByRole('button', { name: '移动 web-1' }).boundingBox();
   if (!grip) throw new Error('grip not on screen');
   await page.mouse.move(grip.x + 5, grip.y + 5);
   await page.mouse.down();
@@ -464,22 +464,22 @@ test('a drag while sorted by name starts from the name order', async ({ page }) 
   await page.keyboard.press('Escape');
   await page.mouse.up();
   await options.click();
-  await expect(page.getByRole('radio', { name: 'Name' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: '名称' })).toHaveAttribute('aria-checked', 'true');
   await page.keyboard.press('Escape');
   await dragOnto(page, 'web-1', 'imported');
   await expect.poll(() => cardOrder(page)).toEqual(['api-1', 'web-1', 'imported']);
   await options.click();
-  await expect(page.getByRole('radio', { name: 'Custom' })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: '自定义' })).toHaveAttribute('aria-checked', 'true');
 });
 
 test('the grip moves a row with the keyboard without changing it when the tree regroups', async ({ page }) => {
   await boot(page);
-  const grip = page.getByRole('button', { name: 'Move web-1' });
+  const grip = page.getByRole('button', { name: '移动 web-1' });
   await grip.focus();
   await page.keyboard.press('ArrowRight');
   await expect.poll(() => cardOrder(page)).toEqual(['imported', 'web-1', 'api-1']);
   await expect(grip).toBeFocused();
-  await expect(page.locator('[aria-live="polite"]')).toHaveText('web-1 moved to position 2 of 3');
+  await expect(page.locator('[aria-live="polite"]')).toHaveText('web-1 已移动到第 2 位，共 3 台主机');
   await page.keyboard.press('End');
   await expect.poll(() => cardOrder(page)).toEqual(['imported', 'api-1', 'web-1']);
   await page.keyboard.press('Home');
@@ -487,17 +487,17 @@ test('the grip moves a row with the keyboard without changing it when the tree r
   await expect(grip).toBeFocused();
   await page.keyboard.press('g');
   await expect.poll(() => cardOrder(page)).toEqual(['web-1', 'imported', 'api-1']);
-  await expect(page.getByRole('button', { name: 'Move web-1' })).toBeFocused();
+  await expect(page.getByRole('button', { name: '移动 web-1' })).toBeFocused();
   await page.keyboard.press('End');
   await expect.poll(() => cardOrder(page)).toEqual(['imported', 'api-1', 'web-1']);
-  await expect(page.locator('[aria-live="polite"]')).toHaveText('web-1 moved to position 3 of 3');
+  await expect(page.locator('[aria-live="polite"]')).toHaveText('web-1 已移动到第 3 位，共 3 台主机');
 });
 
 test('holding a drag past the bottom edge scrolls and drops at the end', async ({ page }) => {
   await page.setViewportSize({ width: 1000, height: 260 });
   await boot(page);
   await hostRow(page, 'web-1').hover();
-  const grip = await page.getByRole('button', { name: 'Move web-1' }).boundingBox();
+  const grip = await page.getByRole('button', { name: '移动 web-1' }).boundingBox();
   if (!grip) throw new Error('grip not on screen');
   await page.mouse.move(grip.x + 5, grip.y + 5);
   await page.mouse.down();
@@ -530,7 +530,7 @@ test('same-named hosts keep their places while a drag starts', async ({ page }) 
   const before = ['root@dup-a.example.com:22', 'root@x.example.com:22', 'root@dup-b.example.com:22'];
   await expect.poll(addresses).toEqual(before);
   await hostRow(page, 'x').hover();
-  const grip = await page.getByRole('button', { name: 'Move x' }).boundingBox();
+  const grip = await page.getByRole('button', { name: '移动 x' }).boundingBox();
   if (!grip) throw new Error('grip not on screen');
   await page.mouse.move(grip.x + 5, grip.y + 5);
   await page.mouse.down();
@@ -554,7 +554,7 @@ test('moving one of several same-named hosts moves just that row', async ({ page
   const addresses = () => page.getByText(/^root@.*:22$/).evaluateAll((elements) => elements.map((element) => element.textContent?.trim().replace(/^root@|\.example\.com:22$/g, '')));
   const card = (hostname: string) => page.locator('[data-card]', { hasText: hostname });
   await card('dup-b.example.com').hover();
-  const grip = await card('dup-b.example.com').getByRole('button', { name: 'Move dup' }).boundingBox();
+  const grip = await card('dup-b.example.com').getByRole('button', { name: '移动 dup' }).boundingBox();
   const target = await card('dup-a.example.com').boundingBox();
   if (!grip || !target) throw new Error('row not on screen');
   await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
@@ -563,7 +563,7 @@ test('moving one of several same-named hosts moves just that row', async ({ page
   await page.mouse.up();
   await expect.poll(addresses).toEqual(['dup-b', 'dup-a', 'x', 'y', 'dup-c']);
   await page.keyboard.press('g');
-  await card('dup-c.example.com').getByRole('button', { name: 'Move dup' }).focus();
+  await card('dup-c.example.com').getByRole('button', { name: '移动 dup' }).focus();
   await page.keyboard.press('Home');
   await expect.poll(addresses).toEqual(['dup-c', 'dup-b', 'dup-a', 'x', 'y']);
   await page.reload();
@@ -572,47 +572,47 @@ test('moving one of several same-named hosts moves just that row', async ({ page
 
 test('rejects a new host whose name already exists', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Add host', exact: true }).click();
-  const editor = page.getByRole('dialog', { name: 'Add host' });
-  await editor.getByLabel('Name', { exact: true }).fill('web-1');
-  await editor.getByLabel('Hostname / IP').fill('dupe.example.com');
-  await editor.getByRole('button', { name: 'Add host' }).click();
+  await page.getByRole('button', { name: '添加主机', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: '添加主机' });
+  await editor.getByLabel('名称', { exact: true }).fill('web-1');
+  await editor.getByLabel('主机名 / IP').fill('dupe.example.com');
+  await editor.getByRole('button', { name: '添加主机' }).click();
   await expect(editor).toBeVisible();
-  await expect(editor.getByText('A host named "web-1" already exists')).toBeVisible();
+  await expect(editor.getByText('已存在名为“web-1”的主机')).toBeVisible();
 });
 
 test('favorites filter the table and persist across reload', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Favorite web-1' }).click();
-  await page.getByRole('button', { name: /^收藏/ }).click();
+  await page.getByRole('button', { name: '收藏 web-1' }).click();
+  await page.getByRole('button', { name: /^收藏 \d+$/ }).click();
   await expect(hostRow(page, 'web-1')).toBeVisible();
   await expect(hostRow(page, 'api-1')).toHaveCount(0);
   await page.reload();
-  await page.getByRole('button', { name: /^收藏/ }).click();
+  await page.getByRole('button', { name: /^收藏 \d+$/ }).click();
   await expect(hostRow(page, 'web-1')).toBeVisible();
-  await page.getByRole('button', { name: 'Unfavorite web-1' }).click();
+  await page.getByRole('button', { name: '取消收藏 web-1' }).click();
   await expect(hostRow(page, 'web-1')).toHaveCount(0);
 });
 
 test('recent connections are recorded by real session launches', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Connect web-1' }).click();
-  await page.getByRole('navigation', { name: 'Workspace', exact: true }).getByRole('button', { name: 'SSH', exact: true }).click();
-  await page.getByRole('button', { name: 'Recent connections' }).click();
+  await page.getByRole('button', { name: '连接 web-1' }).click();
+  await page.getByRole('navigation', { name: '工作区', exact: true }).getByRole('button', { name: 'SSH', exact: true }).click();
+  await page.getByRole('button', { name: '最近连接' }).click();
   await expect(hostRow(page, 'web-1')).toBeVisible();
   await expect(hostRow(page, 'api-1')).toHaveCount(0);
   await page.reload();
-  await page.getByRole('button', { name: 'Recent connections' }).click();
+  await page.getByRole('button', { name: '最近连接' }).click();
   await expect(hostRow(page, 'web-1')).toBeVisible();
 });
 
 test('multi-select opens terminals for the selected hosts', async ({ page }) => {
   await boot(page);
-  await page.getByRole('checkbox', { name: 'Select web-1' }).check();
-  await page.getByRole('checkbox', { name: 'Select api-1' }).check();
+  await page.getByRole('checkbox', { name: '选择 web-1' }).check();
+  await page.getByRole('checkbox', { name: '选择 api-1' }).check();
   await page.getByRole('button', { name: '批量连接', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'api-1 · terminal', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'api-1 · 终端', exact: true })).toBeVisible();
 });
 
 test('tree selection filters one host and the address copy uses the real endpoint', async ({ page }) => {
@@ -622,70 +622,70 @@ test('tree selection filters one host and the address copy uses the real endpoin
   await expect(hostRow(page, 'web-1')).toBeVisible();
   await expect(hostRow(page, 'api-1')).toHaveCount(0);
   await hostRow(page, 'web-1').hover();
-  await page.getByRole('button', { name: 'Copy IP for web-1' }).click();
+  await page.getByRole('button', { name: '复制 web-1 的 IP' }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('web-1.example.com:22');
 });
 
 test('picks an existing group while adding a host', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Add host', exact: true }).click();
-  const editor = page.getByRole('dialog', { name: 'Add host' });
-  await editor.getByLabel('Name', { exact: true }).fill('grouped');
-  await editor.getByLabel('Hostname / IP').fill('grouped.example.com');
-  await editor.getByLabel('User').fill('root');
+  await page.getByRole('button', { name: '添加主机', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: '添加主机' });
+  await editor.getByLabel('名称', { exact: true }).fill('grouped');
+  await editor.getByLabel('主机名 / IP').fill('grouped.example.com');
+  await editor.getByLabel('用户名').fill('root');
 
   // The chip is there because web-1/api-1 already carry that group.
   const chip = editor.getByRole('checkbox', { name: '分组 api' });
   await expect(chip).toBeVisible();
   await chip.click();
   await expect(chip).toHaveAttribute('aria-checked', 'true');
-  await editor.getByRole('button', { name: 'Add host' }).click();
+  await editor.getByRole('button', { name: '添加主机' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   // The membership survived the save: the edit form shows the chip checked.
-  await page.getByRole('button', { name: 'Edit grouped' }).click();
-  const edit = page.getByRole('dialog', { name: 'Edit host' });
+  await page.getByRole('button', { name: '编辑 grouped' }).click();
+  const edit = page.getByRole('dialog', { name: '编辑主机' });
   await expect(edit.getByRole('checkbox', { name: '分组 api' })).toHaveAttribute('aria-checked', 'true');
 });
 
 test('copies the stored password from the row', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await boot(page);
-  await page.getByRole('button', { name: 'Copy password for web-1' }).click();
+  await page.getByRole('button', { name: '复制 web-1 的密码' }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('secret-for-web-1');
 });
 
 test('shows the live network rate on the host row', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Refresh metrics' }).click();
+  await page.getByRole('button', { name: '刷新监控指标' }).click();
   await expect(hostRow(page, 'web-1').getByText('↓ 1.5 MB/s · ↑ 512 KB/s')).toBeVisible();
 });
 
 test('renames and deletes a group from the host tree', async ({ page }) => {
   await boot(page);
   // Groups live in the tree's grouped view; turn it on first.
-  await page.getByRole('button', { name: 'View options' }).click();
+  await page.getByRole('button', { name: '视图选项' }).click();
   await page
-    .getByRole('dialog', { name: 'View options' })
-    .getByRole('switch', { name: 'Group by tag' })
+    .getByRole('dialog', { name: '视图选项' })
+    .getByRole('switch', { name: '按标签分组' })
     .click();
   await page.keyboard.press('Escape');
-  const prod = page.getByRole('region', { name: 'prod hosts' });
+  const prod = page.getByRole('region', { name: 'prod 的主机' });
   await expect(prod).toBeVisible();
   await prod.hover();
   await page.getByRole('button', { name: '重命名分组 prod' }).click();
   await page.getByRole('textbox', { name: '分组名称' }).fill('production');
   await page.getByRole('button', { name: '保存分组名称' }).click();
-  await expect(page.getByRole('region', { name: 'production hosts' })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'prod hosts' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'production 的主机' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'prod 的主机' })).toHaveCount(0);
   // The hosts kept the renamed tag and both remain listed.
   await expect(hostRow(page, 'web-1')).toBeVisible();
   await expect(hostRow(page, 'api-1')).toBeVisible();
 
-  await page.getByRole('region', { name: 'api hosts' }).hover();
+  await page.getByRole('region', { name: 'api 的主机' }).hover();
   await page.getByRole('button', { name: '删除分组 api' }).click();
   await page.getByRole('button', { name: '确认删除分组 api' }).click();
-  await expect(page.getByRole('region', { name: 'api hosts' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'api 的主机' })).toHaveCount(0);
   // Deleting a group keeps its hosts, just without that tag.
   await expect(hostRow(page, 'api-1')).toBeVisible();
 });
@@ -693,15 +693,15 @@ test('renames and deletes a group from the host tree', async ({ page }) => {
 test('duplicates a host from the row menu into the add form', async ({ page }) => {
   await boot(page);
   await openMore(page, 'web-1');
-  await page.getByRole('button', { name: 'Duplicate web-1' }).click();
+  await page.getByRole('button', { name: '复制 web-1', exact: true }).click();
 
-  const editor = page.getByRole('dialog', { name: 'Add host' });
-  await expect(editor.getByLabel('Name', { exact: true })).toHaveValue('web-1-copy');
-  await expect(editor.getByLabel('Hostname / IP')).toHaveValue('web-1.example.com');
+  const editor = page.getByRole('dialog', { name: '添加主机' });
+  await expect(editor.getByLabel('名称', { exact: true })).toHaveValue('web-1-copy');
+  await expect(editor.getByLabel('主机名 / IP')).toHaveValue('web-1.example.com');
   // The copy inherits the group membership, not just the address.
   await expect(editor.getByRole('checkbox', { name: '分组 prod' })).toHaveAttribute('aria-checked', 'true');
 
-  await editor.getByRole('button', { name: 'Add host' }).click();
+  await editor.getByRole('button', { name: '添加主机' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(hostRow(page, 'web-1-copy')).toBeVisible();
 });
@@ -719,20 +719,21 @@ for (const width of [880, 1100]) {
         tags: []
       }));
       await boot(page, manyHosts);
-      await page.getByRole('checkbox', { name: 'Select all hosts', exact: true }).check();
+      await page.getByRole('checkbox', { name: '全选主机', exact: true }).check();
       await page.getByRole('button', { name: '批量连接', exact: true }).click();
       const header = page.getByRole('banner');
-      const tabs = page.getByRole('navigation', { name: 'Open sessions' });
-      const workspace = page.getByRole('navigation', { name: 'Workspace', exact: true });
+      const tabs = page.getByRole('navigation', { name: '已打开会话' });
+      const workspace = page.getByRole('navigation', { name: '工作区', exact: true });
       const transfer = header.getByRole('button', { name: '导入 / 导出主机', exact: true });
-      await expect(tabs.getByRole('button', { name: / · terminal$/ })).toHaveCount(12);
+      await expect(tabs.getByRole('button', { name: / · 终端$/ })).toHaveCount(12);
       await expect(header.getByRole('button', { name: 'Dashboard', exact: true })).toHaveCount(0);
-      await expect(header.getByText('OmnySSH', { exact: true })).toHaveCount(0);
+      // The merged Windows bar carries the brand itself (no native title row).
+      await expect(header.getByText('OmnySSH', { exact: true })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await expect(transfer).toHaveText('导入 / 导出');
       await expect(transfer.locator('svg')).toBeVisible();
       for (const button of await header.getByRole('button').all()) {
-        if (await button.evaluate((el) => !!el.closest('[aria-label="Open sessions"]'))) continue;
+        if (await button.evaluate((el) => !!el.closest('[aria-label="已打开会话"]'))) continue;
         await expect(button).toBeInViewport({ ratio: 1 });
       }
       const position = await transfer.boundingBox();
@@ -745,12 +746,12 @@ for (const width of [880, 1100]) {
       const dialog = page.getByRole('dialog', { name: '导入 / 导出主机' });
       await expect(dialog.getByRole('button', { name: '完整备份', exact: true })).toBeVisible();
       await expect(dialog.getByRole('button', { name: 'SSH config', exact: true })).toBeVisible();
-      await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+      await dialog.getByRole('button', { name: '关闭', description: '关闭', exact: true }).click();
       await expect(dialog).toHaveCount(0);
       await workspace.getByRole('button', { name: '隧道', exact: true }).click();
       await expect(workspace.getByRole('button', { name: '隧道', exact: true })).toHaveAttribute('aria-current', 'page');
-      await workspace.getByRole('button', { name: 'Snippets', exact: true }).click();
-      await expect(page.getByRole('heading', { name: 'Snippets', exact: true })).toBeVisible();
+      await workspace.getByRole('button', { name: '命令片段', exact: true }).click();
+      await expect(page.getByRole('heading', { name: '命令片段', exact: true })).toBeVisible();
       await workspace.getByRole('button', { name: 'SSH', exact: true }).click();
       await expect(hostRow(page, manyHosts[0].name)).toBeVisible();
       await expect(workspace.getByRole('button', { name: 'SSH', exact: true })).toHaveAttribute('aria-current', 'page');
@@ -830,7 +831,7 @@ test('cancelling host transfer never imports or exports a file', async ({ page }
   await expect(dialog).toHaveCount(0);
   await transfer.click();
   await expect(dialog.getByText('未选择文件')).toBeVisible();
-  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
+  await dialog.getByRole('button', { name: '关闭', description: '关闭', exact: true }).click();
   const calls = await page.evaluate(() => (window as unknown as { __hostCalls: string[] }).__hostCalls);
   expect(calls.filter((cmd) => cmd === 'plugin:dialog|save')).toHaveLength(2);
   expect(calls.filter((cmd) => ['import_hosts', 'export_hosts', 'export_ssh_config'].includes(cmd))).toEqual([]);
@@ -853,16 +854,16 @@ test('transfer shows invalid-file errors and duplicate counts without replacing 
   await expect(dialog.getByText('新增 0 台，跳过 1 台（已存在），失败 0 台。', { exact: true })).toBeVisible();
   await expect(dialog.getByText('无法识别主机文件（TOML 或 SSH config）')).toHaveCount(0);
   await expect(page.locator('[data-card]')).toHaveCount(HOSTS.length);
-  await dialog.getByRole('button', { name: '关闭', exact: true }).click();
-  await page.getByRole('button', { name: 'Edit web-1' }).click();
-  await expect(page.getByRole('dialog', { name: 'Edit host' }).getByLabel('Hostname / IP')).toHaveValue('web-1.example.com');
+  await dialog.getByRole('button', { name: '关闭', description: '关闭', exact: true }).click();
+  await page.getByRole('button', { name: '编辑 web-1' }).click();
+  await expect(page.getByRole('dialog', { name: '编辑主机' }).getByLabel('主机名 / IP')).toHaveValue('web-1.example.com');
 });
 
 test('re-reads the local SSH config from the import and export dialog', async ({ page }) => {
   await boot(page);
   await page.getByRole('button', { name: '导入 / 导出主机', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: '导入 / 导出主机' });
-  const sync = dialog.getByRole('button', { name: 'Import SSH config' });
+  const sync = dialog.getByRole('button', { name: '导入 SSH config' });
   await sync.click();
   await expect(sync).toHaveText('已同步');
   await expect(hostRow(page, 'web-1')).toBeVisible();
@@ -870,7 +871,7 @@ test('re-reads the local SSH config from the import and export dialog', async ({
 
 test('shows the TCP and ping latency the prober reports', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Refresh metrics' }).click();
+  await page.getByRole('button', { name: '刷新监控指标' }).click();
   const row = hostRow(page, 'web-1');
   await expect(row.getByText('12 ms')).toBeVisible();
   await expect(row.getByText('18 ms')).toBeVisible();

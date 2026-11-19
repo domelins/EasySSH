@@ -17,7 +17,7 @@ export const MAX_SIZE = 32;
 
 /** The families the settings screen offers. `default` keeps the built-in stack. */
 export const FAMILY_OPTIONS = [
-  { value: DEFAULT_FAMILY, label: 'System default' },
+  { value: DEFAULT_FAMILY, label: '系统默认' },
   { value: 'Consolas', label: 'Consolas' },
   { value: 'Cascadia Mono', label: 'Cascadia Mono' },
   { value: 'Cascadia Code', label: 'Cascadia Code' },

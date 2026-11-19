@@ -159,6 +159,111 @@ fn the_rpm_declares_the_libraries_it_links() {
     }
 }
 
+/// Windows merges the native caption into the app's single top bar, so the main
+/// window's frame must go — but only on Windows: a global `decorations: false`
+/// would strip the macOS traffic lights and the Linux native frame too.
+#[test]
+fn only_the_windows_main_window_drops_the_native_frame() {
+    assert!(
+        MAIN_RS.contains("#[cfg(windows)]") && MAIN_RS.contains("set_decorations(false)"),
+        "the Windows-only set_decorations(false) for the main window is gone — \
+         Windows would stack a native title bar above the app's own top bar"
+    );
+    let config: serde_json::Value =
+        serde_json::from_str(&read(Path::new(MANIFEST_DIR).join("tauri.conf.json")))
+            .expect("tauri.conf.json is valid JSON");
+    assert!(
+        config["app"]["windows"][0].get("decorations").is_none(),
+        "a global decorations setting in tauri.conf.json would strip the macOS \
+         overlay title bar and the Linux native frame"
+    );
+}
+
+/// The caption buttons' permissions belong to the Windows main window alone;
+/// detached panels keep their native frames and must not gain window control.
+#[test]
+fn caption_permissions_stay_on_the_windows_main_window() {
+    let cap: serde_json::Value = serde_json::from_str(&read(
+        Path::new(MANIFEST_DIR).join("capabilities/main-window.json"),
+    ))
+    .expect("main-window.json is valid JSON");
+    assert_eq!(cap["windows"], serde_json::json!(["main"]));
+    assert_eq!(cap["platforms"], serde_json::json!(["windows"]));
+    let permissions = cap["permissions"].as_array().expect("permissions list");
+    for needed in [
+        "core:window:allow-minimize",
+        "core:window:allow-toggle-maximize",
+        "core:window:allow-close",
+    ] {
+        assert!(
+            permissions.iter().any(|p| p == needed),
+            "the main window capability no longer grants {needed}"
+        );
+    }
+    let default = read(Path::new(MANIFEST_DIR).join("capabilities/default.json"));
+    assert!(
+        !default.contains("allow-minimize") && !default.contains("allow-toggle-maximize"),
+        "caption permissions leaked into the shared capability that also covers panel-*"
+    );
+}
+
+/// Source contract: all four Windows `NOTIFYICONDATAW` constructions must set `cbSize`.
+#[test]
+fn windows_tray_icon_sets_cbsize_on_every_notifyicondata() {
+    let src = read(
+        Path::new(MANIFEST_DIR).join("../../vendor/tray-icon/src/platform_impl/windows/mod.rs"),
+    );
+    const FIELD: &str = "cbSize: std::mem::size_of::<NOTIFYICONDATAW>() as _";
+
+    // Each construction body ends at its first '}', so a later field cannot satisfy an earlier missing one.
+    let construction_ok = |s: &str| {
+        let bodies: Vec<&str> = s
+            .split("NOTIFYICONDATAW {")
+            .skip(1)
+            .map(|rest| rest.split_once('}').map(|(b, _)| b).unwrap_or(""))
+            .collect();
+        bodies.len() == 4 && bodies.iter().all(|b| b.contains(FIELD))
+    };
+
+    assert!(
+        construction_ok(&src),
+        "expected exactly four NOTIFYICONDATAW constructions, each setting cbSize to \
+         size_of::<NOTIFYICONDATAW>()"
+    );
+
+    // Mutation regression: deleting any single cbSize field must fail the check.
+    let fields: Vec<usize> = src.match_indices(FIELD).map(|(i, _)| i).collect();
+    assert_eq!(
+        fields.len(),
+        4,
+        "expected exactly four cbSize fields; found {}",
+        fields.len()
+    );
+    for start in fields {
+        let mut mutated = src.clone();
+        mutated.replace_range(start..start + FIELD.len(), "");
+        assert!(
+            !construction_ok(&mutated),
+            "deleting the cbSize field at byte offset {start} still passes — the \
+             mutation regression is not sensitive enough"
+        );
+    }
+}
+
+/// Source contract: the `[patch.crates-io]` entry must point at the vendored copy.
+#[test]
+fn the_tray_icon_patch_points_at_the_vendored_copy() {
+    let manifest = read(Path::new(MANIFEST_DIR).join("../../Cargo.toml"));
+    let patch = manifest
+        .split_once("[patch.crates-io]")
+        .expect("root Cargo.toml declares a [patch.crates-io] section for tray-icon")
+        .1;
+    assert!(
+        patch.contains(r#"tray-icon = { path = "vendor/tray-icon" }"#),
+        "the [patch.crates-io] entry for tray-icon no longer points at vendor/tray-icon"
+    );
+}
+
 /// `--bg` of the dark theme — the single source of truth for the app's backdrop.
 fn dark_background_token() -> String {
     let css = read(Path::new(MANIFEST_DIR).join("ui/src/app.css"));

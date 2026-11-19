@@ -62,7 +62,7 @@ async function boot(page: Page, streamer: boolean, hosts: unknown[] = HOSTS): Pr
     { hosts, streamer }
   );
   await page.goto('/');
-  await expect(page.getByText('1 host', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 台主机', { exact: true })).toBeVisible();
 }
 
 const TUNNEL_ERROR = "Tunnel to 'db': 8080:10.20.3.7:5432 could not be opened: db.example.com refused";
@@ -96,32 +96,32 @@ test('with streamer mode off the status bar shows the error as sent', async ({ p
 test('an eye in the status bar says streamer mode is on, without changing its height', async ({ page }) => {
   await boot(page, false);
   const statusBar = page.getByRole('contentinfo');
-  const eye = statusBar.getByRole('img', { name: 'Streamer mode is on' });
+  const eye = statusBar.getByRole('img', { name: '直播模式已开启' });
   await expect(eye).toHaveCount(0);
   const before = (await statusBar.boundingBox())?.height;
 
   await page.keyboard.press('Control+Shift+S');
   await expect(eye).toBeVisible();
   await expect(eye).toHaveAttribute('title', /\(Ctrl\+Shift\+S\)$/);
-  await expect(statusBar).not.toContainText('Streamer mode');
+  await expect(statusBar).not.toContainText('直播模式');
   expect((await statusBar.boundingBox())?.height).toBe(before);
 });
 
 test('the command palette toggles streamer mode', async ({ page }) => {
   await boot(page, false);
-  const eye = page.getByRole('contentinfo').getByRole('img', { name: 'Streamer mode is on' });
+  const eye = page.getByRole('contentinfo').getByRole('img', { name: '直播模式已开启' });
 
   await page.keyboard.press('Control+k');
-  const palette = page.getByRole('dialog', { name: 'Command palette' });
-  await palette.getByRole('textbox').fill('streamer');
-  await expect(palette.getByText('Commands')).toBeVisible();
-  await expect(palette.getByRole('button', { name: 'Toggle streamer mode Ctrl+Shift+S' })).toBeVisible();
+  const palette = page.getByRole('dialog', { name: '命令面板' });
+  await palette.getByRole('textbox').fill('直播');
+  await expect(palette.getByText('命令')).toBeVisible();
+  await expect(palette.getByRole('button', { name: '切换直播模式 Ctrl+Shift+S' })).toBeVisible();
   await page.keyboard.press('Enter');
   await expect(palette).toHaveCount(0);
   await expect(eye).toBeVisible();
 
   await page.keyboard.press('Control+k');
-  await palette.getByRole('button', { name: /Toggle streamer mode/ }).click();
+  await palette.getByRole('button', { name: /切换直播模式/ }).click();
   await expect(palette).toHaveCount(0);
   await expect(eye).toHaveCount(0);
 });
@@ -135,23 +135,23 @@ test('Ctrl+Shift+S toggles streamer mode and re-masks what is already on screen'
   await page.keyboard.press('Control+Shift+S');
   await expect(statusBar).toContainText("Tunnel to 'db'");
   await expect(statusBar).not.toContainText('10.20.3.7');
-  await expect(statusBar.getByRole('img', { name: 'Streamer mode is on' })).toBeVisible();
+  await expect(statusBar.getByRole('img', { name: '直播模式已开启' })).toBeVisible();
 
   // Typing in a field does not hold it back.
-  await page.getByRole('button', { name: 'Search hosts' }).click();
-  await page.getByRole('textbox', { name: 'Search hosts' }).press('Control+Shift+S');
+  await page.getByRole('button', { name: '搜索主机' }).click();
+  await page.getByRole('textbox', { name: '搜索主机' }).press('Control+Shift+S');
   await expect(statusBar).toContainText('10.20.3.7');
-  await expect(statusBar.getByRole('img', { name: 'Streamer mode is on' })).toHaveCount(0);
-  await expect(page.getByRole('textbox', { name: 'Search hosts' })).toHaveValue('');
+  await expect(statusBar.getByRole('img', { name: '直播模式已开启' })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: '搜索主机' })).toHaveValue('');
 });
 
 test('the host form shows disguised addresses until Reveal, and saves the real ones', async ({ page }) => {
   await boot(page, true);
-  await page.getByRole('button', { name: 'Edit db' }).click();
-  let editor = page.getByRole('dialog', { name: 'Edit host' });
-  let hostname = editor.getByLabel('Hostname / IP');
-  const local = editor.getByLabel('Forward 1 local port');
-  const remote = editor.getByLabel('Forward 1 remote host');
+  await page.getByRole('button', { name: '编辑 db' }).click();
+  let editor = page.getByRole('dialog', { name: '编辑主机' });
+  let hostname = editor.getByLabel('主机名 / IP');
+  const local = editor.getByLabel('转发 1 的本地端口');
+  const remote = editor.getByLabel('转发 1 的远程主机');
 
   await expect(hostname).toHaveAttribute('readonly', '');
   await expect(hostname).toHaveValue(/^[a-z]+\d+\.com$/);
@@ -161,23 +161,23 @@ test('the host form shows disguised addresses until Reveal, and saves the real o
   await expect(remote).toHaveAttribute('readonly', '');
   await expect(remote).not.toHaveValue('10.20.3.7');
   // Edit focus skips the disguised field.
-  await expect(editor.getByLabel('User', { exact: true })).toBeFocused();
+  await expect(editor.getByLabel('用户名', { exact: true })).toBeFocused();
 
-  await editor.getByRole('button', { name: 'Reveal' }).first().click();
+  await editor.getByRole('button', { name: '显示' }).first().click();
   await expect(hostname).toHaveValue('db.example.com');
   await expect(hostname).toBeFocused();
   await expect(hostname).not.toHaveAttribute('readonly');
   await expect(local).toHaveValue('192.168.1.5:8080');
   await expect(remote).toHaveValue('10.20.3.7');
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(0);
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(0);
 
   // A reveal lasts for this open form only; saving while disguised keeps the real values.
-  await editor.getByRole('button', { name: 'Cancel' }).click();
-  await page.getByRole('button', { name: 'Edit db' }).click();
-  editor = page.getByRole('dialog', { name: 'Edit host' });
-  hostname = editor.getByLabel('Hostname / IP');
+  await editor.getByRole('button', { name: '取消' }).click();
+  await page.getByRole('button', { name: '编辑 db' }).click();
+  editor = page.getByRole('dialog', { name: '编辑主机' });
+  hostname = editor.getByLabel('主机名 / IP');
   await expect(hostname).toHaveAttribute('readonly', '');
-  await editor.getByRole('button', { name: 'Save' }).click();
+  await editor.getByRole('button', { name: '保存' }).click();
   await expect(editor).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.stringify((window as unknown as { __saved: unknown }).__saved));
   expect(saved).toContain('"hostname":"db.example.com"');
@@ -186,25 +186,25 @@ test('the host form shows disguised addresses until Reveal, and saves the real o
 
 test('a new host and new forwards stay editable in streamer mode, and save as typed', async ({ page }) => {
   await boot(page, true);
-  await page.getByRole('button', { name: 'Add host' }).click();
-  const editor = page.getByRole('dialog', { name: 'Add host' });
-  const hostname = editor.getByLabel('Hostname / IP');
+  await page.getByRole('button', { name: '添加主机' }).click();
+  const editor = page.getByRole('dialog', { name: '添加主机' });
+  const hostname = editor.getByLabel('主机名 / IP');
   await expect(hostname).not.toHaveAttribute('readonly');
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(0);
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(0);
 
-  await editor.getByLabel('Name', { exact: true }).fill('cache');
+  await editor.getByLabel('名称', { exact: true }).fill('cache');
   await hostname.fill('cache.example.com');
   await expect(hostname).toHaveValue('cache.example.com');
   await expect(hostname).not.toHaveAttribute('readonly');
 
-  await editor.getByRole('button', { name: 'Add forward' }).click();
-  await editor.getByLabel('Forward 1 local port').fill('6380');
-  await editor.getByLabel('Forward 1 remote host').fill('10.9.8.7');
-  await editor.getByLabel('Forward 1 remote port').fill('6379');
-  await expect(editor.getByLabel('Forward 1 remote host')).toHaveValue('10.9.8.7');
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(0);
+  await editor.getByRole('button', { name: '添加转发' }).click();
+  await editor.getByLabel('转发 1 的本地端口').fill('6380');
+  await editor.getByLabel('转发 1 的远程主机').fill('10.9.8.7');
+  await editor.getByLabel('转发 1 的远程端口').fill('6379');
+  await expect(editor.getByLabel('转发 1 的远程主机')).toHaveValue('10.9.8.7');
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(0);
 
-  await editor.getByRole('button', { name: 'Add host' }).click();
+  await editor.getByRole('button', { name: '添加主机' }).click();
   await expect(editor).toHaveCount(0);
   const saved = await page.evaluate(() => JSON.stringify((window as unknown as { __saved: unknown }).__saved));
   expect(saved).toContain('"hostname":"cache.example.com"');
@@ -213,35 +213,35 @@ test('a new host and new forwards stay editable in streamer mode, and save as ty
 
 test('only the forwards present at open are disguised', async ({ page }) => {
   await boot(page, true);
-  await page.getByRole('button', { name: 'Edit db' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
+  await page.getByRole('button', { name: '编辑 db' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
 
-  await editor.getByRole('button', { name: 'Add forward' }).click();
-  await expect(editor.getByLabel('Forward 1 remote host')).toHaveAttribute('readonly', '');
-  const added = editor.getByLabel('Forward 2 remote host');
+  await editor.getByRole('button', { name: '添加转发' }).click();
+  await expect(editor.getByLabel('转发 1 的远程主机')).toHaveAttribute('readonly', '');
+  const added = editor.getByLabel('转发 2 的远程主机');
   await expect(added).not.toHaveAttribute('readonly');
   await added.fill('10.1.2.3');
   await expect(added).toHaveValue('10.1.2.3');
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(2);
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(2);
 
   // Removing the disguised row leaves the added one, still editable, and no forward to reveal.
-  await editor.getByRole('button', { name: 'Remove forward 1' }).click();
-  await expect(editor.getByLabel('Forward 1 remote host')).toHaveValue('10.1.2.3');
-  await expect(editor.getByLabel('Forward 1 remote host')).not.toHaveAttribute('readonly');
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(1);
-  await expect(editor.getByLabel('Hostname / IP')).toHaveAttribute('readonly', '');
+  await editor.getByRole('button', { name: '移除转发 1' }).click();
+  await expect(editor.getByLabel('转发 1 的远程主机')).toHaveValue('10.1.2.3');
+  await expect(editor.getByLabel('转发 1 的远程主机')).not.toHaveAttribute('readonly');
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(1);
+  await expect(editor.getByLabel('主机名 / IP')).toHaveAttribute('readonly', '');
 });
 
 test('switching streamer mode on mid-edit never locks the field being typed in', async ({ page }) => {
   await boot(page, false);
-  await page.getByRole('button', { name: 'Edit db' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  const hostname = editor.getByLabel('Hostname / IP');
-  const remote = editor.getByLabel('Forward 1 remote host');
+  await page.getByRole('button', { name: '编辑 db' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  const hostname = editor.getByLabel('主机名 / IP');
+  const remote = editor.getByLabel('转发 1 的远程主机');
 
   await hostname.fill('db2.example.com');
   await hostname.press('Control+Shift+S');
-  await expect(page.getByRole('contentinfo').getByRole('img', { name: 'Streamer mode is on' })).toBeVisible();
+  await expect(page.getByRole('contentinfo').getByRole('img', { name: '直播模式已开启' })).toBeVisible();
   await expect(hostname).not.toHaveAttribute('readonly');
   await expect(hostname).toBeFocused();
   await hostname.press('x');
@@ -253,40 +253,40 @@ test('switching streamer mode on mid-edit never locks the field being typed in',
 
 test('turning streamer mode off and on again hides a revealed form again', async ({ page }) => {
   await boot(page, true);
-  await page.getByRole('button', { name: 'Edit db' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  const hostname = editor.getByLabel('Hostname / IP');
-  const remote = editor.getByLabel('Forward 1 remote host');
+  await page.getByRole('button', { name: '编辑 db' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  const hostname = editor.getByLabel('主机名 / IP');
+  const remote = editor.getByLabel('转发 1 的远程主机');
 
-  await editor.getByRole('button', { name: 'Reveal' }).first().click();
+  await editor.getByRole('button', { name: '显示' }).first().click();
   await expect(hostname).toHaveValue('db.example.com');
   await hostname.press('Control+Shift+S');
   await hostname.press('Control+Shift+S');
-  await expect(page.getByRole('contentinfo').getByRole('img', { name: 'Streamer mode is on' })).toBeVisible();
+  await expect(page.getByRole('contentinfo').getByRole('img', { name: '直播模式已开启' })).toBeVisible();
   await expect(hostname).toHaveAttribute('readonly', '');
   await expect(hostname).not.toHaveValue('db.example.com');
   await expect(remote).toHaveAttribute('readonly', '');
   await expect(remote).not.toHaveValue('10.20.3.7');
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(2);
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(2);
 });
 
 test('a field its disguise leaves as is stays editable without a Reveal', async ({ page }) => {
   await boot(page, true, [
     { ...HOSTS[0], localForwards: [{ bindPort: 8080, remoteHost: 'localhost', remotePort: 80 }] }
   ]);
-  await page.getByRole('button', { name: 'Edit db' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  const local = editor.getByLabel('Forward 1 local port');
-  const remote = editor.getByLabel('Forward 1 remote host');
+  await page.getByRole('button', { name: '编辑 db' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  const local = editor.getByLabel('转发 1 的本地端口');
+  const remote = editor.getByLabel('转发 1 的远程主机');
 
   await expect(local).toHaveValue('8080');
   await expect(local).not.toHaveAttribute('readonly');
   await expect(remote).toHaveValue('localhost');
   await expect(remote).not.toHaveAttribute('readonly');
   // Only the hostname is held, and changing the port leaves it disguised.
-  await expect(editor.getByRole('button', { name: 'Reveal' })).toHaveCount(1);
+  await expect(editor.getByRole('button', { name: '显示' })).toHaveCount(1);
   await local.fill('9090');
   await expect(local).toHaveValue('9090');
-  await expect(editor.getByLabel('Hostname / IP')).toHaveAttribute('readonly', '');
-  await expect(editor.getByLabel('Hostname / IP')).not.toHaveValue('db.example.com');
+  await expect(editor.getByLabel('主机名 / IP')).toHaveAttribute('readonly', '');
+  await expect(editor.getByLabel('主机名 / IP')).not.toHaveValue('db.example.com');
 });

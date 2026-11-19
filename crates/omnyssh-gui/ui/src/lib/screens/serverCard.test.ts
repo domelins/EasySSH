@@ -441,12 +441,12 @@ describe('deriveTunnel — the card\'s tunnel block', () => {
   });
 
   it('reads as off until a status arrives, and after a stop', () => {
-    expect(deriveTunnel(forwarded(), undefined)).toMatchObject({ running: false, label: 'Off', dot: 'unknown' });
+    expect(deriveTunnel(forwarded(), undefined)).toMatchObject({ running: false, label: '未启动', dot: 'unknown' });
   });
 
   it('tells running states from ended ones', () => {
     expect(deriveTunnel(forwarded(), { kind: 'connecting' })).toMatchObject({ running: true, dot: 'unknown' });
-    expect(deriveTunnel(forwarded(), { kind: 'up' })).toMatchObject({ running: true, dot: 'ok', label: 'Active' });
+    expect(deriveTunnel(forwarded(), { kind: 'up' })).toMatchObject({ running: true, dot: 'ok', label: '运行中' });
     expect(deriveTunnel(forwarded(), { kind: 'retrying', message: 'connection lost' })).toMatchObject({
       running: true,
       dot: 'warn',
@@ -462,7 +462,7 @@ describe('deriveTunnel — the card\'s tunnel block', () => {
   it('rides along on a reachability card too — a port check still has SSH credentials', () => {
     const card = deriveCard({ ...forwarded(), monitoring: 'tcpPort' }, CONNECTED, undefined, undefined, { kind: 'up' });
     expect(card.reachability).toBe('reachable');
-    expect(card.tunnel?.label).toBe('Active');
+    expect(card.tunnel?.label).toBe('运行中');
   });
 
   it('labels where a forward listens', () => {

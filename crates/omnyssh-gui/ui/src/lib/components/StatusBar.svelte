@@ -8,7 +8,7 @@
   import { streamerChordLabel } from '$lib/stores/ui';
   import { Icon, StatusDot } from '$lib/theme';
 
-  const streamerLabel = 'Streamer mode is on';
+  const streamerLabel = '直播模式已开启';
 </script>
 
 <footer
@@ -19,7 +19,7 @@
     <!-- A long error (a hint to act on) is cut to one line; hover shows all of it. -->
     <span class="min-w-0 truncate text-status-crit" title={text}>{text}</span>
   {:else}
-    <span class="min-w-0 truncate">Ready</span>
+    <span class="min-w-0 truncate">就绪</span>
   {/if}
   <div class="flex shrink-0 items-center gap-3">
     {#if $streamerMode}
@@ -34,15 +34,15 @@
         <Icon name="eye" size={14} />
       </span>
     {/if}
-    <span>{$hostSummary.total} {$hostSummary.total === 1 ? 'host' : 'hosts'}</span>
+    <span>{$hostSummary.total} 台主机</span>
     <span class="flex items-center gap-1.5">
-      <StatusDot status="ok" label="online" />{$hostSummary.online} online
+      <StatusDot status="ok" label="在线" />{$hostSummary.online} 在线
     </span>
     <span class="flex items-center gap-1.5">
-      <StatusDot status="warn" label="alert" />{$hostSummary.alert} alert
+      <StatusDot status="warn" label="告警" />{$hostSummary.alert} 告警
     </span>
     <span class="flex items-center gap-1.5">
-      <StatusDot status="off" label="offline" />{$hostSummary.offline} offline
+      <StatusDot status="off" label="离线" />{$hostSummary.offline} 离线
     </span>
   </div>
 </footer>

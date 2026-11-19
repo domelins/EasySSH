@@ -100,13 +100,13 @@ const calls = (page: Page): Promise<Call[]> => page.evaluate(() => (window as un
 
 test('starts and stops a tunnel from the row actions', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'More actions for nas' }).click();
+  await page.getByRole('button', { name: 'nas 的更多操作' }).click();
   await expect(page.getByText('localhost:9443')).toBeVisible();
   await expect(page.getByText('db.internal:5432')).toBeVisible();
-  await expect(page.getByRole('button', { name: /tunnel to web-1/ })).toHaveCount(0);
-  const toggle = page.getByRole('button', { name: 'Start the tunnel to nas' });
+  await expect(page.getByRole('button', { name: /到 web-1 的隧道/ })).toHaveCount(0);
+  const toggle = page.getByRole('button', { name: '启动到 nas 的隧道' });
   await toggle.click();
-  await expect(page.getByText('Active', { exact: true })).toBeVisible();
+  await expect(page.getByText('运行中', { exact: true })).toBeVisible();
   expect((await calls(page)).filter((call) => call.cmd === 'tunnel_start')).toEqual([
     { cmd: 'tunnel_start', args: { hostName: 'nas' } }
   ]);
@@ -116,46 +116,46 @@ test('starts and stops a tunnel from the row actions', async ({ page }) => {
       status: { kind: 'retrying', message: 'connection lost' }
     })
   );
-  await expect(page.getByText('Reconnecting…')).toBeVisible();
+  await expect(page.getByText('重连中…')).toBeVisible();
   await expect(page.getByText('connection lost')).toBeVisible();
-  await page.getByRole('button', { name: 'Stop the tunnel to nas' }).click();
-  await expect(page.getByText('Off', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start the tunnel to nas' })).toBeVisible();
+  await page.getByRole('button', { name: '停止到 nas 的隧道' }).click();
+  await expect(page.getByText('未启动', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '启动到 nas 的隧道' })).toBeVisible();
 });
 
 test('a start the backend refuses surfaces its reason', async ({ page }) => {
   await boot(page, { rejectStart: "'nas' has no port forwards" });
-  await page.getByRole('button', { name: 'More actions for nas' }).click();
-  await page.getByRole('button', { name: 'Start the tunnel to nas' }).click();
+  await page.getByRole('button', { name: 'nas 的更多操作' }).click();
+  await page.getByRole('button', { name: '启动到 nas 的隧道' }).click();
   await expect(page.getByText("'nas' has no port forwards")).toBeVisible();
 });
 
 test('adds a forward in the editor and the row picks it up', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Edit web-1' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  await editor.getByRole('button', { name: 'Add forward' }).click();
-  await editor.getByLabel('Forward 1 local port').fill('8080');
-  await editor.getByLabel('Forward 1 remote host').fill('127.0.0.1');
-  await editor.getByLabel('Forward 1 remote port').fill('80');
-  await editor.getByRole('switch', { name: 'Start tunnel when OmnySSH opens' }).click();
-  await editor.getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('button', { name: '编辑 web-1' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  await editor.getByRole('button', { name: '添加转发' }).click();
+  await editor.getByLabel('转发 1 的本地端口').fill('8080');
+  await editor.getByLabel('转发 1 的远程主机').fill('127.0.0.1');
+  await editor.getByLabel('转发 1 的远程端口').fill('80');
+  await editor.getByRole('switch', { name: 'OmnySSH 打开时自动启动隧道' }).click();
+  await editor.getByRole('button', { name: '保存' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const saved = (await calls(page)).find((call) => call.cmd === 'save_host')?.args.input as Record<string, unknown>;
   expect(saved.localForwards).toEqual([{ bindPort: 8080, remoteHost: '127.0.0.1', remotePort: 80 }]);
   expect(saved.tunnelAutostart).toBe(true);
-  await page.getByRole('button', { name: 'More actions for web-1' }).click();
+  await page.getByRole('button', { name: 'web-1 的更多操作' }).click();
   await expect(page.getByText('localhost:8080')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Start the tunnel to web-1' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '启动到 web-1 的隧道' })).toBeVisible();
 });
 
 test('a half-filled forward keeps the editor open with the reason', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Edit web-1' }).click();
-  const editor = page.getByRole('dialog', { name: 'Edit host' });
-  await editor.getByRole('button', { name: 'Add forward' }).click();
-  await editor.getByLabel('Forward 1 local port').fill('8080');
-  await editor.getByRole('button', { name: 'Save' }).click();
-  await expect(editor.getByText('Forward 1: remote port must be a number')).toBeVisible();
+  await page.getByRole('button', { name: '编辑 web-1' }).click();
+  const editor = page.getByRole('dialog', { name: '编辑主机' });
+  await editor.getByRole('button', { name: '添加转发' }).click();
+  await editor.getByLabel('转发 1 的本地端口').fill('8080');
+  await editor.getByRole('button', { name: '保存' }).click();
+  await expect(editor.getByText('转发 1：远程端口必须是 1 到 65535 之间的数字')).toBeVisible();
   expect((await calls(page)).some((call) => call.cmd === 'save_host')).toBe(false);
 });

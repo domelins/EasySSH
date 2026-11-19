@@ -41,13 +41,13 @@
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50';
 </script>
 
-<Modal label="Quit OmnySSH?" onClose={cancel}>
+<Modal label="退出 OmnySSH？" onClose={cancel}>
   <div class="space-y-3 px-5 py-4">
-    <h2 class="text-sm font-semibold">Quit OmnySSH?</h2>
-    <p class="text-sm text-muted">{summary} will be closed.</p>
+    <h2 class="text-sm font-semibold">退出 OmnySSH？</h2>
+    <p class="text-sm text-muted">{summary}将被关闭。</p>
     <label class="flex items-center gap-2 text-sm text-muted">
       <input type="checkbox" class="accent-accent" bind:checked={dontAsk} />
-      Don't ask again
+      不再询问
     </label>
     {#if $traySupport.available}
       <button
@@ -55,7 +55,7 @@
         class="text-left text-sm text-fg underline underline-offset-2 hover:text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         onclick={keepRunning}
       >
-        {isMac ? 'Keep running in the menu bar instead' : 'Keep running in the tray instead'}
+        {isMac ? '改为在菜单栏继续运行' : '改为在托盘继续运行'}
       </button>
     {/if}
     <div class="flex justify-end gap-2 pt-1">
@@ -65,7 +65,7 @@
         class="{button} text-muted hover:bg-surface-inset hover:text-fg"
         onclick={cancel}
       >
-        Cancel
+        取消
       </button>
       <button
         type="button"
@@ -73,7 +73,7 @@
         disabled={quitting}
         onclick={quit}
       >
-        Quit
+        退出
       </button>
     </div>
   </div>

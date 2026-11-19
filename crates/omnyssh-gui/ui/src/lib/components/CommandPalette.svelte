@@ -29,11 +29,11 @@
   const firstCommand = $derived(items.findIndex((it) => it.kind === 'command'));
 
   const placeholder = $derived(
-    $palette.mode === 'pickHost' ? 'Pick a host…' : 'Search hosts, sessions and commands…'
+    $palette.mode === 'pickHost' ? '选择主机…' : '搜索主机、会话和命令…'
   );
   // The navigator always lists its commands, so only a query can empty it.
   const emptyMessage = $derived(
-    $palette.mode === 'pickHost' ? (query ? 'No matching hosts.' : 'No hosts configured.') : 'No matches.'
+    $palette.mode === 'pickHost' ? (query ? '没有匹配的主机。' : '尚未配置主机。') : '无匹配结果。'
   );
 
   // Focus returns here when the overlay closes, so a keyboard user is not dropped to
@@ -146,12 +146,12 @@
     class="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[14vh]"
     role="dialog"
     aria-modal="true"
-    aria-label={$palette.mode === 'pickHost' ? 'Pick a host' : 'Command palette'}
+    aria-label={$palette.mode === 'pickHost' ? '选择主机' : '命令面板'}
   >
     <button
       type="button"
       tabindex="-1"
-      aria-label="Dismiss"
+      aria-label="关闭"
       class="absolute inset-0 bg-overlay"
       onclick={() => palette.close()}
     ></button>
@@ -180,13 +180,13 @@
           <!-- Keyed by position: rows are stateless. -->
           {#each items as item, i (i)}
             {#if $palette.mode === 'navigate' && i === firstSession}
-              <li class={sectionHead}>Sessions</li>
+              <li class={sectionHead}>会话</li>
             {/if}
             {#if $palette.mode === 'navigate' && i === firstHost}
-              <li class={sectionHead}>Hosts</li>
+              <li class={sectionHead}>主机</li>
             {/if}
             {#if i === firstCommand}
-              <li class={sectionHead}>Commands</li>
+              <li class={sectionHead}>命令</li>
             {/if}
             <li>
               <button
@@ -223,9 +223,9 @@
       <div
         class="flex items-center gap-4 border-t border-default px-4 py-2 font-mono text-[0.6875rem] text-faint"
       >
-        <span>↑↓ navigate</span>
-        <span>↵ select</span>
-        <span>esc close</span>
+        <span>↑↓ 移动</span>
+        <span>↵ 选择</span>
+        <span>esc 关闭</span>
       </div>
     </div>
   </div>

@@ -103,11 +103,11 @@ async function boot(
 test('the header gear opens Settings; theme, interval, and update prefs work', async ({ page }) => {
   await boot(page, { fireUpdateOnBoot: false });
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await page.getByRole('button', { name: '设置' }).click();
+  await expect(page.getByRole('heading', { name: '设置' })).toBeVisible();
 
   // Theme is a seven-option picker; the app boots dark. Each pick repaints the root.
-  const themePicker = page.getByLabel('Theme', { exact: true });
+  const themePicker = page.getByLabel('主题', { exact: true });
   await themePicker.selectOption('light');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await themePicker.selectOption('ocean');
@@ -118,28 +118,28 @@ test('the header gear opens Settings; theme, interval, and update prefs work', a
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
   // Auto-refresh interval is a segmented pref.
-  const tenSec = page.getByRole('button', { name: '10s', exact: true });
+  const tenSec = page.getByRole('button', { name: '10 秒', exact: true });
   await tenSec.click();
   await expect(tenSec).toHaveAttribute('aria-pressed', 'true');
 
   // Check-on-startup persists via save_update_config (seeded true → toggles false).
-  const startupSwitch = page.getByRole('switch', { name: 'Check for updates on startup' });
+  const startupSwitch = page.getByRole('switch', { name: '启动时检查更新' });
   await expect(startupSwitch).toHaveAttribute('aria-checked', 'true');
   await startupSwitch.click();
   await expect(startupSwitch).toHaveAttribute('aria-checked', 'false');
 
   // A manual check surfaces the available version and raises the banner.
-  await page.getByRole('button', { name: 'Check now' }).click();
-  await expect(page.getByText('Version 2.0.0 is available.')).toBeVisible();
-  await expect(page.getByText('Update available — v2.0.0')).toBeVisible();
+  await page.getByRole('button', { name: '立即检查' }).click();
+  await expect(page.getByText('有新版本 2.0.0 可用。')).toBeVisible();
+  await expect(page.getByText('有可用更新 — v2.0.0')).toBeVisible();
 });
 
 test('About shows the installed version, selectable for a bug report', async ({ page }) => {
   await boot(page, { fireUpdateOnBoot: false });
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: '设置' }).click();
 
-  const about = page.getByRole('heading', { name: 'About' }).locator('..');
-  await expect(about.getByText('Version', { exact: true })).toBeVisible();
+  const about = page.getByRole('heading', { name: '关于' }).locator('..');
+  await expect(about.getByText('版本', { exact: true })).toBeVisible();
   const version = about.getByText(INSTALLED, { exact: true });
   await expect(version).toBeVisible();
   await expect(version).toHaveCSS('user-select', 'text');
@@ -150,22 +150,22 @@ for (const version of ['fails', 'hangs'] as const) {
     page
   }) => {
     await boot(page, { fireUpdateOnBoot: false, version });
-    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('button', { name: '设置' }).click();
 
     await expect(
-      page.getByRole('switch', { name: 'Check for updates on startup' })
+      page.getByRole('switch', { name: '启动时检查更新' })
     ).toHaveAttribute('aria-checked', 'true');
-    await expect(page.getByRole('heading', { name: 'About' })).toHaveCount(0);
-    await expect(page.getByText('Version', { exact: true })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: '关于' })).toHaveCount(0);
+    await expect(page.getByText('版本', { exact: true })).toHaveCount(0);
   });
 }
 
 test('scrolled to the end, Settings keeps its bottom padding', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 480 });
   await boot(page, { fireUpdateOnBoot: false });
-  await page.getByRole('button', { name: 'Settings' }).click();
+  await page.getByRole('button', { name: '设置' }).click();
 
-  const last = page.getByRole('heading', { name: 'About' }).locator('..');
+  const last = page.getByRole('heading', { name: '关于' }).locator('..');
   await expect(last).toBeVisible();
   const { overflows, gap } = await last.evaluate((card) => {
     const scroller = card.closest('.overflow-auto') as HTMLElement;
@@ -182,10 +182,10 @@ test('scrolled to the end, Settings keeps its bottom padding', async ({ page }) 
 test('startup update-available raises the banner; dismiss hides it', async ({ page }) => {
   await boot(page, { fireUpdateOnBoot: true });
 
-  const banner = page.getByText('Update available — v2.0.0');
+  const banner = page.getByText('有可用更新 — v2.0.0');
   await expect(banner).toBeVisible();
 
-  await page.getByRole('button', { name: 'Dismiss update notice' }).click();
+  await page.getByRole('button', { name: '忽略更新提示' }).click();
   await expect(banner).toHaveCount(0);
 });
 
@@ -193,15 +193,15 @@ test('a settings toggle preserves a skipVersion the banner wrote out-of-band', a
   await boot(page, { fireUpdateOnBoot: true });
 
   // Open Settings first so its config cache is seeded stale (skipVersion: '').
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await page.getByRole('button', { name: '设置' }).click();
+  await expect(page.getByRole('heading', { name: '设置' })).toBeVisible();
 
   // Now Skip on the banner: it writes skipVersion='2.0.0' to the shared config.
-  await page.getByRole('button', { name: 'Skip', exact: true }).click();
-  await expect(page.getByText('Update available — v2.0.0')).toHaveCount(0);
+  await page.getByRole('button', { name: '跳过此版本', exact: true }).click();
+  await expect(page.getByText('有可用更新 — v2.0.0')).toHaveCount(0);
 
   // Flipping check-on-startup must read-modify-write fresh, not clobber the skip.
-  const startupSwitch = page.getByRole('switch', { name: 'Check for updates on startup' });
+  const startupSwitch = page.getByRole('switch', { name: '启动时检查更新' });
   await startupSwitch.click();
   await expect(startupSwitch).toHaveAttribute('aria-checked', 'false');
 
@@ -221,9 +221,9 @@ test('the tray settings reach the backend and survive a restart', async ({ page 
   // Off by default, and the backend is told so on start.
   await expect.poll(() => trayCalls(page)).toEqual([{ minimizeToTray: false, closeToTray: false }]);
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const close = page.getByRole('switch', { name: 'Close to tray' });
-  await expect(page.getByRole('switch', { name: 'Minimize to tray' })).toHaveAttribute(
+  await page.getByRole('button', { name: '设置' }).click();
+  const close = page.getByRole('switch', { name: '关闭到托盘' });
+  await expect(page.getByRole('switch', { name: '最小化到托盘' })).toHaveAttribute(
     'aria-checked',
     'false'
   );
@@ -241,10 +241,10 @@ test('the tray settings reach the backend and survive a restart', async ({ page 
 test('without a system tray the settings say so and stay off', async ({ page }) => {
   await boot(page, { fireUpdateOnBoot: false, traySupport: { available: false, minimize: false } });
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByText('This desktop has no system tray')).toBeVisible();
-  await expect(page.getByRole('switch', { name: 'Close to tray' })).toBeDisabled();
-  await expect(page.getByRole('switch', { name: 'Minimize to tray' })).toBeDisabled();
+  await page.getByRole('button', { name: '设置' }).click();
+  await expect(page.getByText('当前桌面没有系统托盘')).toBeVisible();
+  await expect(page.getByRole('switch', { name: '关闭到托盘' })).toBeDisabled();
+  await expect(page.getByRole('switch', { name: '最小化到托盘' })).toBeDisabled();
 });
 
 test('under Wayland the window closes to the tray but cannot minimize into it', async ({
@@ -252,10 +252,10 @@ test('under Wayland the window closes to the tray but cannot minimize into it', 
 }) => {
   await boot(page, { fireUpdateOnBoot: false, traySupport: { available: true, minimize: false } });
 
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.getByRole('switch', { name: 'Minimize to tray' })).toBeDisabled();
-  await expect(page.getByText(/Not on Wayland/)).toBeVisible();
-  await expect(page.getByRole('switch', { name: 'Close to tray' })).toBeEnabled();
+  await page.getByRole('button', { name: '设置' }).click();
+  await expect(page.getByRole('switch', { name: '最小化到托盘' })).toBeDisabled();
+  await expect(page.getByText(/Wayland 上不可用/)).toBeVisible();
+  await expect(page.getByRole('switch', { name: '关闭到托盘' })).toBeEnabled();
 });
 
 test.describe('on macOS', () => {
@@ -269,8 +269,8 @@ test.describe('on macOS', () => {
   }) => {
     await boot(page, { fireUpdateOnBoot: false });
 
-    await page.getByRole('button', { name: 'Settings' }).click();
-    await expect(page.getByRole('switch', { name: 'Close to the menu bar' })).toBeVisible();
-    await expect(page.getByRole('switch', { name: 'Minimize to tray' })).toHaveCount(0);
+    await page.getByRole('button', { name: '设置' }).click();
+    await expect(page.getByRole('switch', { name: '关闭到菜单栏' })).toBeVisible();
+    await expect(page.getByRole('switch', { name: '最小化到托盘' })).toHaveCount(0);
   });
 });

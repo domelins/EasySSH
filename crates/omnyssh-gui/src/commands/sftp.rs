@@ -30,7 +30,7 @@ pub async fn sftp_open(
     host_name: String,
 ) -> Result<u64, CommandError> {
     let host = state.host_by_name(&host_name).ok_or_else(|| CommandError {
-        message: format!("unknown host '{host_name}'"),
+        message: format!("未知主机 '{host_name}'"),
     })?;
     // A dedicated channel per tab: its owner is the session id, so the forwarder can
     // attribute the core's session-less `sftp-*` events to this tab (§3.4).
@@ -219,7 +219,7 @@ pub async fn compress_remote(
     let host = state.host_by_name(&host_name).ok_or_else(|| CommandError {
         message: format!("找不到主机 {host_name}"),
     })?;
-    let archive = format!("{}/{}", dir.trim_end_matches('/'), format!("{name}.tar.gz"));
+    let archive = format!("{}/{}.tar.gz", dir.trim_end_matches('/'), name);
     let command = format!(
         "tar -czf {} -C {} {}",
         shell_word(&archive),
@@ -380,10 +380,8 @@ fn local_archive_blocking(
                 .duration_since(std::time::UNIX_EPOCH)
                 .map(|d| d.as_nanos())
                 .unwrap_or(0);
-            let archive = std::env::temp_dir().join(format!(
-                "omnyssh-{}-{stamp}.tar.gz",
-                std::process::id()
-            ));
+            let archive =
+                std::env::temp_dir().join(format!("omnyssh-{}-{stamp}.tar.gz", std::process::id()));
             let file = std::fs::File::create(&archive).map_err(|e| fail("打包失败", e))?;
             let encoder = flate2::write::GzEncoder::new(file, flate2::Compression::fast());
             let mut builder = tar::Builder::new(encoder);
@@ -419,6 +417,11 @@ fn local_archive_blocking(
     }
 }
 
+/// One shell word, single-quoted with embedded quotes escaped.
+fn shell_word(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\\''"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::local_archive_blocking;
@@ -444,9 +447,4 @@ mod tests {
         assert!(!std::path::Path::new(&archive).exists());
         local_archive_blocking("remove", &archive, None).unwrap();
     }
-}
-
-/// One shell word, single-quoted with embedded quotes escaped.
-fn shell_word(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
 }

@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["crates/omnyssh-core", "crates/omnyssh", "crates/omnyssh-gui"]
+exclude = ["vendor/tray-icon"]
 # GUI excluded from bare cargo builds: `cargo build`/`test`/`install` at the root
 # build core + TUI only, with no Tauri/npm toolchain (tech-gui.md §3.1).
 default-members = ["crates/omnyssh-core", "crates/omnyssh"]
@@ -28,3 +29,7 @@ opt-level = 3
 lto = true
 codegen-units = 1
 strip = true
+
+# Patch tray-icon to the vendored copy that initialises cbSize on Windows.
+[patch.crates-io]
+tray-icon = { path = "vendor/tray-icon" }

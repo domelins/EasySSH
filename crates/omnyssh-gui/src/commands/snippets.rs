@@ -67,7 +67,7 @@ pub async fn execute_snippet(
         .into_iter()
         .find(|s| s.name == snippet_name)
         .ok_or_else(|| CommandError {
-            message: format!("snippet '{snippet_name}' not found"),
+            message: format!("未找到命令片段 '{snippet_name}'"),
         })?;
 
     let command = substitute_params(&snippet.command, snippet.params.as_deref(), &params);
@@ -76,7 +76,7 @@ pub async fn execute_snippet(
     let hosts = state.hosts_by_name(&host_names);
     if hosts.is_empty() {
         return Err(CommandError {
-            message: "no matching hosts to execute on".to_string(),
+            message: "没有可执行的主机".to_string(),
         });
     }
 
@@ -106,7 +106,7 @@ async fn load() -> Result<Vec<Snippet>, CommandError> {
     tauri::async_runtime::spawn_blocking(load_snippets)
         .await
         .map_err(|e| CommandError {
-            message: format!("snippet load task failed: {e}"),
+            message: format!("命令片段加载任务失败：{e}"),
         })?
         .map_err(|e| CommandError {
             message: e.to_string(),
@@ -124,7 +124,7 @@ async fn persist(
     })
     .await
     .map_err(|e| CommandError {
-        message: format!("snippet save task failed: {e}"),
+        message: format!("命令片段保存任务失败：{e}"),
     })?
     .map_err(|e| CommandError {
         message: e.to_string(),

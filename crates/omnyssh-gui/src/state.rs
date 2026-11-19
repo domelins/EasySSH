@@ -192,7 +192,7 @@ impl GuiState {
     pub fn try_begin_key_setup(&self, host: &str) -> Result<(), String> {
         let mut slot = self.key_setup.lock().expect("key_setup lock poisoned");
         if let Some(active) = slot.as_ref() {
-            return Err(format!("Key setup is already running for '{active}'"));
+            return Err(format!("主机 '{active}' 的密钥设置正在进行中"));
         }
         *slot = Some(host.to_string());
         Ok(())
@@ -232,9 +232,9 @@ impl GuiState {
     pub fn start_tunnel(&self, name: &str) -> Result<(), String> {
         let host = self
             .host_by_name(name)
-            .ok_or_else(|| format!("unknown host '{name}'"))?;
+            .ok_or_else(|| format!("未知主机 '{name}'"))?;
         if host.local_forwards.is_empty() {
-            return Err(format!("'{name}' has no port forwards"));
+            return Err(format!("主机 '{name}' 未配置端口转发"));
         }
         self.tunnels
             .lock()
@@ -338,7 +338,7 @@ impl GuiState {
             .iter()
             .find(|h| h.name == host_name)
             .cloned()
-            .ok_or_else(|| format!("unknown host '{host_name}'"))?;
+            .ok_or_else(|| format!("未知主机 '{host_name}'"))?;
         let inner = self
             .pty
             .lock()
@@ -699,11 +699,11 @@ mod tests {
         assert!(state
             .start_tunnel("ghost")
             .unwrap_err()
-            .contains("unknown host"));
+            .contains("未知主机"));
         assert!(state
             .start_tunnel("bare")
             .unwrap_err()
-            .contains("no port forwards"));
+            .contains("未配置端口转发"));
     }
 
     #[tokio::test]

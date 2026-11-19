@@ -80,7 +80,7 @@ pub async fn quick_scan(
             ..Metrics::default()
         };
 
-        tx.send(CoreEvent::MetricsUpdate(host_id.clone(), metrics))
+        tx.send(CoreEvent::MetricsUpdate(host_id.clone(), Box::new(metrics)))
             .await
             .ok(); // Don't fail discovery if we can't send OS info
     }

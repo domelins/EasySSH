@@ -14,7 +14,7 @@ pub async fn unlock_identity(key_path: String, passphrase: String) -> Result<(),
     })
     .await
     .map_err(|e| CommandError {
-        message: format!("unlock task failed: {e}"),
+        message: format!("解锁任务失败：{e}"),
     })?
     .map_err(|e| CommandError {
         message: e.to_string(),

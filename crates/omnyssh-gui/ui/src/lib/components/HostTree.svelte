@@ -110,7 +110,7 @@
 </script>
 
 <aside
-  aria-label="Host explorer"
+  aria-label="主机浏览"
   class="flex min-h-0 flex-col overflow-hidden border-r border-default bg-surface {$sidebarCollapsed ? 'w-14' : 'w-60'}"
 >
   {#if $sidebarCollapsed}
@@ -118,14 +118,14 @@
       <button
         type="button"
         class="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-inset hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        title="Expand sidebar (⌘B)"
-        aria-label="Expand sidebar"
+        title="展开侧栏 (⌘B)"
+        aria-label="展开侧栏"
         onclick={() => sidebarCollapsed.toggle()}
       ><Icon name="expand" size={16} /></button>
-      <button type="button" class="grid h-8 w-8 place-items-center rounded-md text-accent hover:bg-surface-inset" title="All hosts" aria-label="All hosts" onclick={() => onCollection('all')}>
+      <button type="button" class="grid h-8 w-8 place-items-center rounded-md text-accent hover:bg-surface-inset" title="全部主机" aria-label="全部主机" onclick={() => onCollection('all')}>
         <Icon name="layers" size={16} />
       </button>
-      <button type="button" class="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-inset hover:text-fg" title="Manage host groups" aria-label="Manage host groups" onclick={onManageGroups}>
+      <button type="button" class="grid h-8 w-8 place-items-center rounded-md text-muted hover:bg-surface-inset hover:text-fg" title="管理主机分组" aria-label="管理主机分组" onclick={onManageGroups}>
         <Icon name="folder" size={16} />
       </button>
     </div>
@@ -134,15 +134,15 @@
       <button
         type="button"
         class="flex h-7 items-center gap-1 rounded-md px-1.5 text-[0.6875rem] text-muted hover:bg-surface-inset hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        title="Collapse sidebar (⌘B)"
-        aria-label="Collapse sidebar"
+        title="收起侧栏 (⌘B)"
+        aria-label="收起侧栏"
         onclick={() => sidebarCollapsed.toggle()}
       ><Icon name="collapse" size={13} /> 收起</button>
       <button
         type="button"
         class="ml-auto flex h-7 items-center gap-1 rounded-md px-1.5 text-[0.6875rem] text-muted hover:bg-surface-inset hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-        title="Manage host groups"
-        aria-label="Manage host groups"
+        title="管理主机分组"
+        aria-label="管理主机分组"
         onclick={onManageGroups}
       ><Icon name="folder" size={12} /> 分组</button>
     </div>
@@ -177,12 +177,12 @@
       <div class="space-y-0.5 px-2">
           {#each groups as group (group.tag)}
             {@const open = searching || !$dashboardView.collapsed.includes(group.tag)}
-            <section aria-label="{group.tag} hosts">
+            <section aria-label="{group.tag} 的主机">
               <div class="group flex items-center">
                 <button
                   type="button"
                   class="grid h-7 w-6 shrink-0 place-items-center rounded text-faint hover:text-fg"
-                  aria-label="{!searching && open ? 'Fold' : 'Unfold'} {group.tag}"
+                  aria-label="{!searching && open ? '折叠' : '展开'} {group.tag}"
                   aria-expanded={open}
                   disabled={searching}
                   onclick={() => dashboardView.toggleCollapsed(group.tag)}

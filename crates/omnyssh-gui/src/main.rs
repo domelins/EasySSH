@@ -349,6 +349,15 @@ fn main() {
             }
         })
         .setup(move |app| {
+            // Windows only: the app's top bar is the title bar (drag region + caption
+            // buttons in TopBar.svelte), so the native frame would stack a second
+            // title row above it. macOS keeps its overlay title bar (traffic lights)
+            // and Linux its native frame; detached panels keep theirs everywhere.
+            #[cfg(windows)]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_decorations(false);
+            }
+
             builder.mount_events(app);
 
             let reveal = app.handle().clone();
@@ -452,9 +461,55 @@ mod tests {
 
         let committed = std::fs::read_to_string(BINDINGS_PATH).expect("read committed bindings");
         assert_eq!(
-            committed, generated,
+            normalize_eol(&committed),
+            normalize_eol(&generated),
             "ui/src/lib/bindings.ts is out of date — regenerate with `cargo tauri dev`"
         );
+    }
+
+    /// A Windows checkout (`core.autocrlf`) stores bindings.ts with CRLF while specta
+    /// emits LF; that line-ending difference is not content drift. Collapse only the
+    /// two-character `\r\n` sequence to `\n` — a lone `\r`, trailing whitespace, or a
+    /// missing final newline is left intact, so real drift still fails the comparison.
+    fn normalize_eol(s: &str) -> String {
+        s.replace("\r\n", "\n")
+    }
+
+    #[test]
+    fn bindings_comparison_treats_crlf_and_lf_as_equal() {
+        let crlf = "export type A = string;\r\nexport type B = number;\r\n";
+        let lf = "export type A = string;\nexport type B = number;\n";
+        assert_eq!(normalize_eol(crlf), normalize_eol(lf));
+        assert_eq!(normalize_eol(crlf), lf);
+    }
+
+    #[test]
+    fn bindings_comparison_still_rejects_content_drift() {
+        // A renamed field / changed type must not be hidden by the normalization.
+        assert_ne!(
+            normalize_eol("export type A = { id: string };\r\n"),
+            normalize_eol("export type A = { name: string };\n")
+        );
+        assert_ne!(
+            normalize_eol("export type A = string;\r\n"),
+            normalize_eol("export type A = number;\n")
+        );
+    }
+
+    #[test]
+    fn bindings_comparison_still_rejects_trailing_whitespace_and_missing_final_newline() {
+        // Trailing space on a line is real drift, not a line-ending difference.
+        assert_ne!(normalize_eol("a\r\n"), normalize_eol("a \n"));
+        // A missing final newline must still differ from a terminated file.
+        assert_ne!(normalize_eol("a\r\n"), normalize_eol("a"));
+        assert_ne!(normalize_eol("a\n"), normalize_eol("a"));
+    }
+
+    #[test]
+    fn bindings_comparison_does_not_ignore_a_lone_carriage_return() {
+        // Only `\r\n` pairs collapse; a bare `\r` is preserved and stays unequal.
+        assert_ne!(normalize_eol("a\rb\n"), normalize_eol("a\nb\n"));
+        assert_eq!(normalize_eol("a\rb\n"), "a\rb\n");
     }
 
     /// The retry exists for one case only: no page, not already retried, no renderer the

@@ -153,6 +153,8 @@
   {:else if name === 'clock'}
     <circle cx="12" cy="12" r="9" />
     <polyline points="12 7 12 12 15 14" />
+  {:else if name === 'minimize'}
+    <line x1="5" y1="12" x2="19" y2="12" />
   {:else if name === 'maximize'}
     <path d="M9 3H3v6M15 3h6v6M15 21h6v-6M9 21H3v-6" />
   {:else if name === 'restore'}

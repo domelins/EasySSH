@@ -65,16 +65,16 @@
     'focus-visible:ring-2 focus-visible:ring-focus placeholder:text-faint';
 </script>
 
-<Modal label="Run snippet" onClose={onCancel}>
+<Modal label="运行命令片段" onClose={onCancel}>
   <header class="border-b border-default px-5 py-3.5">
-    <h2 class="truncate text-sm font-semibold">Run “{snippet.name}”</h2>
+    <h2 class="truncate text-sm font-semibold">运行“{snippet.name}”</h2>
     <p class="mt-0.5 truncate font-mono text-xs text-faint">{snippet.command}</p>
   </header>
 
   <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
     {#if params.length}
       <div class="space-y-3">
-        <h3 class="text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-faint">Parameters</h3>
+        <h3 class="text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-faint">参数</h3>
         <!-- Keyed by position: params come from snippets.toml unchanged and the core
              never dedups them, so a name key could throw each_key_duplicate. -->
         {#each params as name, i (i)}
@@ -88,10 +88,10 @@
 
     <div class="space-y-2">
       <h3 class="text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-faint">
-        Run on {selected.size} of {choices.length}
+        在 {selected.size} / {choices.length} 台主机上运行
       </h3>
       {#if $hosts.length === 0}
-        <p class="text-sm text-muted">No hosts configured.</p>
+        <p class="text-sm text-muted">还没有配置主机。</p>
       {:else}
         <ul class="space-y-1">
           {#each choices as host (host.name)}
@@ -124,9 +124,9 @@
   </div>
 
   <footer class="flex justify-end gap-2 border-t border-default px-5 py-3">
-    <Button variant="ghost" onclick={onCancel}>Cancel</Button>
+    <Button variant="ghost" onclick={onCancel}>取消</Button>
     <Button variant="primary" onclick={run} disabled={selected.size === 0}>
-      Run on {selected.size} {selected.size === 1 ? 'host' : 'hosts'}
+      在 {selected.size} 台主机上运行
     </Button>
   </footer>
 </Modal>

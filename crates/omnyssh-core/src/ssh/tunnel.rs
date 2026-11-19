@@ -90,7 +90,11 @@ impl LocalForward {
             Some(bind) => format!("{}:{}", bracketed(bind), self.bind_port),
             None => self.bind_port.to_string(),
         };
-        format!("{listen} {}:{}", bracketed(&self.remote_host), self.remote_port)
+        format!(
+            "{listen} {}:{}",
+            bracketed(&self.remote_host),
+            self.remote_port
+        )
     }
 }
 

@@ -10,13 +10,13 @@ export type Theme = (typeof THEME_IDS)[number];
 
 /** Picker labels, in `THEME_IDS` order. */
 export const THEME_OPTIONS: { value: Theme; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-  { value: 'ocean', label: 'Ocean' },
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+  { value: 'ocean', label: '海洋' },
   { value: 'nord', label: 'Nord' },
-  { value: 'sakura', label: 'Sakura' },
+  { value: 'sakura', label: '樱花' },
   { value: 'mocha', label: 'Mocha' },
-  { value: 'violet', label: 'Violet' }
+  { value: 'violet', label: '紫罗兰' }
 ];
 
 /** Light or dark base — what the native window decorations accept, and what the

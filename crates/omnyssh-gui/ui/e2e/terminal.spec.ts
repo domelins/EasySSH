@@ -112,7 +112,7 @@ async function boot(page: Page): Promise<void> {
 
   await page.goto('/');
   // The status-bar total confirms the app booted and `list_hosts` resolved.
-  await expect(page.getByText('2 hosts')).toBeVisible();
+  await expect(page.getByText('2 台主机')).toBeVisible();
 }
 
 test('host-first: spawn a terminal from a card, run a command, see output, then close', async ({
@@ -121,10 +121,10 @@ test('host-first: spawn a terminal from a card, run a command, see output, then 
   await boot(page);
 
   // Host-first spawn — a Dashboard card's `sh`, no picker (tech-gui.md §2, §3.1).
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
 
   // The tab row appears and the terminal renders the streamed prompt.
-  await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
   await expect(page.locator('.xterm')).toBeVisible();
   await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
 
@@ -135,9 +135,9 @@ test('host-first: spawn a terminal from a card, run a command, see output, then 
   await expect(page.locator('.xterm-rows')).toContainText('RESULT-OK');
 
   // Closing the tab tears the terminal down.
-  await page.getByRole('button', { name: 'Close web-1' }).click();
+  await page.getByRole('button', { name: '关闭 web-1' }).click();
   await expect(page.locator('.xterm')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toHaveCount(0);
 });
 
 test('action-first: the Terminal spawner opens the host picker, then a live terminal', async ({
@@ -146,27 +146,27 @@ test('action-first: the Terminal spawner opens the host picker, then a live term
   await boot(page);
 
   // Action-first spawn — the sidebar Terminal spawner opens the host picker (§2).
-  await page.getByRole('button', { name: 'Terminal', exact: true }).click();
+  await page.getByRole('button', { name: '终端', exact: true }).click();
   await page.getByRole('dialog').getByText('web-1', { exact: true }).click();
 
-  await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
   await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
 });
 
 test('dismissing the host picker hands the keyboard back to the terminal', async ({ page }) => {
   await boot(page);
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
   await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
 
-  await page.getByRole('button', { name: 'Terminal', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Pick a host' })).toBeVisible();
+  await page.getByRole('button', { name: '终端', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '选择主机' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
 
   // Clicking the tab that is already active takes the keyboard to it as well.
-  await page.getByRole('button', { name: 'web-1 · terminal', exact: true }).click();
+  await page.getByRole('button', { name: 'web-1 · 终端', exact: true }).click();
   await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.locator('.xterm-rows')).toContainText('RESULT-OK');
@@ -175,9 +175,9 @@ test('dismissing the host picker hands the keyboard back to the terminal', async
 test('a terminal that opens under the palette leaves the keyboard to it', async ({ page }) => {
   await boot(page);
   await page.evaluate(() => ((window as unknown as Record<string, unknown>).__holdOpen = true));
-  await page.getByTitle('sh on web-1').click();
-  await page.getByTitle('Command palette (⌘K)').click();
-  const query = page.getByRole('dialog', { name: 'Command palette' }).getByRole('textbox');
+  await page.getByTitle('在 web-1 打开 sh').click();
+  await page.getByTitle('命令面板 (Ctrl/⌘+K)').click();
+  const query = page.getByRole('dialog', { name: '命令面板' }).getByRole('textbox');
   await expect(query).toBeFocused();
 
   await page.evaluate(() => (window as unknown as { __release: () => void }).__release());
@@ -193,7 +193,7 @@ test('a terminal that opens under the palette leaves the keyboard to it', async 
 
 test('toggling the theme re-themes a live terminal (§5.1)', async ({ page }) => {
   await boot(page);
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
 
   // xterm paints its scrollable viewport inline with theme.background; find that
@@ -210,7 +210,7 @@ test('toggling the theme re-themes a live terminal (§5.1)', async ({ page }) =>
   await expect.poll(paintedBg).toBe('rgb(33, 33, 33)');
 
   // The #1 theme-regression guard: flipping the store re-themes the OPEN terminal.
-  await page.getByTitle('Switch to light theme').click();
+  await page.getByTitle('切换到浅色主题').click();
   await expect.poll(paintedBg).toBe('rgb(255, 255, 255)');
 });
 
@@ -232,7 +232,7 @@ const sendOutput = (page: Page, id: number, text: string) =>
 const resizes = (page: Page) =>
   page.evaluate(() => (window as unknown as ExitStub).__resizes ?? 0);
 const terminalTab = (page: Page) =>
-  page.getByRole('button', { name: 'web-1 · terminal', exact: true });
+  page.getByRole('button', { name: 'web-1 · 终端', exact: true });
 
 // What the backend writes under a session's last output when it ends.
 const END_LINE =
@@ -240,7 +240,7 @@ const END_LINE =
 
 test('a remote exit before any output (terminal-exited) tears the tab down', async ({ page }) => {
   await boot(page);
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(terminalTab(page)).toBeVisible();
   await expect(page.locator('.xterm')).toBeVisible();
 
@@ -267,7 +267,7 @@ test('a remote exit after output keeps the tab, takes no input, and Enter closes
 
   await expect(page.locator('.xterm-rows')).toContainText('Permission denied, please try again.');
   await expect(page.locator('.xterm-rows')).toContainText('Press Enter to close this tab.');
-  await expect(terminalTab(page).locator('[role="img"]')).toHaveAttribute('aria-label', 'off');
+  await expect(terminalTab(page).locator('[role="img"]')).toHaveAttribute('aria-label', '离线');
 
   // Nothing reaches the ended session: keys, ^C, a paste, or a resize.
   await page.locator('.xterm-helper-textarea').focus();
@@ -313,14 +313,14 @@ test('output arriving after the exit renders without reviving the tab; Esc close
     (window as unknown as { __silent: boolean }).__silent = true;
   });
   await boot(page);
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(terminalTab(page)).toBeVisible();
 
   await fireExited(page, 1, true);
   await expect.poll(() => sendOutput(page, 1, 'Permission denied, please try again.')).toBe(true);
 
   await expect(page.locator('.xterm-rows')).toContainText('Permission denied, please try again.');
-  await expect(terminalTab(page).locator('[role="img"]')).toHaveAttribute('aria-label', 'off');
+  await expect(terminalTab(page).locator('[role="img"]')).toHaveAttribute('aria-label', '离线');
 
   await page.locator('.xterm-helper-textarea').focus();
   await page.keyboard.press('Escape');
@@ -342,7 +342,7 @@ async function bootWithClipboard(page: Page): Promise<void> {
     };
   });
   await boot(page);
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
 }
 

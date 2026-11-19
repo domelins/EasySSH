@@ -8,11 +8,19 @@
     size = 8,
     label
   }: { status: Status; size?: number; label?: string } = $props();
+
+  const statusLabel: Record<Status, string> = {
+    ok: '在线',
+    warn: '告警',
+    crit: '严重',
+    off: '离线',
+    unknown: '未知'
+  };
 </script>
 
 <span
   class="inline-block shrink-0 rounded-full"
   role="img"
-  aria-label={label ?? status}
+  aria-label={label ?? statusLabel[status]}
   style="width: {size}px; height: {size}px; background-color: {statusToken(status)};"
 ></span>

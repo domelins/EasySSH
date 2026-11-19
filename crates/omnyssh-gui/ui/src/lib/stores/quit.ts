@@ -107,20 +107,20 @@ export function countLiveWork(
   };
 }
 
-/** "2 terminals, 1 transfer and 1 tunnel"; empty when nothing is live. */
+/** "2 个终端和 1 条隧道"; empty when nothing is live. */
 export function describeLiveWork(work: LiveWork): string {
   const parts = (
     [
-      [work.terminals, 'terminal'],
-      [work.transfers, 'transfer'],
-      [work.tunnels, 'tunnel'],
-      [work.snippetRuns, 'snippet run']
+      [work.terminals, '个终端'],
+      [work.transfers, '个传输'],
+      [work.tunnels, '条隧道'],
+      [work.snippetRuns, '次命令片段运行']
     ] as const
   )
     .filter(([n]) => n > 0)
-    .map(([n, noun]) => `${n} ${noun}${n === 1 ? '' : 's'}`);
+    .map(([n, noun]) => `${n} ${noun}`);
   if (parts.length < 2) return parts.join('');
-  return `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}`;
+  return `${parts.slice(0, -1).join('、')}和 ${parts.at(-1)}`;
 }
 
 /** The open question's summary, or null when none is open. */

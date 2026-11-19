@@ -36,10 +36,12 @@ export function sessionLabel(s: Session): string {
   return s.hostName;
 }
 
+const kindLabel: Record<SessionKind, string> = { terminal: '终端' };
+
 /** The accessible/tooltip label: host + type, so hover and screen readers still convey
  *  the connection type the icon shows visually. */
 export function sessionTitle(s: Session): string {
-  return `${s.hostName} · ${s.kind}`;
+  return `${s.hostName} · ${kindLabel[s.kind]}`;
 }
 
 function createSessions() {

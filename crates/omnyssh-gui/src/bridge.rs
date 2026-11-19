@@ -33,7 +33,7 @@ pub async fn forward_core_events(
             CoreEvent::MetricsUpdate(host_name, metrics) => {
                 let _ = events::MetricsUpdated {
                     host_name,
-                    metrics: (&metrics).into(),
+                    metrics: (&*metrics).into(),
                 }
                 .emit(&app);
             }

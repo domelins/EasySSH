@@ -121,7 +121,7 @@
 
   // On edit the DTO omits identity/password (§3.4), so the fields start blank and mean
   // "keep the stored value"; on add they mean "none".
-  const secretHint = $derived(mode === 'edit' ? 'Leave blank to keep the current value' : undefined);
+  const secretHint = $derived(mode === 'edit' ? '留空则保留当前值' : undefined);
 
   const label = 'block space-y-1 text-xs font-medium text-muted';
   const forwardGrid = 'grid grid-cols-[8.5rem,1fr,4.5rem,1.75rem] items-center gap-2';
@@ -135,7 +135,7 @@
   const maskedField = 'cursor-default text-muted';
 </script>
 
-<Modal label={mode === 'add' ? 'Add host' : 'Edit host'} onClose={onCancel}>
+<Modal label={mode === 'add' ? '添加主机' : '编辑主机'} onClose={onCancel}>
   <form
     onsubmit={(e) => {
       e.preventDefault();
@@ -144,32 +144,32 @@
     class="flex min-h-0 flex-col"
   >
     <header class="border-b border-default px-5 py-3.5">
-      <h2 class="text-sm font-semibold">{mode === 'add' ? 'Add host' : 'Edit host'}</h2>
+      <h2 class="text-sm font-semibold">{mode === 'add' ? '添加主机' : '编辑主机'}</h2>
     </header>
 
     <div class="min-h-0 flex-1 space-y-3.5 overflow-y-auto px-5 py-4">
       {#if imported}
         <p class="rounded-lg bg-surface-inset px-3 py-2 text-xs text-muted">
-          Imported from <span class="font-mono">~/.ssh/config</span>. Saving keeps your own copy in
-          <span class="font-mono">hosts.toml</span> and OmnySSH uses it from then on — your SSH config
-          file is never written, and later edits to it stop showing up for this host.
+          从 <span class="font-mono">~/.ssh/config</span> 导入。保存后会在
+          <span class="font-mono">hosts.toml</span> 中保留你自己的副本，OmnySSH 之后将使用它 ——
+          你的 SSH 配置文件不会被写入，此后对该文件的修改也不会再反映到这台主机上。
         </p>
       {/if}
       <label class={label}>
-        <span>Name {mode === 'edit' ? '(fixed)' : ''}</span>
+        <span>名称 {mode === 'edit' ? '（固定）' : ''}</span>
         <input
           bind:this={nameEl}
           bind:value={fields.name}
           class="{field} {mode === 'edit' ? 'cursor-not-allowed text-muted' : ''}"
           placeholder="web-prod-1"
           readonly={mode === 'edit'}
-          title={mode === 'edit' ? 'To rename, delete this host and add it again' : undefined}
+          title={mode === 'edit' ? '如需重命名，请删除该主机后重新添加' : undefined}
         />
       </label>
 
       <div class="flex items-end gap-2">
         <label class="{label} min-w-0 flex-1">
-          <span>Hostname / IP</span>
+          <span>主机名 / IP</span>
           <input
             bind:this={hostnameEl}
             bind:value={
@@ -186,24 +186,24 @@
         </label>
         {#if hostnameMasked}
           <button type="button" class="{smallBtn} mb-1.5 shrink-0" onclick={() => reveal(() => hostnameEl)}>
-            Reveal
+            显示
           </button>
         {/if}
       </div>
 
       <div class="grid grid-cols-[1fr,7rem] gap-3">
         <label class={label}>
-          <span>User</span>
+          <span>用户名</span>
           <input bind:this={userEl} bind:value={fields.user} class={field} placeholder="root" />
         </label>
         <label class={label}>
-          <span>Port</span>
+          <span>端口</span>
           <input bind:value={fields.port} inputmode="numeric" class={field} placeholder="22" />
         </label>
       </div>
 
       <label class={label}>
-        <span>Identity file</span>
+        <span>密钥文件</span>
         <input
           bind:value={fields.identityFile}
           class="{field} font-mono"
@@ -212,12 +212,12 @@
       </label>
 
       <label class={label}>
-        <span>Password</span>
+        <span>密码</span>
         <input
           type="password"
           bind:value={fields.password}
           class={field}
-          placeholder={secretHint ?? 'Login password, not the key passphrase'}
+          placeholder={secretHint ?? '登录密码，不是密钥口令'}
           autocomplete="off"
         />
       </label>
@@ -262,21 +262,21 @@
       </div>
 
       <label class={label}>
-        <span>Notes</span>
-        <textarea bind:value={fields.notes} rows="2" class="{field} resize-y" placeholder="Optional"></textarea>
+        <span>备注</span>
+        <textarea bind:value={fields.notes} rows="2" class="{field} resize-y" placeholder="可选"></textarea>
       </label>
 
       <div class="grid grid-cols-2 gap-3">
         <label class={label}>
-          <span>Monitoring</span>
+          <span>监控</span>
           <Select bind:value={fields.monitoring} class={field}>
-            <option value="ssh">SSH metrics</option>
-            <option value="tcpPort">TCP port check</option>
+            <option value="ssh">SSH 指标</option>
+            <option value="tcpPort">TCP 端口检测</option>
           </Select>
         </label>
         {#if fields.monitoring === 'tcpPort'}
           <label class={label}>
-            <span>Probe port</span>
+            <span>探测端口</span>
             <input
               bind:value={fields.monitorPort}
               inputmode="numeric"
@@ -287,19 +287,18 @@
         {/if}
       </div>
       {#if fields.monitoring === 'tcpPort'}
-        <p class="text-xs text-faint">Checks the port only — no login, and no metrics on the card.</p>
+        <p class="text-xs text-faint">仅检测端口 —— 不登录，卡片上也不显示指标。</p>
       {/if}
 
       <div class="flex items-center justify-between gap-4 border-t border-default pt-3.5">
         <div class="min-w-0">
-          <p class="text-sm text-fg">Forward SSH agent</p>
+          <p class="text-sm text-fg">SSH 代理转发</p>
           <p class="text-xs text-faint">
             {#if isWindows}
-              Not available on Windows yet.
+              Windows 上暂不可用。
             {:else}
-              Terminals here can use your local agent's keys, like <span class="font-mono">ssh -A</span>
-              — for sudo or hopping on. Anyone with root on this server can use them while a
-              terminal is open.
+              这里的终端可以使用你本地代理中的密钥，如同 <span class="font-mono">ssh -A</span>
+              —— 便于 sudo 或跳转登录。终端打开期间，这台服务器上任何拥有 root 权限的人都能使用这些密钥。
             {/if}
           </p>
         </div>
@@ -307,7 +306,7 @@
           type="button"
           role="switch"
           aria-checked={fields.forwardAgent}
-          aria-label="Forward SSH agent"
+          aria-label="SSH 代理转发"
           disabled={isWindows}
           onclick={() => (fields.forwardAgent = !fields.forwardAgent)}
           class="relative h-6 w-11 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50 {fields.forwardAgent
@@ -326,11 +325,11 @@
            a host:port the server reaches. One tunnel per host carries every row. -->
       <div class="space-y-2 border-t border-default pt-3.5">
         <div class="flex items-center justify-between gap-3">
-          <span class="text-xs font-medium text-muted">Port forwarding</span>
+          <span class="text-xs font-medium text-muted">端口转发</span>
           <div class="flex gap-2">
             {#if hide && firstHeldRow >= 0}
               <button type="button" class={smallBtn} onclick={() => reveal(() => localEls[firstHeldRow])}>
-                Reveal
+                显示
               </button>
             {/if}
             <button
@@ -342,15 +341,15 @@
               }}
             >
               <Icon name="plus" size={12} />
-              Add forward
+              添加转发
             </button>
           </div>
         </div>
         {#if fields.forwards.length}
           <div class="{forwardGrid} text-[0.6875rem] text-faint">
-            <span>Local port</span>
-            <span>Remote host</span>
-            <span>Port</span>
+            <span>本地端口</span>
+            <span>远程主机</span>
+            <span>端口</span>
             <span></span>
           </div>
           {#each fields.forwards as row, i (i)}
@@ -369,7 +368,7 @@
                 readonly={localMasked}
                 class="{field} font-mono {localMasked ? maskedField : ''}"
                 placeholder="9443"
-                aria-label="Forward {i + 1} local port"
+                aria-label="转发 {i + 1} 的本地端口"
               />
               <input
                 bind:value={
@@ -382,20 +381,20 @@
                 readonly={remoteMasked}
                 class="{field} font-mono {remoteMasked ? maskedField : ''}"
                 placeholder="localhost"
-                aria-label="Forward {i + 1} remote host"
+                aria-label="转发 {i + 1} 的远程主机"
               />
               <input
                 bind:value={row.remotePort}
                 inputmode="numeric"
                 class="{field} font-mono"
                 placeholder="9443"
-                aria-label="Forward {i + 1} remote port"
+                aria-label="转发 {i + 1} 的远程端口"
               />
               <button
                 type="button"
                 class="grid h-7 w-7 place-items-center rounded-lg text-muted transition hover:bg-surface-inset hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
-                title="Remove forward {i + 1}"
-                aria-label="Remove forward {i + 1}"
+                title="移除转发 {i + 1}"
+                aria-label="移除转发 {i + 1}"
                 onclick={() => {
                   fields.forwards.splice(i, 1);
                   heldRows.splice(i, 1);
@@ -406,17 +405,17 @@
             </div>
           {/each}
           <p class="text-xs text-faint">
-            The local port listens on this machine only — write <span class="font-mono">0.0.0.0:8080</span>
-            to share it on your network. The remote host is resolved by the server, so
-            <span class="font-mono">localhost</span> is the server itself.
+            本地端口仅在本机监听 —— 写成 <span class="font-mono">0.0.0.0:8080</span>
+            即可在局域网中共享。远程主机由服务器解析，因此
+            <span class="font-mono">localhost</span> 指的是服务器自身。
           </p>
           <div class="flex items-center justify-between gap-4 pt-1">
-            <span class="text-sm text-fg">Start tunnel when OmnySSH opens</span>
+            <span class="text-sm text-fg">OmnySSH 打开时自动启动隧道</span>
             <button
               type="button"
               role="switch"
               aria-checked={fields.tunnelAutostart}
-              aria-label="Start tunnel when OmnySSH opens"
+              aria-label="OmnySSH 打开时自动启动隧道"
               onclick={() => (fields.tunnelAutostart = !fields.tunnelAutostart)}
               class="relative h-6 w-11 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus {fields.tunnelAutostart
                 ? 'bg-accent'
@@ -431,8 +430,8 @@
           </div>
         {:else}
           <p class="text-xs text-faint">
-            Reach a service on this server — a database, a web UI — at a port on this machine,
-            like <span class="font-mono">ssh -L</span>.
+            通过本机的一个端口访问这台服务器上的服务 —— 数据库、Web 界面等 ——
+            就像 <span class="font-mono">ssh -L</span> 一样。
           </p>
         {/if}
       </div>
@@ -443,9 +442,9 @@
     </div>
 
     <footer class="flex justify-end gap-2 border-t border-default px-5 py-3">
-      <Button variant="ghost" onclick={onCancel}>Cancel</Button>
+      <Button variant="ghost" onclick={onCancel}>取消</Button>
       <Button variant="primary" type="submit" disabled={saving}>
-        {mode === 'add' ? 'Add host' : 'Save'}
+        {mode === 'add' ? '添加主机' : '保存'}
       </Button>
     </footer>
   </form>

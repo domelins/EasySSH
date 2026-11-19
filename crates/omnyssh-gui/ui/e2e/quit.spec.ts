@@ -91,11 +91,11 @@ const fire = (page: Page, event: string, payload: unknown = null) =>
 const closeWindow = (page: Page) => fire(page, 'tauri://close-requested');
 
 async function openTerminal(page: Page): Promise<void> {
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(page.locator('.xterm-rows')).toContainText('ready>');
 }
 
-const dialog = (page: Page) => page.getByRole('dialog', { name: 'Quit OmnySSH?' });
+const dialog = (page: Page) => page.getByRole('dialog', { name: '退出 OmnySSH？' });
 
 test('closing with a live terminal and tunnel asks first, and Cancel keeps the app', async ({ page }) => {
   await boot(page, { tunnel: true });
@@ -103,9 +103,9 @@ test('closing with a live terminal and tunnel asks first, and Cancel keeps the a
 
   await closeWindow(page);
   await expect(dialog(page)).toBeVisible();
-  await expect(dialog(page).getByText('1 terminal and 1 tunnel will be closed.')).toBeVisible();
+  await expect(dialog(page).getByText('1 个终端和 1 条隧道将被关闭。')).toBeVisible();
   // Not the terminal, which had the keyboard: a stray Enter must not quit.
-  await expect(dialog(page).getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await expect(dialog(page).getByRole('button', { name: '取消' })).toBeFocused();
 
   await page.keyboard.press('Enter');
   await expect(dialog(page)).toHaveCount(0);
@@ -116,16 +116,16 @@ test('closing with a live terminal and tunnel asks first, and Cancel keeps the a
 test('Quit destroys the window', async ({ page }) => {
   await boot(page, { tunnel: true });
   await closeWindow(page);
-  await expect(dialog(page).getByText('1 tunnel will be closed.')).toBeVisible();
-  await dialog(page).getByRole('button', { name: 'Quit' }).click();
+  await expect(dialog(page).getByText('1 条隧道将被关闭。')).toBeVisible();
+  await dialog(page).getByRole('button', { name: '退出' }).click();
   await expect.poll(() => calls(page)).toContain('plugin:window|destroy');
 });
 
 test("Don't ask again sticks, and the next close quits without asking", async ({ page }) => {
   await boot(page, { tunnel: true });
   await closeWindow(page);
-  await dialog(page).getByLabel("Don't ask again").check();
-  await dialog(page).getByRole('button', { name: 'Quit' }).click();
+  await dialog(page).getByLabel('不再询问').check();
+  await dialog(page).getByRole('button', { name: '退出' }).click();
   await expect.poll(() => calls(page)).toContain('plugin:window|destroy');
   expect(await page.evaluate(() => localStorage.getItem('omnyssh-confirm-quit'))).toBe('false');
   const stored = await page.evaluate(() =>
@@ -141,8 +141,8 @@ test("Don't ask again sticks, and the next close quits without asking", async ({
   await expect(dialog(page)).toHaveCount(0);
 
   // Settings turns the question back on.
-  await page.getByRole('button', { name: 'Settings' }).click();
-  const ask = page.getByRole('switch', { name: 'Ask before quitting' });
+  await page.getByRole('button', { name: '设置' }).click();
+  const ask = page.getByRole('switch', { name: '退出前询问' });
   await expect(ask).toHaveAttribute('aria-checked', 'false');
   await ask.click();
   await expect(ask).toHaveAttribute('aria-checked', 'true');
@@ -168,7 +168,7 @@ test('a window the tray already hid is left alone', async ({ page }) => {
 test('the question brings a minimized window forward, once', async ({ page }) => {
   await boot(page, { tunnel: true });
   await closeWindow(page);
-  await expect(dialog(page).getByText('1 tunnel will be closed.')).toBeVisible();
+  await expect(dialog(page).getByText('1 条隧道将被关闭。')).toBeVisible();
   await expect
     .poll(() => calls(page))
     .toEqual(expect.arrayContaining(['plugin:window|unminimize', 'plugin:window|set_focus']));
@@ -178,9 +178,9 @@ test('the question brings a minimized window forward, once', async ({ page }) =>
   await expect(dialog(page)).toHaveCount(1);
 
   // Keeping it running in the tray instead goes to the setting.
-  await dialog(page).getByRole('button', { name: 'Keep running in the tray instead' }).click();
+  await dialog(page).getByRole('button', { name: '改为在托盘继续运行' }).click();
   await expect(dialog(page)).toHaveCount(0);
-  await expect(page.getByRole('switch', { name: 'Close to tray' })).toBeVisible();
+  await expect(page.getByRole('switch', { name: '关闭到托盘' })).toBeVisible();
   expect(await calls(page)).not.toContain('plugin:window|destroy');
 });
 
@@ -198,7 +198,7 @@ test('off macOS Ctrl+W goes to the terminal', async ({ page }) => {
   await openTerminal(page);
   await page.locator('.xterm-helper-textarea').focus();
   await page.keyboard.press('Control+w');
-  await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
 });
 
 test.describe('on macOS', () => {
@@ -213,14 +213,14 @@ test.describe('on macOS', () => {
     await page.locator('.xterm-helper-textarea').focus();
     await page.keyboard.press('Meta+w');
     // The host entry stays on its empty workspace; only the terminal is gone.
-    await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toHaveCount(1);
     await expect(page.locator('.xterm')).toHaveCount(0);
     await expect(page.getByText('这个主机还没有打开的终端')).toBeVisible();
     expect(await calls(page)).not.toContain('plugin:window|destroy');
 
     // A second ⌘W closes the empty host workspace, back to the dashboard.
     await page.keyboard.press('Meta+w');
-    await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toHaveCount(0);
     await expect(page.locator('[data-card]').getByText('web-1', { exact: true })).toBeVisible();
     expect(await calls(page)).not.toContain('plugin:window|destroy');
   });
@@ -231,16 +231,16 @@ test.describe('on macOS', () => {
     await closeWindow(page);
     await expect(dialog(page)).toBeVisible();
     await page.keyboard.press('Meta+w');
-    await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toBeVisible();
-    await expect(dialog(page).getByRole('button', { name: 'Keep running in the menu bar instead' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
+    await expect(dialog(page).getByRole('button', { name: '改为在菜单栏继续运行' })).toBeVisible();
   });
 
   test('⌘W leaves the tab alone while the command palette is open', async ({ page }) => {
     await boot(page);
     await openTerminal(page);
     await page.keyboard.press('Meta+k');
-    await expect(page.getByRole('dialog', { name: 'Command palette' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '命令面板' })).toBeVisible();
     await page.keyboard.press('Meta+w');
-    await expect(page.getByRole('button', { name: 'web-1 · terminal', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
   });
 });

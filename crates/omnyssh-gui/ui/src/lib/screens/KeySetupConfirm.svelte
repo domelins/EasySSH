@@ -25,41 +25,41 @@
   onMount(() => actions?.querySelector('button')?.focus());
 </script>
 
-<Modal label={rerun ? 'Turn off password login' : 'Set up key login'} onClose={onCancel}>
+<Modal label={rerun ? '关闭密码登录' : '设置密钥登录'} onClose={onCancel}>
   <div class="space-y-3 px-5 py-4">
     <h2 class="text-sm font-semibold">
-      {rerun ? `Turn off password login on ${host.name}?` : `Set up key login for ${host.name}?`}
+      {rerun ? `关闭 ${host.name} 的密码登录？` : `为 ${host.name} 设置密钥登录？`}
     </h2>
     <ul class="list-disc space-y-1.5 pl-5 text-sm text-muted">
       {#if rerun}
         <li>
-          Reuse the login key OmnySSH made before, or create it again if it is gone:
+          复用 OmnySSH 之前生成的登录密钥，若已丢失则重新生成：
           <span class="break-all font-mono text-xs">{keyPath}</span>
         </li>
       {:else}
         <li>
-          Create a login key on this computer:
-          <span class="break-all font-mono text-xs">{keyPath}</span> (no passphrase)
+          在本机生成登录密钥：
+          <span class="break-all font-mono text-xs">{keyPath}</span>（无密钥口令）
         </li>
       {/if}
       <li>
-        Add it to
-        <span class="break-all font-mono text-xs">{host.user}@{displayHostname(host.hostname, $streamerMode)}</span>,
-        so this computer logs in without a password
+        将其添加到
+        <span class="break-all font-mono text-xs">{host.user}@{displayHostname(host.hostname, $streamerMode)}</span>，
+        让本机无需密码即可登录
       </li>
       <li>
-        Turn off password login on the server for every account and device, if your account
-        can use sudo without a password. A backup of the server's SSH settings is kept.
+        若你的账户可以免密使用 sudo，将关闭服务器上所有账户和设备的密码登录。
+        服务器 SSH 设置会保留备份。
       </li>
     </ul>
     <p class="text-xs text-faint">
-      Password login is turned off only after the new key is tested. Keep the key file: if
-      you lose it, you'll need your hosting provider's console to get back in.
+      只有在新密钥测试通过后才会关闭密码登录。请妥善保管密钥文件：一旦丢失，
+      需要通过主机服务商的控制台才能重新登录。
     </p>
     <div class="flex justify-end gap-2 pt-1" bind:this={actions}>
-      <Button variant="ghost" onclick={onCancel}>Cancel</Button>
+      <Button variant="ghost" onclick={onCancel}>取消</Button>
       <Button variant="primary" onclick={onConfirm}>
-        {rerun ? 'Turn off password login' : 'Set up key login'}
+        {rerun ? '关闭密码登录' : '设置密钥登录'}
       </Button>
     </div>
   </div>

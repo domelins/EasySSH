@@ -91,7 +91,7 @@ async function boot(page: Page): Promise<void> {
     { hosts: HOSTS }
   );
   await page.goto('/');
-  await expect(page.getByText('1 host')).toBeVisible();
+  await expect(page.getByText('1 台主机')).toBeVisible();
 }
 
 const answers = (page: Page): Promise<Answer[]> =>
@@ -99,20 +99,20 @@ const answers = (page: Page): Promise<Answer[]> =>
 
 test('a login without a usable key asks for the password until the server takes one', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Connect nas' }).click();
+  await page.getByRole('button', { name: '连接 nas' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'SSH login' });
-  await expect(dialog.getByText('SSH login — nas')).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: 'SSH 登录' });
+  await expect(dialog.getByText('SSH 登录 — nas')).toBeVisible();
   await expect(dialog.getByText('admin@nas.example.com')).toBeVisible();
-  const input = dialog.getByLabel('Password');
+  const input = dialog.getByLabel('密码');
   await expect(input).toBeFocused();
-  await expect(dialog.getByRole('button', { name: 'Log in' })).toBeDisabled();
-  await expect(dialog.getByText('Permission denied')).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: '登录' })).toBeDisabled();
+  await expect(dialog.getByText('权限被拒绝')).toHaveCount(0);
 
   // A refused password comes back as a fresh prompt that says so.
   await input.fill('wrong');
   await input.press('Enter');
-  await expect(dialog.getByText('Permission denied, please try again.')).toBeVisible();
+  await expect(dialog.getByText('权限被拒绝，请重试。')).toBeVisible();
   await expect(input).toHaveValue('');
   await expect(input).toBeFocused();
 
@@ -127,10 +127,10 @@ test('a login without a usable key asks for the password until the server takes 
 
 test('cancelling ends the login with the reason', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Connect nas' }).click();
+  await page.getByRole('button', { name: '连接 nas' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'SSH login' });
-  await expect(dialog.getByLabel('Password')).toBeFocused();
+  const dialog = page.getByRole('dialog', { name: 'SSH 登录' });
+  await expect(dialog.getByLabel('密码')).toBeFocused();
   await page.keyboard.press('Escape');
 
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -151,7 +151,7 @@ test('a server met for the first time shows its host key before the password goe
       newHostKey: 'SHA256:abcDEF123'
     });
   });
-  const dialog = page.getByRole('dialog', { name: 'SSH login' });
+  const dialog = page.getByRole('dialog', { name: 'SSH 登录' });
   await expect(dialog.getByText('SHA256:abcDEF123')).toBeVisible();
 });
 
@@ -161,18 +161,18 @@ test('a prompt its login gave up on closes and says so when answered', async ({ 
     const fire = (window as unknown as { __fire: (e: string, p: unknown) => void }).__fire;
     fire('password-required', { requestId: 41, hostName: 'nas', login: 'admin@nas.example.com', retry: false, newHostKey: null });
   });
-  const dialog = page.getByRole('dialog', { name: 'SSH login' });
-  await dialog.getByLabel('Password').fill('late');
-  await dialog.getByLabel('Password').press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'SSH 登录' });
+  await dialog.getByLabel('密码').fill('late');
+  await dialog.getByLabel('密码').press('Enter');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByText('That login stopped waiting for a password. Open it again.')).toBeVisible();
+  await expect(page.getByText('该登录已停止等待密码。请重新打开。')).toBeVisible();
 });
 
 test('a click beside the dialog does not cancel the login', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Connect nas' }).click();
-  const dialog = page.getByRole('dialog', { name: 'SSH login' });
-  await expect(dialog.getByLabel('Password')).toBeFocused();
+  await page.getByRole('button', { name: '连接 nas' }).click();
+  const dialog = page.getByRole('dialog', { name: 'SSH 登录' });
+  await expect(dialog.getByLabel('密码')).toBeFocused();
   await page.mouse.click(5, 5);
   await expect(dialog).toBeVisible();
   expect(await answers(page)).toEqual([]);
@@ -181,9 +181,9 @@ test('a click beside the dialog does not cancel the login', async ({ page }) => 
 test('streamer mode keeps the host out of the prompt', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('omnyssh-streamer-mode', 'true'));
   await boot(page);
-  await page.getByRole('button', { name: 'Connect nas' }).click();
+  await page.getByRole('button', { name: '连接 nas' }).click();
 
-  const dialog = page.getByRole('dialog', { name: 'SSH login' });
-  await expect(dialog.getByLabel('Password')).toBeFocused();
+  const dialog = page.getByRole('dialog', { name: 'SSH 登录' });
+  await expect(dialog.getByLabel('密码')).toBeFocused();
   await expect(dialog.getByText('nas.example.com')).toHaveCount(0);
 });

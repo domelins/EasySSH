@@ -109,7 +109,7 @@ async function boot(
     }
   );
   await page.goto('/');
-  await expect(page.getByText('2 hosts')).toBeVisible();
+  await expect(page.getByText('2 台主机')).toBeVisible();
 }
 
 const unlocks = (page: Page): Promise<Unlock[]> =>
@@ -120,13 +120,13 @@ test('a key locked at launch is asked for once, keeps typing across repeats, and
 }) => {
   await boot(page, { lockedAtLaunch: true });
 
-  const dialog = page.getByRole('dialog', { name: 'Unlock SSH key' });
+  const dialog = page.getByRole('dialog', { name: '解锁 SSH 密钥' });
   await expect(dialog).toHaveCount(1);
-  await expect(dialog.getByText('Unlock SSH key — web-1')).toBeVisible();
+  await expect(dialog.getByText('解锁 SSH 密钥 — web-1')).toBeVisible();
   await expect(dialog.getByText(KEY)).toBeVisible();
-  const input = dialog.getByLabel('Passphrase');
+  const input = dialog.getByLabel('密钥口令');
   await expect(input).toBeFocused();
-  await expect(dialog.getByRole('button', { name: 'Unlock' })).toBeDisabled();
+  await expect(dialog.getByRole('button', { name: '解锁' })).toBeDisabled();
 
   // Another host reporting the same key must not wipe what is being typed.
   await input.fill('wro');
@@ -148,14 +148,14 @@ test('a key locked at launch is asked for once, keeps typing across repeats, and
   await input.press('Enter');
   // One unlock served both hosts on that key; the other key is next.
   await expect(dialog.getByText(OTHER)).toBeVisible();
-  await expect(dialog.getByText('Unlock SSH key — web-2')).toBeVisible();
+  await expect(dialog.getByText('解锁 SSH 密钥 — web-2')).toBeVisible();
   await expect(dialog.getByText('wrong passphrase')).toHaveCount(0);
   expect(await unlocks(page)).toEqual([
     { keyPath: KEY, passphrase: 'wrong' },
     { keyPath: KEY, passphrase: 'sesame' }
   ]);
 
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await dialog.getByRole('button', { name: '取消' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
@@ -164,11 +164,11 @@ test('a terminal on a locked key closes with the reason and asks for the passphr
 }) => {
   await boot(page, { lockedAtLaunch: false });
 
-  await page.getByTitle('sh on web-1').click();
-  const tab = page.getByRole('button', { name: 'web-1 · terminal', exact: true });
+  await page.getByTitle('在 web-1 打开 sh').click();
+  const tab = page.getByRole('button', { name: 'web-1 · 终端', exact: true });
   await expect(tab).toBeVisible();
 
-  const dialog = page.getByRole('dialog', { name: 'Unlock SSH key' });
+  const dialog = page.getByRole('dialog', { name: '解锁 SSH 密钥' });
   await expect(dialog.getByText(KEY)).toBeVisible();
   await expect(page.getByText(`Terminal: SSH key requires a passphrase: ${KEY}`)).toBeVisible();
   // The failed terminal is gone, but the host entry stays on its empty workspace.
@@ -184,8 +184,8 @@ test('a terminal that finishes opening under the dialog leaves the keyboard to i
 }) => {
   await boot(page, { lockedAtLaunch: false, terminal: 'slow' });
 
-  await page.getByTitle('sh on web-1').click();
-  const input = page.getByRole('dialog', { name: 'Unlock SSH key' }).getByLabel('Passphrase');
+  await page.getByTitle('在 web-1 打开 sh').click();
+  const input = page.getByRole('dialog', { name: '解锁 SSH 密钥' }).getByLabel('密钥口令');
   await expect(input).toBeFocused();
 
   // Once the terminal is ready (plus a frame), typing must still land in the dialog.
@@ -203,7 +203,7 @@ test('a terminal that finishes opening under the dialog leaves the keyboard to i
 test('closing the dialog hands the keyboard back to the terminal it covered', async ({ page }) => {
   await boot(page, { lockedAtLaunch: false, terminal: 'ok' });
 
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   const terminalInput = page.locator('.xterm-helper-textarea');
   await expect(terminalInput).toBeFocused();
 
@@ -213,7 +213,7 @@ test('closing the dialog hands the keyboard back to the terminal it covered', as
       { hostName: 'web-2', keyPath: key }
     );
   }, KEY);
-  await expect(page.getByRole('dialog', { name: 'Unlock SSH key' }).getByLabel('Passphrase')).toBeFocused();
+  await expect(page.getByRole('dialog', { name: '解锁 SSH 密钥' }).getByLabel('密钥口令')).toBeFocused();
 
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -223,14 +223,14 @@ test('closing the dialog hands the keyboard back to the terminal it covered', as
 test('a prompt that opens just as a terminal comes back keeps the keyboard', async ({ page }) => {
   await boot(page, { lockedAtLaunch: false, terminal: 'ok' });
 
-  await page.getByTitle('sh on web-1').click();
+  await page.getByTitle('在 web-1 打开 sh').click();
   await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
-  await page.getByRole('navigation', { name: 'Workspace', exact: true }).getByRole('button', { name: 'SSH', exact: true }).click();
+  await page.getByRole('navigation', { name: '工作区', exact: true }).getByRole('button', { name: 'SSH', exact: true }).click();
 
   // Showing the tab queues the terminal's focus for the next frame; the prompt opens
   // before that frame, in the same task.
   await page.evaluate(async (key) => {
-    document.querySelector<HTMLButtonElement>('button[aria-label="web-1 · terminal"]')?.click();
+    document.querySelector<HTMLButtonElement>('button[aria-label="web-1 · 终端"]')?.click();
     for (let i = 0; i < 5; i++) await Promise.resolve();
     (window as unknown as { __fire: (e: string, p: unknown) => void }).__fire(
       'key-passphrase-required',
@@ -239,18 +239,18 @@ test('a prompt that opens just as a terminal comes back keeps the keyboard', asy
   }, KEY);
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 
-  await expect(page.getByRole('dialog', { name: 'Unlock SSH key' }).getByLabel('Passphrase')).toBeFocused();
+  await expect(page.getByRole('dialog', { name: '解锁 SSH 密钥' }).getByLabel('密钥口令')).toBeFocused();
 });
 
 test('cancelling while an unlock is running leaves the next key alone', async ({ page }) => {
   await boot(page, { lockedAtLaunch: true, unlockDelay: 500 });
 
-  const dialog = page.getByRole('dialog', { name: 'Unlock SSH key' });
-  const input = dialog.getByLabel('Passphrase');
+  const dialog = page.getByRole('dialog', { name: '解锁 SSH 密钥' });
+  const input = dialog.getByLabel('密钥口令');
   await input.fill('wrong');
   await input.press('Enter');
   // The first key's unlock is still running when the user gives up on it.
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await dialog.getByRole('button', { name: '取消' }).click();
   await expect(dialog.getByText(OTHER)).toBeVisible();
 
   await page.waitForTimeout(700);
@@ -261,9 +261,9 @@ test('cancelling while an unlock is running leaves the next key alone', async ({
 test('Escape on the prompt closes only the prompt, not the form under it', async ({ page }) => {
   await boot(page, { lockedAtLaunch: false });
 
-  await page.getByRole('button', { name: 'Add host' }).click();
-  const editor = page.getByRole('dialog', { name: 'Add host' });
-  const name = editor.getByLabel('Name', { exact: true });
+  await page.getByRole('button', { name: '添加主机' }).click();
+  const editor = page.getByRole('dialog', { name: '添加主机' });
+  const name = editor.getByLabel('名称', { exact: true });
   await name.fill('db-9');
 
   await page.evaluate((key) => {
@@ -272,8 +272,8 @@ test('Escape on the prompt closes only the prompt, not the form under it', async
       { hostName: 'web-2', keyPath: key }
     );
   }, KEY);
-  const prompt = page.getByRole('dialog', { name: 'Unlock SSH key' });
-  await expect(prompt.getByLabel('Passphrase')).toBeFocused();
+  const prompt = page.getByRole('dialog', { name: '解锁 SSH 密钥' });
+  await expect(prompt.getByLabel('密钥口令')).toBeFocused();
 
   await page.keyboard.press('Escape');
   await expect(prompt).toHaveCount(0);

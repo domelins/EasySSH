@@ -85,15 +85,15 @@ export function deriveTunnel(host: HostDto, status: TunnelStatusDto | undefined)
   const base = { forwards: host.localForwards, autostart: host.tunnelAutostart };
   switch (status?.kind) {
     case 'connecting':
-      return { ...base, running: true, dot: 'unknown', label: 'Connecting…' };
+      return { ...base, running: true, dot: 'unknown', label: '连接中…' };
     case 'up':
-      return { ...base, running: true, dot: 'ok', label: 'Active' };
+      return { ...base, running: true, dot: 'ok', label: '运行中' };
     case 'retrying':
-      return { ...base, running: true, dot: 'warn', label: 'Reconnecting…', message: status.message };
+      return { ...base, running: true, dot: 'warn', label: '重连中…', message: status.message };
     case 'failed':
-      return { ...base, running: false, dot: 'off', label: 'Failed', message: status.message };
+      return { ...base, running: false, dot: 'off', label: '失败', message: status.message };
     default:
-      return { ...base, running: false, dot: 'unknown', label: 'Off' };
+      return { ...base, running: false, dot: 'unknown', label: '未启动' };
   }
 }
 

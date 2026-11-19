@@ -21,7 +21,7 @@
   import { installedVersion } from '$lib/ipc/appInfo';
 
   const message = (e: unknown): string => (e instanceof Error ? e.message : String(e));
-  const formatInterval = (secs: number): string => (secs < 60 ? `${secs}s` : `${secs / 60}m`);
+  const formatInterval = (secs: number): string => (secs < 60 ? `${secs} 秒` : `${secs / 60} 分`);
 
   let updateConfig = $state<UpdateConfigDto | null>(null);
   let version = $state<string | null>(null);
@@ -88,21 +88,21 @@
 </script>
 
 <section class="mx-auto min-h-full max-w-2xl p-6">
-  <h1 class="mb-5 text-lg font-semibold tracking-tight">Settings</h1>
+  <h1 class="mb-5 text-lg font-semibold tracking-tight">设置</h1>
 
   <div class="space-y-4">
     <!-- Appearance -->
     <Surface class="p-5">
-      <h2 class="mb-3 text-sm font-semibold">Appearance</h2>
+      <h2 class="mb-3 text-sm font-semibold">外观</h2>
       <div class="flex items-center justify-between gap-4">
         <div>
-          <p class="text-sm">Theme</p>
-          <p class="text-xs text-muted">Mirrors the header toggle.</p>
+          <p class="text-sm">主题</p>
+          <p class="text-xs text-muted">与顶部栏的切换保持一致。</p>
         </div>
         <Select
           value={$theme}
           class="{fontField} w-44"
-          aria-label="Theme"
+          aria-label="主题"
           onchange={(e) => theme.set(e.currentTarget.value as Theme)}
         >
           {#each THEME_OPTIONS as opt (opt.value)}
@@ -112,14 +112,14 @@
       </div>
       <div class="mt-4 flex items-center justify-between gap-4">
         <div>
-          <p class="text-sm">Terminal font</p>
-          <p class="text-xs text-muted">Family and size; applies to every open terminal.</p>
+          <p class="text-sm">终端字体</p>
+          <p class="text-xs text-muted">字体族与大小；应用于所有已打开的终端。</p>
         </div>
         <div class="flex items-center gap-2">
           <Select
             value={$terminalFont.family}
             class="{fontField} w-44"
-            aria-label="Terminal font family"
+            aria-label="终端字体族"
             onchange={(e) => terminalFont.setFamily(e.currentTarget.value)}
           >
             {#each FAMILY_OPTIONS as opt (opt.value)}
@@ -129,7 +129,7 @@
           <Select
             value={String($terminalFont.size)}
             class="{fontField} w-24"
-            aria-label="Terminal font size"
+            aria-label="终端字体大小"
             onchange={(e) => terminalFont.setSize(Number(e.currentTarget.value))}
           >
             {#each SIZE_OPTIONS as size (size)}
@@ -140,13 +140,13 @@
       </div>
       <div class="mt-4 flex items-center justify-between gap-4">
         <div>
-          <p class="text-sm">Interface font size</p>
-          <p class="text-xs text-muted">Scales the whole interface; terminal font is separate.</p>
+          <p class="text-sm">界面字体大小</p>
+          <p class="text-xs text-muted">缩放整个界面；终端字体单独设置。</p>
         </div>
         <Select
           value={String($uiFontSize)}
           class="{fontField} w-24"
-          aria-label="Interface font size"
+          aria-label="界面字体大小"
           onchange={(e) => uiFontSize.set(Number(e.currentTarget.value))}
         >
           {#each UI_SIZE_OPTIONS as size (size)}
@@ -158,19 +158,19 @@
 
     <!-- Privacy -->
     <Surface class="p-5">
-      <h2 class="mb-3 text-sm font-semibold">Privacy</h2>
+      <h2 class="mb-3 text-sm font-semibold">隐私</h2>
       <div class="flex items-center justify-between gap-4">
         <div class="min-w-0">
-          <p class="text-sm">Streamer mode</p>
+          <p class="text-sm">直播模式</p>
           <p class="text-xs text-muted">
-            Mask host addresses with realistic fakes, so real IPs stay off-screen while recording.
+            用逼真的假地址遮盖主机地址，录制时真实 IP 不会出现在屏幕上。
           </p>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={$streamerMode}
-          aria-label="Streamer mode"
+          aria-label="直播模式"
           onclick={() => streamerMode.toggle()}
           class="relative h-6 w-11 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus {$streamerMode
             ? 'bg-accent'
@@ -187,11 +187,11 @@
 
     <!-- Dashboard -->
     <Surface class="p-5">
-      <h2 class="mb-3 text-sm font-semibold">Dashboard</h2>
+      <h2 class="mb-3 text-sm font-semibold">仪表盘</h2>
       <div class="flex items-center justify-between gap-4">
         <div>
-          <p class="text-sm">Auto-refresh interval</p>
-          <p class="text-xs text-muted">How often the dashboard forces a metric refresh.</p>
+          <p class="text-sm">自动刷新间隔</p>
+          <p class="text-xs text-muted">仪表盘强制刷新指标的频率。</p>
         </div>
         <div class="flex flex-wrap justify-end gap-1 rounded-xl bg-surface-inset p-1">
           {#each REFRESH_OPTIONS as secs (secs)}
@@ -211,40 +211,40 @@
     <!-- Window: the tray keeps sessions and tunnels up with no window on screen. macOS
          has no minimize event to act on, and keeps minimized windows in the Dock. -->
     <Surface class="p-5">
-      <h2 class="mb-3 text-sm font-semibold">Window</h2>
+      <h2 class="mb-3 text-sm font-semibold">窗口</h2>
       <div class="space-y-4">
         {#if !isMac}
           {@render traySwitch(
-            'Minimize to tray',
+            '最小化到托盘',
             $traySupport.available && !$traySupport.minimize
-              ? 'Not on Wayland, which never tells an app its window was minimized.'
-              : 'Minimizing hides the window; the tray icon brings it back.',
+              ? 'Wayland 上不可用，它不会通知应用窗口已被最小化。'
+              : '最小化会隐藏窗口；点击托盘图标可将其恢复。',
             $trayBehavior.minimizeToTray && $traySupport.minimize,
             $traySupport.minimize,
             () => trayBehavior.update({ minimizeToTray: !$trayBehavior.minimizeToTray })
           )}
         {/if}
         {@render traySwitch(
-          isMac ? 'Close to the menu bar' : 'Close to tray',
-          'Closing the window keeps OmnySSH running — terminals, transfers and tunnels stay connected. Quit from the icon.',
+          isMac ? '关闭到菜单栏' : '关闭到托盘',
+          '关闭窗口后 OmnySSH 继续运行——终端、传输和隧道保持连接。可通过图标退出。',
           $trayBehavior.closeToTray && $traySupport.available,
           $traySupport.available,
           () => trayBehavior.update({ closeToTray: !$trayBehavior.closeToTray })
         )}
         {#if !$traySupport.available}
           <p class="text-xs text-status-warn">
-            This desktop has no system tray, so the window closes and minimizes as usual.
+            当前桌面没有系统托盘，窗口将按常规方式关闭和最小化。
           </p>
         {:else if $trayBehavior.minimizeToTray || $trayBehavior.closeToTray}
           <!-- Some desktops keep tray icons out of sight (GNOME without the AppIndicator
                extension, an overflow menu); a second launch always finds the window. -->
           <p class="text-xs text-muted">
-            No icon in sight? Opening OmnySSH again brings the window back.
+            找不到图标？再次打开 OmnySSH 即可恢复窗口。
           </p>
         {/if}
         {@render traySwitch(
-          'Ask before quitting',
-          'When terminals, transfers, tunnels or snippet runs are still open.',
+          '退出前询问',
+          '当仍有终端、传输、隧道或命令片段在运行时。',
           $confirmQuit,
           true,
           () => confirmQuit.toggle()
@@ -254,18 +254,18 @@
 
     <!-- Updates -->
     <Surface class="p-5">
-      <h2 class="mb-3 text-sm font-semibold">Updates</h2>
+      <h2 class="mb-3 text-sm font-semibold">更新</h2>
       <div class="space-y-4">
         <div class="flex items-center justify-between gap-4">
           <div>
-            <p class="text-sm">Check for updates on startup</p>
-            <p class="text-xs text-muted">Look for a newer release when the app launches.</p>
+            <p class="text-sm">启动时检查更新</p>
+            <p class="text-xs text-muted">应用启动时查找新版本。</p>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={updateConfig?.checkOnStartup ?? false}
-            aria-label="Check for updates on startup"
+            aria-label="启动时检查更新"
             disabled={!updateConfig}
             onclick={toggleCheckOnStartup}
             class="relative h-6 w-11 shrink-0 rounded-full transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus {updateConfig?.checkOnStartup
@@ -282,13 +282,13 @@
 
         <div class="flex items-center justify-between gap-4 border-t border-default pt-4">
           <div class="min-w-0">
-            <p class="text-sm">Manual check</p>
+            <p class="text-sm">手动检查</p>
             <p class="text-xs text-muted">
-              {#if check.kind === 'checking'}Checking…
-              {:else if check.kind === 'upToDate'}You're on the latest version.
-              {:else if check.kind === 'available'}Version {check.version} is available.
+              {#if check.kind === 'checking'}正在检查…
+              {:else if check.kind === 'upToDate'}已是最新版本。
+              {:else if check.kind === 'available'}有新版本 {check.version} 可用。
               {:else if check.kind === 'error'}{check.message}
-              {:else}Check GitHub for a newer release.
+              {:else}在 GitHub 上查找新版本。
               {/if}
             </p>
           </div>
@@ -299,7 +299,7 @@
             onclick={checkNow}
           >
             <Icon name="refresh" size={14} />
-            Check now
+            立即检查
           </button>
         </div>
       </div>
@@ -308,9 +308,9 @@
     <!-- About: selectable, so the version can be pasted into a bug report -->
     {#if version}
       <Surface class="p-5">
-        <h2 class="mb-3 text-sm font-semibold">About</h2>
+        <h2 class="mb-3 text-sm font-semibold">关于</h2>
         <div class="flex items-center justify-between gap-4">
-          <p class="text-sm">Version</p>
+          <p class="text-sm">版本</p>
           <p class="select-text text-sm tabular-nums text-muted">{version}</p>
         </div>
       </Surface>

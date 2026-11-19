@@ -349,7 +349,10 @@ async fn run_ssh_poller(
                 // commands (a network appliance) to the first backoff step forever.
                 backoff.reset();
                 if tx
-                    .send(CoreEvent::MetricsUpdate(host.name.clone(), metrics))
+                    .send(CoreEvent::MetricsUpdate(
+                        host.name.clone(),
+                        Box::new(metrics),
+                    ))
                     .await
                     .is_err()
                 {

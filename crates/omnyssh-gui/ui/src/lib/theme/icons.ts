@@ -40,6 +40,7 @@ export type IconName =
   | 'memory'
   | 'disk'
   | 'clock'
+  | 'minimize'
   | 'maximize'
   | 'restore'
   | 'popout'

@@ -33,18 +33,18 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             &PredefinedMenuItem::hide_others(app, None)?,
             &PredefinedMenuItem::show_all(app, None)?,
             &separator()?,
-            &MenuItem::with_id(app, QUIT_ID, "Quit OmnySSH", true, Some("CmdOrCtrl+Q"))?,
+            &MenuItem::with_id(app, QUIT_ID, "退出 OmnySSH", true, Some("CmdOrCtrl+Q"))?,
         ],
     )?;
     // Closing goes through `CloseRequested`, so the tray or the page's question still apply.
     let file = Submenu::with_items(
         app,
-        "File",
+        "文件",
         true,
         &[&MenuItem::with_id(
             app,
             CLOSE_WINDOW_ID,
-            "Close Window",
+            "关闭窗口",
             true,
             Some("CmdOrCtrl+Shift+W"),
         )?],
@@ -52,7 +52,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     // WKWebView's clipboard and undo shortcuts work only through these items.
     let edit = Submenu::with_items(
         app,
-        "Edit",
+        "编辑",
         true,
         &[
             &PredefinedMenuItem::undo(app, None)?,
@@ -66,13 +66,13 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
     )?;
     let view = Submenu::with_items(
         app,
-        "View",
+        "显示",
         true,
         &[&PredefinedMenuItem::fullscreen(app, None)?],
     )?;
     let window = Submenu::with_items(
         app,
-        "Window",
+        "窗口",
         true,
         &[
             &PredefinedMenuItem::minimize(app, None)?,

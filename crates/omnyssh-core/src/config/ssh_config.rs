@@ -76,7 +76,10 @@ pub fn hosts_to_ssh_config(hosts: &[Host]) -> String {
     for h in hosts {
         // A `Host` value is a pattern list: whitespace would split it into two aliases.
         if h.name.split_whitespace().count() != 1 {
-            out.push_str(&format!("# skipped '{}': whitespace in Host name\n", h.name));
+            out.push_str(&format!(
+                "# skipped '{}': whitespace in Host name\n",
+                h.name
+            ));
             continue;
         }
         out.push_str(&format!(
@@ -845,15 +848,19 @@ Host internal
 
     #[test]
     fn export_never_writes_passwords_and_skips_whitespace_names() {
-        let mut h = Host::default();
-        h.name = "web".to_string();
-        h.hostname = "10.0.0.1".to_string();
-        h.user = "deploy".to_string();
-        h.port = 2222;
-        h.password = Some("s3cret".to_string());
-        let mut odd = Host::default();
-        odd.name = "two words".to_string();
-        odd.hostname = "10.0.0.2".to_string();
+        let h = Host {
+            name: "web".to_string(),
+            hostname: "10.0.0.1".to_string(),
+            user: "deploy".to_string(),
+            port: 2222,
+            password: Some("s3cret".to_string()),
+            ..Default::default()
+        };
+        let odd = Host {
+            name: "two words".to_string(),
+            hostname: "10.0.0.2".to_string(),
+            ..Default::default()
+        };
         let out = hosts_to_ssh_config(&[h, odd]);
         assert!(!out.contains("s3cret"));
         assert!(out.contains("Host web\n"));
@@ -878,7 +885,11 @@ Host internal
         assert_eq!(standalone.len(), 1, "an import must not read local disk");
         assert_eq!(standalone[0].name, "local");
         let live = parse_ssh_config(&cfg);
-        assert_eq!(live.len(), 2, "the live parser still follows absolute Includes");
+        assert_eq!(
+            live.len(),
+            2,
+            "the live parser still follows absolute Includes"
+        );
         assert!(live.iter().any(|h| h.name == "from-include"));
         let _ = std::fs::remove_dir_all(&dir);
     }

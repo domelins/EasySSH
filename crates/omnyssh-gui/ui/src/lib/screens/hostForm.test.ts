@@ -27,14 +27,14 @@ describe('formToInput — mirrors the TUI to_host', () => {
   it('rejects an empty name', () => {
     expect(formToInput(fields({ name: '  ', hostname: 'h' }))).toEqual({
       ok: false,
-      error: 'Name cannot be empty'
+      error: '名称不能为空'
     });
   });
 
   it('rejects an empty hostname', () => {
     expect(formToInput(fields({ name: 'n', hostname: '  ' }))).toEqual({
       ok: false,
-      error: 'Hostname / IP cannot be empty'
+      error: '主机名 / IP 不能为空'
     });
   });
 
@@ -69,7 +69,7 @@ describe('formToInput — mirrors the TUI to_host', () => {
       const r = formToInput(fields({ name: 'n', hostname: 'h', port }));
       expect(r).toEqual({
         ok: false,
-        error: `Port must be a number between 1 and 65535, got '${port}'`
+        error: `端口必须是 1 到 65535 之间的数字，当前为 '${port}'`
       });
     }
   );
@@ -242,11 +242,11 @@ describe('formToInput — port forwarding', () => {
 
   it('names the row and the problem', () => {
     const cases: [ReturnType<typeof row>, string][] = [
-      [row('0', 'localhost', '80'), 'Forward 1: local port'],
-      [row('::1:8080', 'localhost', '80'), 'Forward 1: put an IPv6 address in brackets'],
-      [row('8080', '  ', '80'), 'Forward 1: enter the host'],
-      [row('8080', 'local host', '80'), 'Forward 1: enter the host'],
-      [row('8080', 'localhost', '70000'), 'Forward 1: remote port']
+      [row('0', 'localhost', '80'), '转发 1：本地端口'],
+      [row('::1:8080', 'localhost', '80'), '转发 1：IPv6 地址需放在方括号内'],
+      [row('8080', '  ', '80'), '转发 1：请填写从服务器访问的目标主机'],
+      [row('8080', 'local host', '80'), '转发 1：请填写从服务器访问的目标主机'],
+      [row('8080', 'localhost', '70000'), '转发 1：远程端口']
     ];
     for (const [bad, message] of cases) {
       const r = formToInput(fields({ ...base, forwards: [bad] }));
@@ -258,7 +258,7 @@ describe('formToInput — port forwarding', () => {
     const r = formToInput(
       fields({ ...base, forwards: [row('9443', 'localhost', '1'), row('localhost:9443', 'localhost', '2')] })
     );
-    expect(r).toEqual({ ok: false, error: 'Forward 2 listens on the same port as forward 1' });
+    expect(r).toEqual({ ok: false, error: '转发 2 与转发 1 使用了相同的本地端口' });
   });
 
   it('drops the autostart flag along with the last forward', () => {

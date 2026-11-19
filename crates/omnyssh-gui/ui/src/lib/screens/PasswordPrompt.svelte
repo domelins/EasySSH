@@ -47,7 +47,7 @@
     // password would vanish without a word.
     settlePassword(id);
     await answerPassword(id, secret).catch(() =>
-      lastError.set('That login stopped waiting for a password. Open it again.')
+      lastError.set('该登录已停止等待密码。请重新打开。')
     );
   }
 
@@ -63,7 +63,7 @@
 {#if $passwordPrompt}
   {@const prompt = $passwordPrompt}
   <!-- A stray click beside it must not cancel the login. -->
-  <Modal label="SSH login" onClose={() => void answer(null)} backdropCloses={false}>
+  <Modal label="SSH 登录" onClose={() => void answer(null)} backdropCloses={false}>
     <form
       bind:this={form}
       class="space-y-4 px-5 py-4"
@@ -75,14 +75,14 @@
       <div class="space-y-1">
         <div class="flex items-center gap-2.5">
           <Icon name="key" size={16} />
-          <h2 class="min-w-0 truncate text-sm font-semibold">SSH login — {prompt.hostName}</h2>
+          <h2 class="min-w-0 truncate text-sm font-semibold">SSH 登录 — {prompt.hostName}</h2>
         </div>
         <p class="break-all font-mono text-xs text-muted">
           {displayLogin(prompt.login, $streamerMode)}
         </p>
       </div>
       <label class="block space-y-1 text-xs font-medium text-muted">
-        <span>Password</span>
+        <span>密码</span>
         <input
           type="password"
           bind:this={input}
@@ -92,18 +92,18 @@
         />
       </label>
       <p class="text-xs text-faint">
-        Kept in memory until you quit OmnySSH, never written to disk.
+        仅保存在内存中，退出 OmnySSH 后清除，绝不写入磁盘。
       </p>
       {#if prompt.retry}
-        <p class="text-xs text-status-crit">Permission denied, please try again.</p>
+        <p class="text-xs text-status-crit">权限被拒绝，请重试。</p>
       {:else if prompt.newHostKey}
         <p class="break-all text-xs text-status-warn">
-          First connection to this server. Its host key was recorded: {prompt.newHostKey}
+          首次连接此服务器。已记录其主机密钥：{prompt.newHostKey}
         </p>
       {/if}
       <div class="flex justify-end gap-2">
-        <Button variant="ghost" type="button" onclick={() => void answer(null)}>Cancel</Button>
-        <Button variant="primary" type="submit" disabled={!password}>Log in</Button>
+        <Button variant="ghost" type="button" onclick={() => void answer(null)}>取消</Button>
+        <Button variant="primary" type="submit" disabled={!password}>登录</Button>
       </div>
     </form>
   </Modal>

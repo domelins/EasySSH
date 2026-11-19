@@ -35,7 +35,7 @@ pub async fn check_update() -> Result<Option<UpdateInfoDto>, CommandError> {
 #[specta::specta]
 pub async fn install_update(app: AppHandle) -> Result<(), CommandError> {
     let updater = app.updater().map_err(|e| CommandError {
-        message: format!("Self-update is not available yet: {e}"),
+        message: format!("自动更新暂不可用：{e}"),
     })?;
     match updater.check().await {
         Ok(Some(update)) => {
@@ -43,15 +43,15 @@ pub async fn install_update(app: AppHandle) -> Result<(), CommandError> {
                 .download_and_install(|_, _| {}, || {})
                 .await
                 .map_err(|e| CommandError {
-                    message: format!("Update failed: {e}"),
+                    message: format!("更新失败：{e}"),
                 })?;
             app.restart();
         }
         Ok(None) => Err(CommandError {
-            message: "No update is currently available to install.".to_string(),
+            message: "当前没有可安装的更新。".to_string(),
         }),
         Err(e) => Err(CommandError {
-            message: format!("Self-update is not available yet: {e}"),
+            message: format!("自动更新暂不可用：{e}"),
         }),
     }
 }
@@ -63,7 +63,7 @@ pub async fn load_update_config() -> Result<UpdateConfigDto, CommandError> {
     let config = tauri::async_runtime::spawn_blocking(|| load_app_config(None))
         .await
         .map_err(|e| CommandError {
-            message: format!("config load task failed: {e}"),
+            message: format!("配置加载任务失败：{e}"),
         })?
         .map_err(|e| CommandError {
             message: e.to_string(),
@@ -80,7 +80,7 @@ pub async fn save_update_config(config: UpdateConfigDto) -> Result<(), CommandEr
     tauri::async_runtime::spawn_blocking(move || core_save_update_config(&update))
         .await
         .map_err(|e| CommandError {
-            message: format!("config save task failed: {e}"),
+            message: format!("配置保存任务失败：{e}"),
         })?
         .map_err(|e| CommandError {
             message: e.to_string(),

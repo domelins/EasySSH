@@ -36,7 +36,7 @@ pub fn start_key_setup(
     host_name: String,
 ) -> Result<(), CommandError> {
     let host = state.host_by_name(&host_name).ok_or_else(|| CommandError {
-        message: format!("unknown host '{host_name}'"),
+        message: format!("未知主机 '{host_name}'"),
     })?;
     state
         .try_begin_key_setup(&host_name)
@@ -83,7 +83,7 @@ async fn run_key_setup(app: AppHandle, host: Host, engine_tx: mpsc::Sender<CoreE
             let _ = engine_tx
                 .send(CoreEvent::KeySetupFailed(
                     host.name.clone(),
-                    format!("Connection failed: {e}"),
+                    format!("连接失败：{e}"),
                 ))
                 .await;
             return;
@@ -135,7 +135,7 @@ fn key_write(result: &KeySetupResult) -> Option<KeyWrite> {
 fn outcome_event(host_name: String, result: KeySetupResult) -> CoreEvent {
     let error = result
         .error_message
-        .unwrap_or_else(|| "Key setup failed.".to_string());
+        .unwrap_or_else(|| "密钥设置失败。".to_string());
     match result.state {
         KeySetupState::Success => CoreEvent::KeySetupComplete(host_name, result.key_path),
         KeySetupState::PartialSuccess => CoreEvent::KeySetupPartial(host_name, result.key_path),

@@ -155,6 +155,8 @@ fn ping_command(hostname: &str) -> Command {
 /// Scans raw bytes so both the English `time=` and the localised `时间=` match, in
 /// UTF-8 and in legacy code pages (GBK), where `时间` is `CA B1 BC E4`; a generic
 /// `= <number> ms` fallback covers locales without a known marker.
+// Windows pings via ICMP, so only tests call this there.
+#[cfg_attr(windows, allow(dead_code))]
 fn parse_ping(output: &[u8]) -> Option<u32> {
     const GBK_SHI: &[u8] = &[0xCA, 0xB1];
     const GBK_JIAN: &[u8] = &[0xBC, 0xE4];
@@ -280,12 +282,7 @@ mod tests {
             if byte.is_ascii() {
                 gbk.push(byte as u8);
             } else {
-                let mut block = [0u8; 4];
-                let text = byte.encode_utf8(&mut block).as_bytes();
                 // Encode just the characters the reply needs (时, 间) by known codes.
-                match text {
-                    _ => {}
-                }
                 gbk.extend_from_slice(match byte {
                     '来' => &[0xC0, 0xB4],
                     '自' => &[0xD7, 0xD4],

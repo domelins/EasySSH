@@ -140,7 +140,7 @@ impl Default for Metrics {
 #[derive(Debug)]
 pub enum CoreEvent {
     /// SSH metrics received from a background task.
-    MetricsUpdate(HostId, Metrics),
+    MetricsUpdate(HostId, Box<Metrics>),
     /// Connection status changed for a host (reported by metrics poller).
     HostStatusChanged(HostId, ConnectionStatus),
     /// File transfer progress: (transfer_id, bytes_done, bytes_total).

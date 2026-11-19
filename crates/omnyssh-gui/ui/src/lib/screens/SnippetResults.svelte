@@ -13,16 +13,16 @@
   }
 
   function state(entry: SnippetResultEntry): string {
-    if (entry.pending) return 'running';
-    return entry.ok ? 'ok' : 'failed';
+    if (entry.pending) return '运行中';
+    return entry.ok ? '成功' : '失败';
   }
 </script>
 
 {#if $snippetRun && !$snippetRun.dismissed}
   {@const run = $snippetRun}
-  <Modal label="Snippet results" onClose={clearRun}>
+  <Modal label="命令片段运行结果" onClose={clearRun}>
     <header class="border-b border-default px-5 py-3.5">
-      <h2 class="truncate text-sm font-semibold">Results — “{run.snippetName}”</h2>
+      <h2 class="truncate text-sm font-semibold">运行结果 — “{run.snippetName}”</h2>
     </header>
 
     <div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
@@ -34,7 +34,7 @@
             <span class="shrink-0 text-[0.6875rem] uppercase tracking-wider text-faint">{state(entry)}</span>
           </div>
           {#if entry.pending}
-            <p class="px-3 py-2 text-xs text-faint">Running…</p>
+            <p class="px-3 py-2 text-xs text-faint">运行中…</p>
           {:else if entry.output.trim()}
             <!-- A failed entry's output is the backend's error (connect or command), so it
                  is masked; a success is the command's own stdout, shown as it came. -->
@@ -43,14 +43,14 @@
                 ? 'text-muted'
                 : 'text-status-crit'}">{entry.ok ? entry.output : $maskText(entry.output)}</pre>
           {:else}
-            <p class="px-3 py-2 text-xs text-faint">(no output)</p>
+            <p class="px-3 py-2 text-xs text-faint">（无输出）</p>
           {/if}
         </div>
       {/each}
     </div>
 
     <footer class="flex justify-end border-t border-default px-5 py-3">
-      <Button variant="secondary" onclick={clearRun}>Close</Button>
+      <Button variant="secondary" onclick={clearRun}>关闭</Button>
     </footer>
   </Modal>
 {/if}

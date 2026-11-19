@@ -274,12 +274,12 @@ async function boot(page: Page, options: { parked?: Record<string, number>; path
 
   await page.goto(options.path ?? '/');
   if (options.path) return;
-  await expect(page.getByText('2 hosts')).toBeVisible();
+  await expect(page.getByText('2 台主机')).toBeVisible();
 }
 
 /** Opens web-1's terminal from the dashboard and waits for the workspace to settle. */
 async function openWorkspace(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Connect web-1' }).click();
+  await page.getByRole('button', { name: '连接 web-1' }).click();
   await expect(page.getByRole('tab', { name: /终端 1/ })).toBeVisible();
   await expect(page.getByRole('region', { name: '远程文件' })).toBeVisible();
 }
@@ -388,8 +388,8 @@ test('drags the splitter and keeps the width across a reload', async ({ page }) 
   expect(saved).toContain('web-1');
 
   await page.reload();
-  await expect(page.getByText('2 hosts')).toBeVisible();
-  await page.getByRole('button', { name: 'Connect web-1' }).click();
+  await expect(page.getByText('2 台主机')).toBeVisible();
+  await page.getByRole('button', { name: '连接 web-1' }).click();
   await expect(page.getByRole('region', { name: '远程文件' })).toBeVisible();
   const restored = (await files.boundingBox())?.width ?? 0;
   expect(Math.abs(restored - after)).toBeLessThanOrEqual(2);
@@ -410,7 +410,7 @@ test('maximizes the terminal over both side panes', async ({ page }) => {
 
 test('a TCP-only host states that it has no metrics instead of inventing them', async ({ page }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Connect db-1' }).click();
+  await page.getByRole('button', { name: '连接 db-1' }).click();
   await expect(page.getByRole('region', { name: '主机监控' })).toContainText('仅端口探测');
 });
 
@@ -438,7 +438,7 @@ test('restores parked tabs on the next start and connects only the one opened', 
   await boot(page, { parked: { 'web-1': 2 } });
 
   // Both tabs are back at once under ONE top-bar host entry, and neither has dialled.
-  const tabs = page.getByRole('button', { name: 'web-1 · terminal' });
+  const tabs = page.getByRole('button', { name: 'web-1 · 终端' });
   await expect(tabs).toHaveCount(1);
   const opens = () =>
     page.evaluate(() => (window as unknown as { __terminalOpens?: number }).__terminalOpens ?? 0);
@@ -559,7 +559,7 @@ test('a detached panel window renders that panel alone', async ({ page }) => {
   await expect(monitor).toBeVisible();
   await expect(monitor.getByText('32%')).toBeVisible();
   // No workspace chrome, and no "pop out" button inside a window that already is one.
-  await expect(page.getByRole('navigation', { name: 'Workspace' })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: '工作区' })).toHaveCount(0);
   await expect(monitor.getByRole('button', { name: '在独立窗口打开监控' })).toHaveCount(0);
 });
 
@@ -590,10 +590,10 @@ test('monitor shows the host address with copy actions', async ({ page }) => {
   const monitor = page.getByRole('region', { name: '主机监控' });
 
   await expect(monitor.getByText('web-1.example.com:22').first()).toBeVisible();
-  await monitor.getByRole('button', { name: 'Copy IP for web-1' }).click();
+  await monitor.getByRole('button', { name: '复制 web-1 的 IP' }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('web-1.example.com:22');
 
-  await monitor.getByRole('button', { name: 'Copy password for web-1' }).click();
+  await monitor.getByRole('button', { name: '复制 web-1 的登录密码' }).click();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('secret-for-web-1');
 });
 
