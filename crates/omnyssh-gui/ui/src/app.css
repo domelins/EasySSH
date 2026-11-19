@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Semantic design tokens (tech-gui.md §5.1). One name set, seven value maps: a
+   theme switch swaps `data-theme` and every surface follows. Components reference
+   these tokens via Tailwind utilities (bg-surface, text-muted, …) — never a raw
+   brand hex. Keep the id list in sync with THEME_IDS in stores/theme.ts and the
+   app.html no-FOUC whitelist. */
+:root[data-theme='light'] {
+  --bg: #f6f8f7;
+  --surface: #ffffff;
+  --surface-raised: #fbfdfc;
+  --surface-inset: #eef2f0;
+  --text: #1f2937;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --border: #e3e8e5;
+  --border-strong: #c6d0ca;
+  --accent: #22c55e;
+  --accent-fg: #ffffff;
+  --header: #45d06e;
+  --header-fg: #ffffff;
+  --header-muted: rgba(255, 255, 255, 0.78);
+  --header-hover: rgba(255, 255, 255, 0.16);
+  --header-active: rgba(255, 255, 255, 0.28);
+  --focus-ring: rgba(34, 197, 94, 0.45);
+  --glass: rgba(255, 255, 255, 0.8);
+  --overlay: rgba(31, 41, 55, 0.4);
+  --status-ok: #22c55e;
+  --status-warn: #f59e0b;
+  --status-crit: #ef4444;
+  --status-off: #9ca3af;
+  --shadow-soft: 0 10px 30px -12px rgba(31, 41, 55, 0.18);
+}
+
+:root[data-theme='dark'] {
+  --bg: #171717;
+  --surface: #212121;
+  --surface-raised: #2a2a2d;
+  --surface-inset: #1a1a1a;
+  --text: #ffffff;
+  --text-muted: #aeb7c2;
+  --text-faint: rgba(255, 255, 255, 0.45);
+  --border: rgba(255, 255, 255, 0.15);
+  --border-strong: rgba(255, 255, 255, 0.25);
+  --accent: #45c98b;
+  --accent-fg: #10261b;
+  --header: #19553c;
+  --header-fg: #ffffff;
+  --header-muted: rgba(255, 255, 255, 0.72);
+  --header-hover: rgba(255, 255, 255, 0.08);
+  --header-active: rgba(255, 255, 255, 0.16);
+  --focus-ring: rgba(69, 201, 139, 0.5);
+  --glass: rgba(33, 33, 33, 0.7);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --status-ok: #5fd08a;
+  --status-warn: #e8c15a;
+  --status-crit: #f07777;
+  --status-off: #7c8595;
+  --shadow-soft: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='ocean'] {
+  --bg: #0b1220;
+  --surface: #101a2c;
+  --surface-raised: #16233a;
+  --surface-inset: #0a101c;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-faint: rgba(226, 232, 240, 0.45);
+  --border: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(148, 163, 184, 0.3);
+  --accent: #38bdf8;
+  --accent-fg: #082f49;
+  --header: #0c4a6e;
+  --header-fg: #e0f2fe;
+  --header-muted: rgba(224, 242, 254, 0.72);
+  --header-hover: rgba(224, 242, 254, 0.08);
+  --header-active: rgba(224, 242, 254, 0.16);
+  --focus-ring: rgba(56, 189, 248, 0.5);
+  --glass: rgba(16, 26, 44, 0.7);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --status-ok: #4ade80;
+  --status-warn: #fbbf24;
+  --status-crit: #f87171;
+  --status-off: #64748b;
+  --shadow-soft: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='nord'] {
+  --bg: #2e3440;
+  --surface: #3b4252;
+  --surface-raised: #434c5e;
+  --surface-inset: #272c36;
+  --text: #eceff4;
+  --text-muted: #d8dee9;
+  --text-faint: rgba(236, 239, 244, 0.45);
+  --border: rgba(216, 222, 233, 0.16);
+  --border-strong: rgba(216, 222, 233, 0.28);
+  --accent: #88c0d0;
+  --accent-fg: #2e3440;
+  --header: #5e81ac;
+  --header-fg: #eceff4;
+  --header-muted: rgba(236, 239, 244, 0.72);
+  --header-hover: rgba(236, 239, 244, 0.1);
+  --header-active: rgba(236, 239, 244, 0.2);
+  --focus-ring: rgba(136, 192, 208, 0.5);
+  --glass: rgba(59, 66, 82, 0.7);
+  --overlay: rgba(0, 0, 0, 0.5);
+  --status-ok: #a3be8c;
+  --status-warn: #ebcb8b;
+  --status-crit: #bf616a;
+  --status-off: #7b88a1;
+  --shadow-soft: 0 10px 30px -12px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme='sakura'] {
+  --bg: #fdf4f7;
+  --surface: #ffffff;
+  --surface-raised: #fffafc;
+  --surface-inset: #fbe8ef;
+  --text: #4c2a3d;
+  --text-muted: #8b6478;
+  --text-faint: #c4a3b3;
+  --border: #f3dbe5;
+  --border-strong: #e3b9cc;
+  --accent: #db2777;
+  --accent-fg: #ffffff;
+  --header: #f9a8d4;
+  --header-fg: #502038;
+  --header-muted: rgba(80, 32, 56, 0.65);
+  --header-hover: rgba(255, 255, 255, 0.3);
+  --header-active: rgba(255, 255, 255, 0.55);
+  --focus-ring: rgba(219, 39, 119, 0.4);
+  --glass: rgba(255, 255, 255, 0.8);
+  --overlay: rgba(76, 42, 61, 0.4);
+  --status-ok: #16a34a;
+  --status-warn: #d97706;
+  --status-crit: #dc2626;
+  --status-off: #b09aa5;
+  --shadow-soft: 0 10px 30px -12px rgba(76, 42, 61, 0.16);
+}
+
+:root[data-theme='mocha'] {
+  --bg: #201a17;
+  --surface: #2a2320;
+  --surface-raised: #342c27;
+  --surface-inset: #1b1512;
+  --text: #ede0d4;
+  --text-muted: #b8a898;
+  --text-faint: rgba(237, 224, 212, 0.45);
+  --border: rgba(184, 168, 152, 0.18);
+  --border-strong: rgba(184, 168, 152, 0.3);
+  --accent: #d99e56;
+  --accent-fg: #2a1c0e;
+  --header: #6f4e37;
+  --header-fg: #f5ebe0;
+  --header-muted: rgba(245, 235, 224, 0.72);
+  --header-hover: rgba(245, 235, 224, 0.08);
+  --header-active: rgba(245, 235, 224, 0.16);
+  --focus-ring: rgba(217, 158, 86, 0.5);
+  --glass: rgba(42, 35, 32, 0.7);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --status-ok: #a7c957;
+  --status-warn: #e9c46a;
+  --status-crit: #e76f51;
+  --status-off: #8a7a6a;
+  --shadow-soft: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='violet'] {
+  --bg: #171321;
+  --surface: #201a2e;
+  --surface-raised: #2a2340;
+  --surface-inset: #130f1c;
+  --text: #ede9fe;
+  --text-muted: #a99fc4;
+  --text-faint: rgba(237, 233, 254, 0.45);
+  --border: rgba(169, 159, 196, 0.18);
+  --border-strong: rgba(169, 159, 196, 0.3);
+  --accent: #a78bfa;
+  --accent-fg: #1e1338;
+  --header: #4c1d95;
+  --header-fg: #ede9fe;
+  --header-muted: rgba(237, 233, 254, 0.72);
+  --header-hover: rgba(237, 233, 254, 0.08);
+  --header-active: rgba(237, 233, 254, 0.16);
+  --focus-ring: rgba(167, 139, 250, 0.5);
+  --glass: rgba(32, 26, 46, 0.7);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --status-ok: #86efac;
+  --status-warn: #fcd34d;
+  --status-crit: #fca5a5;
+  --status-off: #6f678a;
+  --shadow-soft: 0 10px 30px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Overlay title-bar inset: on macOS the window draws the traffic lights over the
+   app (frameless, hiddenTitle), so the shell reserves a draggable strip at the top.
+   Zero elsewhere — Windows/Linux keep their native title bar. Set on <html> by the
+   app.html pre-paint script so there is no layout shift. */
+:root {
+  --titlebar-h: 0px;
+  --titlebar-left: 0px;
+  /* Row hover sits between surface and its inset; derived so every theme gets it. */
+  --surface-hover: color-mix(in srgb, var(--surface-inset) 55%, var(--surface));
+}
+:root[data-os='macos'] {
+  --titlebar-h: 1.75rem;
+  --titlebar-left: 4.5rem;
+}
+
+html,
+body {
+  height: 100%;
+  /* The shell is a fixed viewport: content scrolls inside its own panes, the
+     window itself never scrolls or rubber-bands (no empty gap on overscroll). */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* Native-app feel: chrome, cards, and labels are not selectable. Selection is
+     re-enabled only inside a terminal session and in editable fields. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}
