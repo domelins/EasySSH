@@ -22,7 +22,7 @@ pub(crate) enum Verdict {
         file: PathBuf,
         /// The types saved, when none is the offered key's.
         pinned: Vec<Algorithm>,
-        /// The file is the one OmnySSH kept up to 1.1.3.
+        /// The file is the one EasySSH kept up to 1.1.3.
         legacy: bool,
     },
     /// The file could not be read or parsed, or there is no home to find it in.
@@ -125,7 +125,7 @@ pub(crate) fn learn(host: &str, port: u16, key: &PublicKey) -> Result<(), russh:
 }
 
 /// The host key algorithms asked for when nothing is pinned: russh 0.46's list,
-/// which OmnySSH shipped with, then P-384, last so that no server that worked
+/// which EasySSH shipped with, then P-384, last so that no server that worked
 /// shows another key; some devices have no other (Cisco RoomOS set to ECDSA).
 /// `ssh-rsa` (SHA-1) only after all of them, for servers before OpenSSH 7.2
 /// that have nothing else (RHEL 6).
@@ -218,7 +218,7 @@ fn key_type(algorithm: &Algorithm) -> (String, Option<&'static str>) {
 ///
 /// Names the offered key's type: a server has one key per type, and checking
 /// another type's key on the server shows a mismatch that is not there. A
-/// refusal from the legacy file says it is OmnySSH's own list, or a user whose
+/// refusal from the legacy file says it is EasySSH's own list, or a user whose
 /// PuTTY and `ssh` connect has no reason to believe it.
 pub(crate) fn changed_message(
     host: &str,
@@ -243,7 +243,7 @@ pub(crate) fn changed_message(
         format!("the {} key", types.join(" or "))
     };
     let whose = if legacy {
-        ", the list OmnySSH kept up to 1.1.3, which PuTTY and OpenSSH never read"
+        ", the list EasySSH kept up to 1.1.3, which PuTTY and OpenSSH never read"
     } else {
         ""
     };
@@ -577,7 +577,7 @@ mod tests {
             Some("Host key of 192.168.1.25 has changed")
         );
         assert!(message.contains(
-            r"saved in C:\Users\me\ssh\known_hosts, the list OmnySSH kept up to 1.1.3, which PuTTY and OpenSSH never read."
+            r"saved in C:\Users\me\ssh\known_hosts, the list EasySSH kept up to 1.1.3, which PuTTY and OpenSSH never read."
         ));
         assert!(
             message.contains(r#"ssh-keygen -R "192.168.1.25" -f "C:\Users\me\ssh\known_hosts""#)

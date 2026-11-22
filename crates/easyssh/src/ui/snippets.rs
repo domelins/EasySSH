@@ -22,7 +22,7 @@ use ratatui::{
 
 use crate::app::{AppAction, AppState, SnippetPopup, SnippetsView, ViewState};
 use crate::ui::popup;
-use omnyssh_core::config::snippets::SnippetScope;
+use easyssh_core::config::snippets::SnippetScope;
 
 // ---------------------------------------------------------------------------
 // Render

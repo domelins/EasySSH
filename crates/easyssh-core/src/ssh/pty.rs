@@ -148,7 +148,7 @@ async fn forward_locale(channel: &russh::Channel<russh::client::Msg>) {
 /// never a requirement for the terminal to work.
 const COLOR_ENV: &[(&str, &str)] = &[
     ("COLORTERM", "truecolor"),
-    ("TERM_PROGRAM", "OmnySSH"),
+    ("TERM_PROGRAM", "EasySSH"),
     ("CLICOLOR", "1"),
     ("CLICOLOR_FORCE", "1"),
     (

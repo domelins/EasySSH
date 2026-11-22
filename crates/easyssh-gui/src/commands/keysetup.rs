@@ -1,5 +1,5 @@
 //! Auto SSH key-setup command (tech-gui.md §4.2). `start_key_setup` mirrors the TUI's
-//! orchestration (crates/omnyssh `ConfirmKeySetup`): connect a password session, drive
+//! orchestration (crates/easyssh `ConfirmKeySetup`): connect a password session, drive
 //! `setup_key_for_host_detailed`, and report progress + the terminal outcome as
 //! `CoreEvent::KeySetup*` on the shared engine channel — the bridge maps those to
 //! `key-setup-*` IPC events (§3.4). Once the key works it writes it back onto the
@@ -12,13 +12,13 @@ use std::path::Path;
 use tauri::{AppHandle, Manager, State};
 use tokio::sync::mpsc;
 
-use omnyssh_core::config::{load_hosts, save_hosts};
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::key_setup::{
+use easyssh_core::config::{load_hosts, save_hosts};
+use easyssh_core::event::CoreEvent;
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::key_setup::{
     setup_key_for_host_detailed, KeySetupResult, KeySetupState, KeySetupStep, KeyType,
 };
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::ssh::session::SshSession;
 
 use crate::error::CommandError;
 use crate::state::GuiState;

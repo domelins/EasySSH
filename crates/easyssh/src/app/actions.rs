@@ -2,8 +2,8 @@
 //! shared state, spawns background tasks, and delegates to feature methods.
 
 use super::*;
-use omnyssh_core::config::snippets::SnippetScope;
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::config::snippets::SnippetScope;
+use easyssh_core::ssh::session::SshSession;
 
 impl App {
     /// Executes an [`AppAction`] that requires access to shared state or the
@@ -161,7 +161,7 @@ impl App {
                     let tx = self.core_tx.clone();
                     let host_clone = host.clone();
                     tokio::spawn(async move {
-                        use omnyssh_core::ssh::key_setup::{
+                        use easyssh_core::ssh::key_setup::{
                             setup_key_for_host, KeySetupStep, KeyType,
                         };
 
@@ -202,7 +202,7 @@ impl App {
                         .await
                         {
                             Ok(result) => {
-                                use omnyssh_core::ssh::key_setup::KeySetupState;
+                                use easyssh_core::ssh::key_setup::KeySetupState;
                                 match result.state {
                                     KeySetupState::Success => {
                                         let _ = tx
@@ -305,7 +305,7 @@ impl App {
                 // Decrypting runs the key's KDF, which can take a while: keep it
                 // off the render loop.
                 tokio::task::spawn_blocking(move || {
-                    let result = omnyssh_core::ssh::identity::unlock(&key_path, &passphrase)
+                    let result = easyssh_core::ssh::identity::unlock(&key_path, &passphrase)
                         .map_err(|e| e.to_string());
                     let _ = tx.blocking_send(AppEvent::PassphraseUnlocked { key_path, result });
                 });
@@ -326,7 +326,7 @@ impl App {
                     matches!(action, AppAction::SubmitPassword).then_some(prompt.field.value);
                 // The connection checks it with the server and asks again if
                 // it is refused.
-                if omnyssh_core::ssh::password::answer(prompt.request_id, password).is_err() {
+                if easyssh_core::ssh::password::answer(prompt.request_id, password).is_err() {
                     self.view.status_message = Some(format!(
                         "{} is no longer waiting for a password",
                         prompt.login

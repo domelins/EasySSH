@@ -18,9 +18,9 @@ use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc;
 use tokio::task::{JoinHandle, JoinSet};
 
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::tunnel::{LocalForward, TunnelManager, TunnelStatus};
+use easyssh_core::event::CoreEvent;
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::tunnel::{LocalForward, TunnelManager, TunnelStatus};
 
 const PASSWORD: &str = "tunnel-test";
 /// A password the server answers by dropping the connection mid-login.
@@ -592,7 +592,7 @@ async fn a_locked_key_waits_for_its_passphrase() {
     }
     assert!(statuses.rx.try_recv().is_err(), "the prompt is sent once");
 
-    omnyssh_core::ssh::identity::unlock(&key_path, "sesame").expect("unlock");
+    easyssh_core::ssh::identity::unlock(&key_path, "sesame").expect("unlock");
     // The server turns every key down and hangs up, so this dial is refused —
     // after one more connection for the saved password, which the hang-up cut off.
     statuses

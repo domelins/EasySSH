@@ -164,7 +164,7 @@ test('a full success says password login is off and the card shows the shield', 
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('密钥登录已设置，密码登录已关闭')).toBeVisible();
   await expect(dialog.getByText(/omnyssh_pw-host_ed25519/)).toBeVisible();
-  await expect(dialog.getByText('OmnySSH 中保存的密码已删除。')).toBeVisible();
+  await expect(dialog.getByText('EasySSH 中保存的密码已删除。')).toBeVisible();
   expect(await startCalls(page)).toBe(1);
 
   await dialog.getByRole('button', { name: '完成' }).click();
@@ -193,7 +193,7 @@ test('a partial run says password login is still on and offers to turn it off', 
   await badge.click();
   const rerun = page.getByRole('dialog', { name: '关闭密码登录' });
   await expect(rerun.getByText('关闭 pw-host 的密码登录？')).toBeVisible();
-  await expect(rerun.getByText(/复用 OmnySSH 之前生成的登录密钥/)).toBeVisible();
+  await expect(rerun.getByText(/复用 EasySSH 之前生成的登录密钥/)).toBeVisible();
   await expect(rerun.getByRole('button', { name: '取消' })).toBeFocused();
   await rerun.getByRole('button', { name: '关闭密码登录' }).click();
   await expect(page.getByRole('dialog', { name: '密钥设置' })).toBeVisible();

@@ -1,5 +1,5 @@
 {
-  description = "OmnySSH — TUI SSH dashboard & server manager";
+  description = "EasySSH — TUI SSH dashboard & server manager";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -21,7 +21,7 @@
         craneLib = crane.mkLib pkgs;
 
         workspaceToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
-        crateToml = builtins.fromTOML (builtins.readFile ./crates/omnyssh/Cargo.toml);
+        crateToml = builtins.fromTOML (builtins.readFile ./crates/easyssh/Cargo.toml);
 
         workspacePackage = workspaceToml.workspace.package;
         cratePackage = crateToml.package;
@@ -38,7 +38,7 @@
 
         cargoArtifacts = craneLib.buildDepsOnly commonArgs;
 
-        omnyssh = craneLib.buildPackage (
+        easyssh = craneLib.buildPackage (
           commonArgs
           // {
             inherit cargoArtifacts;
@@ -49,21 +49,21 @@
             nativeBuildInputs = commonArgs.nativeBuildInputs ++ [ pkgs.installShellFiles ];
 
             postInstall = ''
-              installManPage doc/omny.1
+              installManPage doc/easy.1
             '';
 
             meta = with pkgs.lib; {
               inherit (cratePackage) description;
               homepage = workspacePackage.repository;
               license = licenses.asl20;
-              mainProgram = "omny";
+              mainProgram = "easy";
             };
           }
         );
       in
       {
         checks = {
-          inherit omnyssh;
+          inherit easyssh;
           omnyssh-fmt = craneLib.cargoFmt { inherit pname version src; };
           omnyssh-clippy = craneLib.cargoClippy (
             commonArgs
@@ -82,14 +82,14 @@
         };
 
         packages = {
-          default = omnyssh;
-          inherit omnyssh;
+          default = easyssh;
+          inherit easyssh;
         };
 
         apps.default = {
           type = "app";
-          program = "${omnyssh}/bin/omny";
-          inherit (omnyssh) meta;
+          program = "${easyssh}/bin/easy";
+          inherit (easyssh) meta;
         };
 
         devShells.default = craneLib.devShell {

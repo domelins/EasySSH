@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn test_nginx_detect_from_process() {
-        let probe = "===OMNYSSH:PROCESS===\nroot 1234 nginx: master process\n";
+        let probe = "===EASYSSH:PROCESS===\nroot 1234 nginx: master process\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(NginxProvider.detect(&parsed));
     }

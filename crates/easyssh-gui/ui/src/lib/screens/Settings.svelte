@@ -226,7 +226,7 @@
         {/if}
         {@render traySwitch(
           isMac ? '关闭到菜单栏' : '关闭到托盘',
-          '关闭窗口后 OmnySSH 继续运行——终端、传输和隧道保持连接。可通过图标退出。',
+          '关闭窗口后 EasySSH 继续运行——终端、传输和隧道保持连接。可通过图标退出。',
           $trayBehavior.closeToTray && $traySupport.available,
           $traySupport.available,
           () => trayBehavior.update({ closeToTray: !$trayBehavior.closeToTray })
@@ -239,7 +239,7 @@
           <!-- Some desktops keep tray icons out of sight (GNOME without the AppIndicator
                extension, an overflow menu); a second launch always finds the window. -->
           <p class="text-xs text-muted">
-            找不到图标？再次打开 OmnySSH 即可恢复窗口。
+            找不到图标？再次打开 EasySSH 即可恢复窗口。
           </p>
         {/if}
         {@render traySwitch(

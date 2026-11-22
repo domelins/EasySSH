@@ -22,7 +22,7 @@ fn main() {
         let mut buf = Vec::new();
         man.render(&mut buf).expect("Failed to render man page");
 
-        fs::write(out_dir.join("omny.1"), buf).expect("Failed to write man page");
+        fs::write(out_dir.join("easy.1"), buf).expect("Failed to write man page");
     }
 
     println!("cargo:rerun-if-changed=src/cli.rs");

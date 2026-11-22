@@ -14,7 +14,7 @@ use crate::app::{
     UPDATE_BUTTONS,
 };
 use crate::ui::theme::Theme;
-use omnyssh_core::ssh::client::Host;
+use easyssh_core::ssh::client::Host;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1071,7 +1071,7 @@ pub fn render_passphrase_prompt(frame: &mut Frame, prompt: &PassphrasePrompt, th
         SecretPrompt {
             title: format!(" Unlock SSH key — {} ", prompt.host_name),
             detail: &prompt.key_path,
-            label: "  Passphrase (kept in memory until OmnySSH exits):",
+            label: "  Passphrase (kept in memory until EasySSH exits):",
             input,
             error: prompt.error.clone(),
             action: ":unlock  ",
@@ -1087,7 +1087,7 @@ pub fn render_password_prompt(frame: &mut Frame, prompt: &PasswordPrompt, theme:
         SecretPrompt {
             title: format!(" SSH login — {} ", prompt.host_name),
             detail: &prompt.login,
-            label: "  Password (kept in memory until OmnySSH exits):",
+            label: "  Password (kept in memory until EasySSH exits):",
             input: masked(&prompt.field),
             error: prompt
                 .retry
@@ -1447,7 +1447,7 @@ fn render_single_result(
 /// and offers y/Enter to confirm or n/Esc to cancel.
 pub fn render_key_setup_confirm(
     frame: &mut Frame,
-    host: Option<&omnyssh_core::ssh::client::Host>,
+    host: Option<&easyssh_core::ssh::client::Host>,
     theme: &Theme,
 ) {
     let area = centred_rect(55, 40, frame.area());
@@ -1561,10 +1561,10 @@ pub fn render_key_setup_confirm(
 pub fn render_key_setup_progress(
     frame: &mut Frame,
     host_name: &str,
-    current_step: Option<&omnyssh_core::ssh::key_setup::KeySetupStep>,
+    current_step: Option<&easyssh_core::ssh::key_setup::KeySetupStep>,
     theme: &Theme,
 ) {
-    use omnyssh_core::ssh::key_setup::KeySetupStep;
+    use easyssh_core::ssh::key_setup::KeySetupStep;
 
     let area = centred_rect(55, 55, frame.area());
     frame.render_widget(Clear, area);

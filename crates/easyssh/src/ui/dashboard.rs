@@ -490,7 +490,7 @@ pub fn handle_tag_popup_input(key: KeyEvent, view: &mut ViewState) -> Option<App
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omnyssh_core::ssh::client::Host;
+    use easyssh_core::ssh::client::Host;
     use std::collections::HashMap;
 
     /// Draws the grouped grid into a `width`x`height` area and returns its text.

@@ -38,14 +38,14 @@ mod tests {
 
     #[test]
     fn test_nodejs_detect_from_process() {
-        let probe = "===OMNYSSH:PROCESS===\nuser 1234 /usr/bin/node server.js\n";
+        let probe = "===EASYSSH:PROCESS===\nuser 1234 /usr/bin/node server.js\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(NodeJSProvider.detect(&parsed));
     }
 
     #[test]
     fn test_nodejs_not_detected() {
-        let probe = "===OMNYSSH:SERVICES===\nsshd.service\n";
+        let probe = "===EASYSSH:SERVICES===\nsshd.service\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(!NodeJSProvider.detect(&parsed));
     }

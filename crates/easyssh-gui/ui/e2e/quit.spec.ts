@@ -95,7 +95,7 @@ async function openTerminal(page: Page): Promise<void> {
   await expect(page.locator('.xterm-rows')).toContainText('ready>');
 }
 
-const dialog = (page: Page) => page.getByRole('dialog', { name: '退出 OmnySSH？' });
+const dialog = (page: Page) => page.getByRole('dialog', { name: '退出 EasySSH？' });
 
 test('closing with a live terminal and tunnel asks first, and Cancel keeps the app', async ({ page }) => {
   await boot(page, { tunnel: true });

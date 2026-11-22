@@ -5,7 +5,7 @@
   // arrives on a per-session channel (§3.3/§3.6); keystrokes/resizes go back over the
   // terminal commands. Subscribes to the theme store and re-themes live (§5.1).
   import '@xterm/xterm/css/xterm.css';
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, tick } from 'svelte';
   import { get } from 'svelte/store';
   import type { Terminal } from '@xterm/xterm';
   import type { FitAddon } from '@xterm/addon-fit';
@@ -29,8 +29,9 @@
     terminalPaste
   } from '$lib/ipc/commands';
   import { shouldFadeTop } from './terminalFade';
-  import { chunkBytes, closesEndedTab, isCopyShortcut, layoutFallback } from './terminalInput';
-  import { isMac } from '$lib/platform';
+  import { chunkBytes, closesEndedTab, isCopyShortcut, isPasteShortcut, layoutFallback } from './terminalInput';
+  import { Icon } from '$lib/theme';
+  import { isMac, isLinux } from '$lib/platform';
   import type { TerminalBytes } from '$lib/bindings';
 
   let { session, active }: { session: Session; active: boolean } = $props();
@@ -94,6 +95,70 @@
   let destroyed = false;
   let connected = false;
   let ready = $state(false);
+  let menu = $state<{ x: number; y: number; hasSelection: boolean; ended: boolean } | null>(null);
+  let menuPanel = $state<HTMLDivElement>();
+
+  function closeMenu(): void {
+    menu = null;
+    if (active && keyboardFree()) term?.focus();
+  }
+
+  async function openMenu(event: MouseEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!term || !keyboardFree()) return;
+    menu = {
+      x: Math.max(0, Math.min(event.clientX, window.innerWidth - 160)),
+      y: Math.max(0, Math.min(event.clientY, window.innerHeight - 76)),
+      hasSelection: term.hasSelection(),
+      ended: ended()
+    };
+    await tick();
+    const item = menuPanel?.querySelector<HTMLButtonElement>('button:not(:disabled)');
+    if (item) item.focus();
+    else if (active && keyboardFree()) term?.focus();
+  }
+
+  async function copySelection(): Promise<void> {
+    try {
+      if (term?.hasSelection()) await navigator.clipboard.writeText(term.getSelection());
+    } catch (err) {
+      lastError.set(`复制失败：${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  async function pasteClipboard(): Promise<void> {
+    const terminal = term;
+    if (!terminal || destroyed || ended() || !keyboardFree()) return;
+    try {
+      if (isLinux) {
+        await terminalPaste();
+      } else {
+        const text = await navigator.clipboard.readText();
+        if (!destroyed && !ended() && keyboardFree()) terminal.paste(text);
+      }
+    } catch (err) {
+      lastError.set(`粘贴失败：${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  $effect(() => {
+    if (!menu) return;
+    const onKeydown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && !event.isComposing && event.keyCode !== 229) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeMenu();
+      }
+    };
+    window.addEventListener('keydown', onKeydown, true);
+    return () => window.removeEventListener('keydown', onKeydown, true);
+  });
+
+  $effect(() => {
+    if (!active) menu = null;
+  });
+
   let themeUnsub: (() => void) | undefined;
   let fontUnsub: (() => void) | undefined;
   let resizeObserver: ResizeObserver | undefined;
@@ -195,20 +260,14 @@
       }
       if (exited) sessions.setStatus(session.id, 'closed');
 
-      // Copy takes Ctrl+Shift+C whether or not anything is selected, so the chord never
-      // reaches the shell. Returning false only keeps xterm out of it; the default is
-      // ours to stop. The write happens inside the keydown, which WebKit requires.
+      // Clipboard writes start inside keydown, which WebKit requires.
       term.attachCustomKeyEventHandler((e) => {
         // The streamer chord belongs to the window (AppShell), never to the shell, where
         // a ^S would stop its output.
         if (isStreamerChord(e)) return false;
-        if (isCopyShortcut(e, isMac)) {
+        if (isCopyShortcut(e, isMac, term?.hasSelection() ?? false)) {
           e.preventDefault();
-          if (term?.hasSelection()) {
-            navigator.clipboard.writeText(term.getSelection()).catch((err) => {
-              lastError.set(`复制失败：${err instanceof Error ? err.message : String(err)}`);
-            });
-          }
+          void copySelection();
           return false;
         }
         // An ended session takes no input: Enter or Esc closes the tab, and xterm gets
@@ -222,6 +281,11 @@
             // would hand the Enter that closes the tab to a button.
             e.preventDefault();
           }
+          return false;
+        }
+        if (isPasteShortcut(e, isMac)) {
+          e.preventDefault();
+          void pasteClipboard();
           return false;
         }
         // Under a non-Latin layout WebKitGTK names no key; the physical one stands in.
@@ -294,9 +358,56 @@
        into makes FitAddon over-size, sliding the last row under the status bar. The top
        inset clears the macOS traffic-light strip; the bottom gap clears the footer. -->
   <div class="h-full w-full" style="padding: max(var(--titlebar-h), 0.75rem) 0.5rem 1rem;">
-    <div bind:this={container} class="h-full w-full" class:term-fade={scrolled}></div>
+    <div bind:this={container} class="h-full w-full" class:term-fade={scrolled} role="presentation" oncontextmenu={openMenu}></div>
   </div>
 </div>
+
+{#if menu}
+  <div
+    class="fixed inset-0 z-40"
+    role="presentation"
+    onclick={closeMenu}
+    oncontextmenu={(event) => {
+      event.preventDefault();
+      closeMenu();
+    }}
+  ></div>
+  <div
+    bind:this={menuPanel}
+    class="fixed z-50 w-40 rounded-lg border border-default bg-surface-raised py-1 shadow-soft"
+    style:left="{menu.x}px"
+    style:top="{menu.y}px"
+    role="menu"
+    aria-label="终端操作"
+  >
+    <button
+      type="button"
+      role="menuitem"
+      title="复制"
+      aria-label="复制"
+      disabled={!menu.hasSelection}
+      class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-muted transition hover:bg-surface-inset hover:text-fg disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+      onclick={() => {
+        void copySelection();
+        closeMenu();
+      }}
+    ><Icon name="copy" size={13} /> 复制</button>
+    <button
+      type="button"
+      role="menuitem"
+      title="粘贴"
+      aria-label="粘贴"
+      disabled={menu.ended}
+      class="flex w-full items-center px-3 py-1.5 text-left text-xs text-muted transition hover:bg-surface-inset hover:text-fg disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
+      onclick={async () => {
+        closeMenu();
+        // Native paste targets the focused editor, so restore xterm before invoking it.
+        await tick();
+        await pasteClipboard();
+      }}
+    >粘贴</button>
+  </div>
+{/if}
 
 <style>
   /* Scrolled output dissolves into the top edge instead of hard-clipping (on only while

@@ -1,5 +1,5 @@
 [package]
-name = "omnyssh"
+name = "easyssh"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,15 +10,15 @@ keywords = ["ssh", "tui", "terminal", "devops"]
 categories = ["command-line-utilities"]
 
 [lib]
-name = "omnyssh"
+name = "easyssh"
 path = "src/lib.rs"
 
 [[bin]]
-name = "omny"
+name = "easy"
 path = "src/main.rs"
 
 [dependencies]
-omnyssh-core = { path = "../omnyssh-core", version = "1.1.6" }
+easyssh-core = { path = "../easyssh-core", version = "1.1.6" }
 
 # TUI
 ratatui = "0.29"

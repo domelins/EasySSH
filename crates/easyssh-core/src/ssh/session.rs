@@ -56,7 +56,7 @@ pub(crate) struct KnownHostsHandler {
     /// OpenSSH does after too many failed logins. A link that just dies leaves
     /// it unset.
     hung_up: Arc<AtomicBool>,
-    /// Set when the server leaves no login method OmnySSH has: russh's
+    /// Set when the server leaves no login method EasySSH has: russh's
     /// NoAuthMethod on disconnect, or a refused key that names only others.
     no_method: Arc<AtomicBool>,
     /// What the server's version string says about RSA key signatures.
@@ -1107,14 +1107,14 @@ where
     let no_method = |first: &Dialed| first.link.no_method.load(Ordering::SeqCst);
     if no_method(&first) || (first.closed().await && no_method(&first)) {
         return Err(Refused(format!(
-            "SSH authentication failed for {}: the server offers no login method OmnySSH supports",
+            "SSH authentication failed for {}: the server offers no login method EasySSH supports",
             host.name
         ))
         .into());
     }
 
     // The server login password, never a key passphrase, and tried last: keys
-    // are what OmnySSH steers users towards. One typed this session goes first,
+    // are what EasySSH steers users towards. One typed this session goes first,
     // as it is newer than a saved one — but never to a host key first seen on
     // this connection: that is not the server it was typed for.
     let new_key = first.link.new_key();
@@ -1365,7 +1365,7 @@ where
             (_, Kbd::WantsCode) => {
                 return Offer::Unavailable(
                     Refused(format!(
-                        "SSH login to {} asks for a verification code, which OmnySSH cannot answer",
+                        "SSH login to {} asks for a verification code, which EasySSH cannot answer",
                         host.name
                     ))
                     .into(),
@@ -1695,7 +1695,7 @@ async fn try_key_auth(
     Ok(result.success())
 }
 
-/// Notes a login the server turned down while naming only methods OmnySSH does
+/// Notes a login the server turned down while naming only methods EasySSH does
 /// not have (such as gssapi-with-mic): no password or key can get in then.
 fn note_methods(result: &client::AuthResult, no_method: &AtomicBool) {
     use russh::MethodKind::{KeyboardInteractive, Password, PublicKey};
@@ -1808,7 +1808,7 @@ async fn try_agent_auth(
     })
     .await
     .map_err(|_| anyhow!("SSH agent did not answer"))??;
-    // Plain keys only: OmnySSH does not log in with certificates.
+    // Plain keys only: EasySSH does not log in with certificates.
     let listed = listed
         .into_iter()
         .filter_map(|identity| match identity {

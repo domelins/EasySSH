@@ -71,6 +71,8 @@
   // A tree, not a pane: every directory remembers its own listing, the root is what
   // the breadcrumb shows, and expanding a folder loads it in place.
   let root = $state('/');
+  let copiedPath = $state<string | null>(null);
+  let copyTimer: ReturnType<typeof setTimeout> | undefined;
   let expanded = $state<Set<string>>(new Set());
 
   /** The loaded listing of one directory, if it has arrived. */
@@ -184,6 +186,7 @@
 
   onDestroy(() => {
     destroyed = true;
+    clearTimeout(copyTimer);
     if (backendId != null) {
       void sftpClose(backendId).catch(() => {});
       treeClear(backendId);
@@ -545,13 +548,23 @@
     }
   }
 
-  async function copyText(value: string): Promise<void> {
+  async function copyText(value: string): Promise<boolean> {
     menu = null;
     try {
       await navigator.clipboard.writeText(value);
+      return true;
     } catch (error) {
       lastError.set(errMsg(error));
+      return false;
     }
+  }
+
+  async function copyRoot(): Promise<void> {
+    const path = root;
+    if (!(await copyText(path)) || destroyed) return;
+    copiedPath = path;
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => (copiedPath = null), 1200);
   }
 
   // One menu everywhere: right-clicking an entry adds the entry-only actions to the
@@ -682,6 +695,15 @@
           {crumb.name}
         </button>
       {/each}
+      <button
+        type="button"
+        class="{button(copiedPath === root)} ml-auto"
+        title="复制路径"
+        aria-label="复制路径"
+        onclick={copyRoot}
+      >
+        <Icon name={copiedPath === root ? 'check' : 'copy'} size={13} />
+      </button>
     </nav>
   </header>
 

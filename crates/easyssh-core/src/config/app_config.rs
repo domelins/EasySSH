@@ -66,7 +66,7 @@ impl UiConfig {
     ///
     /// # Examples
     /// ```
-    /// # use omnyssh_core::config::app_config::UiConfig;
+    /// # use easyssh_core::config::app_config::UiConfig;
     /// assert!(UiConfig::is_valid_theme("dracula"));
     /// assert!(!UiConfig::is_valid_theme("unknown"));
     /// ```

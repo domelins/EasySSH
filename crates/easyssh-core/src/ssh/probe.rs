@@ -2,7 +2,7 @@
 //!
 //! The Quick Scan probe is a single bash script that collects maximum
 //! information in one SSH invocation. Output is delimited by
-//! section markers (`===OMNYSSH:SECTION===`) for easy parsing.
+//! section markers (`===EASYSSH:SECTION===`) for easy parsing.
 
 use std::collections::HashMap;
 
@@ -13,15 +13,15 @@ use std::collections::HashMap;
 /// redirection to /dev/null for graceful failure.
 pub fn generate_quick_scan_script() -> &'static str {
     r#"cat << 'OMNYSSH_PROBE_EOF' | bash
-echo "===OMNYSSH:OS==="
+echo "===EASYSSH:OS==="
 cat /etc/os-release 2>/dev/null | head -5
-echo "===OMNYSSH:SERVICES==="
+echo "===EASYSSH:SERVICES==="
 systemctl list-units --type=service --state=running --no-pager --no-legend 2>/dev/null | awk '{print $1}' | head -50
-echo "===OMNYSSH:DOCKER==="
+echo "===EASYSSH:DOCKER==="
 docker ps --format '{{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Image}}' 2>/dev/null | head -30
-echo "===OMNYSSH:LISTEN==="
+echo "===EASYSSH:LISTEN==="
 ss -tlnp 2>/dev/null | tail -n +2 | head -30
-echo "===OMNYSSH:PROCESS==="
+echo "===EASYSSH:PROCESS==="
 ps aux --sort=-%mem 2>/dev/null | head -15
 OMNYSSH_PROBE_EOF
 "#
@@ -36,7 +36,7 @@ pub struct ProbeOutput {
 impl ProbeOutput {
     /// Parse the probe script output into sections.
     ///
-    /// Each section is delimited by `===OMNYSSH:NAME===` markers.
+    /// Each section is delimited by `===EASYSSH:NAME===` markers.
     /// Returns `Ok` even for empty or malformed input (graceful degradation).
     ///
     /// # Errors
@@ -50,7 +50,7 @@ impl ProbeOutput {
             let trimmed = line.trim();
 
             // Check if this is a section marker
-            if trimmed.starts_with("===OMNYSSH:") && trimmed.ends_with("===") {
+            if trimmed.starts_with("===EASYSSH:") && trimmed.ends_with("===") {
                 // Save previous section if it exists
                 if let Some(section_name) = current_section.take() {
                     sections.insert(section_name, current_content.trim().to_string());
@@ -59,7 +59,7 @@ impl ProbeOutput {
 
                 // Extract new section name (remove markers)
                 let section_name = trimmed
-                    .strip_prefix("===OMNYSSH:")
+                    .strip_prefix("===EASYSSH:")
                     .and_then(|s| s.strip_suffix("==="))
                     .unwrap_or("")
                     .to_string();
@@ -169,7 +169,7 @@ mod tests {
 
     #[test]
     fn test_parse_probe_single_section() {
-        let output = "===OMNYSSH:OS===\nUbuntu 22.04 LTS\n===OMNYSSH:SERVICES===\nsshd.service\n";
+        let output = "===EASYSSH:OS===\nUbuntu 22.04 LTS\n===EASYSSH:SERVICES===\nsshd.service\n";
         let result = ProbeOutput::parse(output).expect("should parse");
         assert!(result.has_section("OS"));
         assert!(result.has_section("SERVICES"));
@@ -179,13 +179,13 @@ mod tests {
 
     #[test]
     fn test_parse_probe_multiple_sections() {
-        let output = r#"===OMNYSSH:OS===
+        let output = r#"===EASYSSH:OS===
 NAME="Ubuntu"
 VERSION="22.04 LTS"
-===OMNYSSH:DOCKER===
+===EASYSSH:DOCKER===
 abc123	nginx-proxy	Up 2 hours	nginx:latest
 def456	db-master	Up 5 days	postgres:15
-===OMNYSSH:LISTEN===
+===EASYSSH:LISTEN===
 0.0.0.0:22	LISTEN
 0.0.0.0:80	LISTEN
 "#;
@@ -203,7 +203,7 @@ def456	db-master	Up 5 days	postgres:15
 
     #[test]
     fn test_parse_probe_with_empty_sections() {
-        let output = "===OMNYSSH:OS===\nUbuntu\n===OMNYSSH:DOCKER===\n===OMNYSSH:SERVICES===\nsshd.service\n";
+        let output = "===EASYSSH:OS===\nUbuntu\n===EASYSSH:DOCKER===\n===EASYSSH:SERVICES===\nsshd.service\n";
         let result = ProbeOutput::parse(output).expect("should parse");
         assert!(result.has_section("OS"));
         assert!(!result.has_section("DOCKER")); // Empty section = false
@@ -213,11 +213,11 @@ def456	db-master	Up 5 days	postgres:15
     #[test]
     fn test_generate_quick_scan_script() {
         let script = generate_quick_scan_script();
-        assert!(script.contains("===OMNYSSH:OS==="));
-        assert!(script.contains("===OMNYSSH:SERVICES==="));
-        assert!(script.contains("===OMNYSSH:DOCKER==="));
-        assert!(script.contains("===OMNYSSH:LISTEN==="));
-        assert!(script.contains("===OMNYSSH:PROCESS==="));
+        assert!(script.contains("===EASYSSH:OS==="));
+        assert!(script.contains("===EASYSSH:SERVICES==="));
+        assert!(script.contains("===EASYSSH:DOCKER==="));
+        assert!(script.contains("===EASYSSH:LISTEN==="));
+        assert!(script.contains("===EASYSSH:PROCESS==="));
         assert!(script.contains("/etc/os-release"));
         assert!(script.contains("systemctl list-units"));
         assert!(script.contains("docker ps"));

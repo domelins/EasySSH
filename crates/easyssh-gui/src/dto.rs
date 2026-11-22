@@ -4,19 +4,19 @@
 
 use serde::{Deserialize, Serialize};
 
-use omnyssh_core::config::app_config::UpdateConfig;
-use omnyssh_core::config::snippets::{Snippet, SnippetScope};
-use omnyssh_core::event::{
+use easyssh_core::config::app_config::UpdateConfig;
+use easyssh_core::config::snippets::{Snippet, SnippetScope};
+use easyssh_core::event::{
     DetectedService, DiskUsage, MemoryInfo, MetricValue, Metrics, NetworkInfo, ProcessEntry,
     ProcessInfo, ServiceKind, ServiceMetric,
 };
-use omnyssh_core::ssh::client::{ConnectionStatus, Host, HostSource, MonitorMode};
-use omnyssh_core::ssh::key_setup::KeySetupStep;
-use omnyssh_core::ssh::sftp::FileEntry;
-use omnyssh_core::ssh::tunnel::{LocalForward, TunnelStatus};
-use omnyssh_core::update::UpdateInfo;
+use easyssh_core::ssh::client::{ConnectionStatus, Host, HostSource, MonitorMode};
+use easyssh_core::ssh::key_setup::KeySetupStep;
+use easyssh_core::ssh::sftp::FileEntry;
+use easyssh_core::ssh::tunnel::{LocalForward, TunnelStatus};
+use easyssh_core::update::UpdateInfo;
 
-/// Host origin, mirrors `omnyssh_core::ssh::client::HostSource`.
+/// Host origin, mirrors `easyssh_core::ssh::client::HostSource`.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub enum HostSourceDto {
@@ -24,7 +24,7 @@ pub enum HostSourceDto {
     Manual,
 }
 
-/// How a host is watched, mirrors `omnyssh_core::ssh::client::MonitorMode`
+/// How a host is watched, mirrors `easyssh_core::ssh::client::MonitorMode`
 /// (tech-gui.md §4.1). `tcpPort` means reachability only — no login, no metrics.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
@@ -247,7 +247,7 @@ pub struct DiskUsageDto {
     pub write_bytes_per_sec: Option<f64>,
 }
 
-/// A service kind detected on a host, mirrors `omnyssh_core::event::ServiceKind`.
+/// A service kind detected on a host, mirrors `easyssh_core::event::ServiceKind`.
 /// Wire names are lowercase (`docker`, `nginx`, `postgresql`, `redis`, `nodejs`);
 /// if the core adds a kind, extend this enum so it is never silently dropped
 /// (tech-gui.md §4.1).
@@ -278,7 +278,7 @@ pub struct ServiceDto {
     pub metrics: Vec<ServiceMetricDto>,
 }
 
-/// Snippet scope, mirrors `omnyssh_core::config::snippets::SnippetScope`. Wire
+/// Snippet scope, mirrors `easyssh_core::config::snippets::SnippetScope`. Wire
 /// names are lowercase (`global`, `host`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
@@ -1134,7 +1134,7 @@ mod tests {
 
     #[test]
     fn update_info_dto_maps_from_core_and_omits_notes() {
-        use omnyssh_core::update::InstallMethod;
+        use easyssh_core::update::InstallMethod;
         let info = UpdateInfo {
             current: "1.0.0".to_string(),
             latest: "1.2.0".to_string(),

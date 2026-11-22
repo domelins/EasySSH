@@ -4,7 +4,7 @@ use crossterm::event::{self, Event, KeyEvent, KeyEventKind, MouseEventKind};
 use std::time::Duration;
 use tokio::sync::mpsc;
 
-use omnyssh_core::event::CoreEvent;
+use easyssh_core::event::CoreEvent;
 
 /// Central event type consumed by the main loop. Input events are produced by
 /// the crossterm event thread; everything domain-side arrives wrapped in

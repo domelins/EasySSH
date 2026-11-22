@@ -8,20 +8,23 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Mutex, RwLock};
 use std::time::Duration;
 
-use omnyssh_core::event::{CoreEvent, SessionId, TransferId};
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::pool::PollManager;
-use omnyssh_core::ssh::pty::PtyManager;
-use omnyssh_core::ssh::sftp::{SftpCommand, SftpManager};
-use omnyssh_core::ssh::tunnel::TunnelManager;
+use easyssh_core::event::{CoreEvent, SessionId, TransferId};
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::pool::PollManager;
+use easyssh_core::ssh::pty::PtyManager;
+use easyssh_core::ssh::sftp::{SftpCommand, SftpManager};
+use easyssh_core::ssh::tunnel::TunnelManager;
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
 use crate::dto::{HostDto, TerminalBytes, TunnelStatusDto};
 
-/// Metric poll cadence. Mirrors the TUI's fixed interval; a configurable refresh
-/// interval lands with settings in Stage 4.3 (tech-gui.md §4.3).
-const POLL_INTERVAL: Duration = Duration::from_secs(30);
+/// Backend baseline poll cadence: the poller keeps sampling on its own at this
+/// rhythm. The frontend sends no interval value — it additionally drives
+/// `refresh_metrics` on the cadence the user picked in settings (2 s or 5 s,
+/// default 5 s), which adds immediate polls on top of this baseline
+/// (tech-gui.md §4.3).
+const POLL_INTERVAL: Duration = Duration::from_secs(5);
 
 /// Maps frontend-facing **public** session ids to the core's **inner** handles, and
 /// back for terminals (the bridge labels `terminal-exited` by inner PTY id, §3.4).

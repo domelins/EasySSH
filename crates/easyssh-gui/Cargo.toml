@@ -1,18 +1,18 @@
 [package]
-name = "omnyssh-gui"
+name = "easyssh-gui"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "OmnySSH Desktop — native GUI for the OmnySSH engine"
+description = "EasySSH Desktop — native GUI for the EasySSH engine"
 publish = false
 
-# Named "OmnySSH" (not lowercased) so `cargo tauri dev` — which runs this cargo binary
-# directly, not a bundle — shows "OmnySSH" as the app name (e.g. the macOS menu bar),
-# matching productName. Still distinct from the `omny` TUI binary.
+# Named "EasySSH" (not lowercased) so `cargo tauri dev` — which runs this cargo binary
+# directly, not a bundle — shows "EasySSH" as the app name (e.g. the macOS menu bar),
+# matching productName. Still distinct from the `easy` TUI binary.
 [[bin]]
-name = "OmnySSH"
+name = "EasySSH"
 path = "src/main.rs"
 
 [features]
@@ -32,7 +32,7 @@ tauri-build = { version = "2", features = [] }
 # stream channel (§3.3/§3.6) exports through tauri-specta like any other DTO.
 # `tray-icon` also makes the bundler depend on libayatana-appindicator3 on Linux.
 tauri = { version = "2", features = ["specta", "tray-icon"] }
-omnyssh-core = { path = "../omnyssh-core" }
+easyssh-core = { path = "../easyssh-core" }
 serde = { workspace = true }
 tokio = { workspace = true }
 # Timestamps the key-setup completion write onto the host, matching the TUI's

@@ -1,9 +1,17 @@
 # Changelog
 
-All notable changes to OmnySSH are documented in this file.
+All notable changes to EasySSH (formerly OmnySSH) are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
+
+---
+
+## Unreleased
+
+### Changes
+- **OmnySSH is now EasySSH.** The crates are `easyssh-core`, `easyssh` and `easyssh-gui`; the terminal app is `easy` (man page `easy.1`); the desktop app and its installers are `EasySSH` (Windows installer `EasySSH_1.1.6_x64-setup.exe`), and the Linux packages register as `easy-ssh`. Release archives are named `easy-<target>` and `EasySSH-<target>`.
+- **Existing settings keep loading.** Only the product and installer name change. The config directory stays `omnyssh` (e.g. `~/.config/omnyssh`), the portable directory stays `omnyssh-data/`, environment variables keep the `OMNYSSH_` prefix (e.g. `OMNYSSH_CONFIG_DIR`), the desktop app identifier stays `com.timhartmann.omnyssh`, and stored preferences, generated key names and export file names are unchanged — so an existing installation's hosts, snippets and settings are picked up without migration.
 
 ---
 

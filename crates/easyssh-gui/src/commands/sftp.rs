@@ -6,10 +6,10 @@
 use tauri::{AppHandle, State};
 use tokio::sync::mpsc;
 
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::ssh::identity;
-use omnyssh_core::ssh::password::Prompter;
-use omnyssh_core::ssh::sftp::{SftpCommand, SftpManager};
+use easyssh_core::event::CoreEvent;
+use easyssh_core::ssh::identity;
+use easyssh_core::ssh::password::Prompter;
+use easyssh_core::ssh::sftp::{SftpCommand, SftpManager};
 
 use crate::bridge;
 use crate::error::CommandError;
@@ -41,7 +41,7 @@ pub async fn sftp_open(
     let manager = match SftpManager::connect(&host, tx, prompter).await {
         Ok(manager) => manager,
         Err(e) => {
-            if let Some(path) = omnyssh_core::ssh::session::passphrase_required(&e) {
+            if let Some(path) = easyssh_core::ssh::session::passphrase_required(&e) {
                 identity::ask_passphrase(&state.engine_sender(), &host_name, path).await;
             }
             // The whole chain: the core wraps the cause in "SFTP SSH connect".
@@ -226,7 +226,7 @@ pub async fn compress_remote(
         shell_word(&dir),
         shell_word(&name)
     );
-    let session = omnyssh_core::ssh::session::SshSession::connect(&host)
+    let session = easyssh_core::ssh::session::SshSession::connect(&host)
         .await
         .map_err(|e| CommandError {
             message: format!("连接主机失败：{e:#}"),
@@ -312,7 +312,7 @@ pub async fn remote_archive(
     let host = state.host_by_name(&host_name).ok_or_else(|| CommandError {
         message: format!("找不到主机 {host_name}"),
     })?;
-    let session = omnyssh_core::ssh::session::SshSession::connect(&host)
+    let session = easyssh_core::ssh::session::SshSession::connect(&host)
         .await
         .map_err(|e| CommandError {
             message: format!("连接主机失败：{e:#}"),

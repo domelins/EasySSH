@@ -100,7 +100,7 @@
         />
       </label>
       <p class="text-xs text-faint">
-        仅保存在内存中，退出 OmnySSH 后清除，绝不写入磁盘。
+        仅保存在内存中，退出 EasySSH 后清除，绝不写入磁盘。
         因此密钥而中断的终端或文件会话需要重新打开。
       </p>
       {#if error}

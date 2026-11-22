@@ -22,7 +22,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::app::{
     AppAction, FileManagerPopup, FileManagerView, FilePanelView, FmPanel, FormField, ViewState,
 };
-use omnyssh_core::ssh::client::Host;
+use easyssh_core::ssh::client::Host;
 
 // ---------------------------------------------------------------------------
 // Public entry points
@@ -1127,7 +1127,7 @@ fn sanitize_preview_content(content: &str, max_width: usize, max_lines: usize) -
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omnyssh_core::ssh::sftp::FileEntry;
+    use easyssh_core::ssh::sftp::FileEntry;
 
     #[test]
     fn format_mtime_is_fixed_width_or_blank() {

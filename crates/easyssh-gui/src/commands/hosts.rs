@@ -4,10 +4,11 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
-use omnyssh_core::config::{
-    hosts_to_export_toml, load_all_hosts, load_hosts, parse_hosts_toml, save_hosts, ssh_config,
+use easyssh_core::config::{
+    hosts_to_config_toml, hosts_to_credentials_toml, hosts_to_export_toml, load_all_hosts,
+    load_hosts, parse_credentials_toml, parse_hosts_toml, save_hosts, ssh_config, HostCredential,
 };
-use omnyssh_core::ssh::client::{Host, HostSource};
+use easyssh_core::ssh::client::{Host, HostSource};
 
 use crate::dto::{check_forwards, HostDto, HostInputDto};
 use crate::error::CommandError;
@@ -47,9 +48,15 @@ pub async fn reload_hosts(app: AppHandle, state: State<'_, GuiState>) -> Result<
             state.engine_sender(),
         ));
     }
-    // Parsing hosts.toml + ~/.ssh/config is blocking I/O — keep it off the async
-    // worker so in-flight commands and the event bridge don't stall.
-    let hosts = tauri::async_runtime::spawn_blocking(omnyssh_core::config::load_all_hosts)
+    refresh_hosts(&app, &state).await
+}
+
+/// Reload the merged host list from disk and bring the cache, pollers, tunnels, and
+/// frontend list in line — the shared tail of `reload_hosts` and the batch delete.
+/// Parsing hosts.toml + ~/.ssh/config is blocking I/O — keep it off the async worker
+/// so in-flight commands and the event bridge don't stall.
+async fn refresh_hosts(app: &AppHandle, state: &State<'_, GuiState>) -> Result<(), CommandError> {
+    let hosts = tauri::async_runtime::spawn_blocking(easyssh_core::config::load_all_hosts)
         .await
         .map_err(|e| CommandError {
             message: format!("主机加载任务失败：{e}"),
@@ -61,13 +68,13 @@ pub async fn reload_hosts(app: AppHandle, state: State<'_, GuiState>) -> Result<
     state.restart_pollers();
     state.sync_tunnels();
     state.autostart_tunnels();
-    let _ = events::HostsLoaded(state.host_dtos()).emit(&app);
+    let _ = events::HostsLoaded(state.host_dtos()).emit(app);
     state.replay_tunnel_statuses(|host_name, status| {
         let _ = events::TunnelStatusChanged {
             host_name: host_name.to_string(),
             status: status.clone(),
         }
-        .emit(&app);
+        .emit(app);
     });
     Ok(())
 }
@@ -96,11 +103,63 @@ pub async fn save_host(
 
 /// Delete a manual host by name and persist (tech-gui.md §4.2, Stage 4.1). Only manual
 /// entries live in `hosts.toml`, so an SSH-config name — or a missing one — is a no-op
-/// success: the desired end state (absent) already holds.
+/// success: the desired end state (absent) already holds. Shares the batch-delete path.
 #[tauri::command]
 #[specta::specta]
-pub async fn delete_host(name: String) -> Result<(), CommandError> {
-    persist(move |hosts| remove(hosts, &name)).await
+pub async fn delete_host(
+    name: String,
+    app: AppHandle,
+    state: State<'_, GuiState>,
+) -> Result<(), CommandError> {
+    delete_hosts_inner(&app, &state, vec![name])
+        .await
+        .map(|_| ())
+}
+
+/// Delete several manual hosts in one pass: one config read, one disk write, one
+/// `reload_hosts`-level refresh. Unknown names are ignored; returns how many were
+/// actually removed (tech-gui.md §4.2).
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_hosts(
+    names: Vec<String>,
+    app: AppHandle,
+    state: State<'_, GuiState>,
+) -> Result<u32, CommandError> {
+    delete_hosts_inner(&app, &state, names).await
+}
+
+/// The shared batch delete: drop every manual host named in `names`, persist once when
+/// anything changed, then refresh the cache/pollers/tunnels like `reload_hosts`.
+async fn delete_hosts_inner(
+    app: &AppHandle,
+    state: &State<'_, GuiState>,
+    names: Vec<String>,
+) -> Result<u32, CommandError> {
+    let deleted = tauri::async_runtime::spawn_blocking(move || {
+        let mut hosts = load_hosts().map_err(|e| CommandError {
+            message: format!("{e:#}"),
+        })?;
+        let before = hosts.len();
+        for name in &names {
+            remove(&mut hosts, name);
+        }
+        let deleted = (before - hosts.len()) as u32;
+        if deleted > 0 {
+            save_hosts(&hosts).map_err(|e| CommandError {
+                message: format!("{e:#}"),
+            })?;
+        }
+        Ok::<u32, CommandError>(deleted)
+    })
+    .await
+    .map_err(|e| CommandError {
+        message: format!("主机删除任务失败：{e}"),
+    })??;
+    if deleted > 0 {
+        refresh_hosts(app, state).await?;
+    }
+    Ok(deleted)
 }
 
 /// The stored login password of a host, for the list's copy action.
@@ -196,42 +255,92 @@ async fn persist(mutate: impl FnOnce(&mut Vec<Host>) + Send + 'static) -> Result
     })
 }
 
-/// What an import did: how many hosts came in, how many were already known, and why
-/// the rest were refused. The dialog reports all three.
+/// What an import did: how many hosts came in, how many were already known, how many
+/// hosts had credentials updated, how many credential rows matched nothing, and why the
+/// rest were refused. The dialog reports them all.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct ImportSummary {
     pub added: usize,
     pub skipped: usize,
     pub failed: usize,
+    /// How many existing hosts had their credentials updated (credentials import only).
+    #[serde(default)]
+    pub updated: usize,
+    /// How many credential rows named no existing host (so nothing was created).
+    #[serde(default)]
+    pub unmatched_credentials: usize,
     pub errors: Vec<String>,
 }
 
-/// Export every host — manual and SSH-config imports alike — as a `hosts.toml`-shaped
-/// snapshot (SSH-config entries frozen as manual ones).
+/// Header comment stamped onto every host export, so a stray file says what it holds
+/// and whether it carries plaintext passwords.
+const EXPORT_HEADER_BOTH: &str = "# EasySSH 主机完整快照：含连接配置与明文密码，请妥善保管。\n";
+const EXPORT_HEADER_CONFIG: &str = "# EasySSH 主机连接配置：不含密码或口令，可安全分享。\n";
+const EXPORT_HEADER_CREDENTIALS: &str = "# EasySSH 主机凭据：含用户名与明文密码，请妥善保管。\n";
+
+/// Export every host — manual and SSH-config imports alike — split by `scope`
+/// (SSH-config entries frozen as manual ones):
 ///
-/// `path` is where the save dialog put it; without one (a platform without a dialog, or
-/// the tests) the file goes to the downloads folder under a fresh name. The file carries
-/// passwords in plaintext, exactly like `hosts.toml`; the dialog warns about that.
-/// Returns the path written so the UI can show (and copy) it.
+/// - `"both"`: the full `hosts.toml`-shaped snapshot, plaintext passwords included —
+///   the backward-compatible default. File base name `omnyssh-hosts`.
+/// - `"config"`: connection configuration only (name, address, port, user, tags, key
+///   path, proxy jump, forwards…) — never any password. `omnyssh-hosts-config`.
+/// - `"credentials"`: identity and secrets only (`name`, `username`, `password`), no
+///   address or other configuration. `omnyssh-credentials`.
+///
+/// An unknown `scope` is an error, never silently treated as `"both"`.
+///
+/// `path` is where the save dialog put it; without one the file goes to the downloads
+/// folder under a fresh name. Returns the path written so the UI can show (and copy) it.
 #[tauri::command]
 #[specta::specta]
-pub async fn export_hosts(path: Option<String>) -> Result<String, CommandError> {
-    tauri::async_runtime::spawn_blocking(move || export_hosts_blocking(path.as_deref()))
-        .await
-        .map_err(|e| CommandError {
-            message: format!("主机导出任务失败：{e}"),
-        })?
+pub async fn export_hosts(path: Option<String>, scope: String) -> Result<String, CommandError> {
+    tauri::async_runtime::spawn_blocking(move || {
+        export_hosts_blocking(path.as_deref(), scope.as_str())
+    })
+    .await
+    .map_err(|e| CommandError {
+        message: format!("主机导出任务失败：{e}"),
+    })?
 }
 
-fn export_hosts_blocking(target: Option<&str>) -> Result<String, CommandError> {
+fn export_hosts_blocking(target: Option<&str>, scope: &str) -> Result<String, CommandError> {
     let hosts = load_all_hosts().map_err(|e| CommandError {
         message: format!("{e:#}"),
     })?;
-    let content = hosts_to_export_toml(&hosts).map_err(|e| CommandError {
-        message: format!("{e:#}"),
-    })?;
-    write_export(target, "omnyssh-hosts", "toml", content)
+    let (base, content) = match scope {
+        "both" => {
+            let toml = hosts_to_export_toml(&hosts).map_err(|e| CommandError {
+                message: format!("{e:#}"),
+            })?;
+            ("omnyssh-hosts", format!("{}{}", EXPORT_HEADER_BOTH, toml))
+        }
+        "config" => {
+            let toml = hosts_to_config_toml(&hosts).map_err(|e| CommandError {
+                message: format!("{e:#}"),
+            })?;
+            (
+                "omnyssh-hosts-config",
+                format!("{}{}", EXPORT_HEADER_CONFIG, toml),
+            )
+        }
+        "credentials" => {
+            let toml = hosts_to_credentials_toml(&hosts).map_err(|e| CommandError {
+                message: format!("{e:#}"),
+            })?;
+            (
+                "omnyssh-credentials",
+                format!("{}{}", EXPORT_HEADER_CREDENTIALS, toml),
+            )
+        }
+        other => {
+            return Err(CommandError {
+                message: format!("不支持的导出范围 '{other}'，可用值：both、config、credentials"),
+            })
+        }
+    };
+    write_export(target, base, "toml", content)
 }
 
 /// Export every host as OpenSSH config text (no passwords). `path` semantics match
@@ -264,7 +373,7 @@ fn write_export(
         Some(target) => PathBuf::from(target),
         None => {
             let dir =
-                omnyssh_core::utils::platform::download_dir().ok_or_else(|| CommandError {
+                easyssh_core::utils::platform::download_dir().ok_or_else(|| CommandError {
                     message: "找不到下载目录，无法导出主机".to_string(),
                 })?;
             std::fs::create_dir_all(&dir).map_err(|e| CommandError {
@@ -294,14 +403,30 @@ fn unique_export_path(dir: &Path, base: &str, ext: &str) -> PathBuf {
     unreachable!("the loop only ends by returning")
 }
 
-/// Import hosts from an exported file's text: OmnySSH TOML or OpenSSH config text.
+/// Import hosts from an exported file's text: a full snapshot, a config-only export
+/// (both EasySSH TOML), a credentials export, or OpenSSH config text.
 ///
-/// A name that is already known (manual or an SSH-config import) is skipped rather than
-/// overwritten: an import must never silently replace an existing login. Rows without a
-/// name or address are counted as failed, with the reason kept for the dialog.
+/// A host name that is already known (manual or an SSH-config import) is skipped rather
+/// than overwritten: an import must never silently replace an existing login, and a
+/// config-only file must never clear a stored password. Credentials rows match by name:
+/// a hit updates `user`/`password`, a miss is counted (never creating an address-less
+/// host). Rows without a name or address are counted as failed, with the reason kept.
 #[tauri::command]
 #[specta::specta]
 pub async fn import_hosts(content: String) -> Result<ImportSummary, CommandError> {
+    // A credentials export carries `[[credentials]]` rows with no address; detect it
+    // before the hosts-file fallthrough, which would otherwise read it as empty.
+    if let Ok(credentials) = parse_credentials_toml(&content) {
+        if !credentials.is_empty() {
+            return tauri::async_runtime::spawn_blocking(move || {
+                import_credentials_blocking(credentials)
+            })
+            .await
+            .map_err(|e| CommandError {
+                message: format!("主机导入任务失败：{e}"),
+            })?;
+        }
+    }
     let incoming = parse_import(&content)?;
     tauri::async_runtime::spawn_blocking(move || import_hosts_blocking(incoming))
         .await
@@ -370,11 +495,56 @@ fn merge_import(hosts: &mut Vec<Host>, incoming: Vec<Host>) -> ImportSummary {
     summary
 }
 
+/// Merge a credentials export into the manual list: one config read + one disk write.
+/// Only a name match changes anything (an import must never create an address-less host).
+fn import_credentials_blocking(
+    incoming: Vec<HostCredential>,
+) -> Result<ImportSummary, CommandError> {
+    let mut hosts = load_hosts().map_err(|e| CommandError {
+        message: format!("{e:#}"),
+    })?;
+    let summary = merge_credentials(&mut hosts, incoming);
+    if summary.updated > 0 {
+        save_hosts(&hosts).map_err(|e| CommandError {
+            message: format!("{e:#}"),
+        })?;
+    }
+    Ok(summary)
+}
+
+/// Merge credentials into the manual list by name: a match updates `user`/`password`,
+/// a miss is counted in `unmatched_credentials` (never creating an address-less host).
+/// The key passphrase has no persisted home (it lives in memory only), so it is dropped.
+fn merge_credentials(hosts: &mut [Host], incoming: Vec<HostCredential>) -> ImportSummary {
+    let mut summary = ImportSummary::default();
+    for cred in incoming {
+        let name = cred.name.trim().to_string();
+        if name.is_empty() {
+            summary.failed += 1;
+            summary
+                .errors
+                .push("跳过一条缺少名称的凭据记录。".to_string());
+            continue;
+        }
+        match hosts.iter_mut().find(|h| h.name == name) {
+            Some(host) => {
+                host.user = cred.username;
+                host.password = cred.password;
+                summary.updated += 1;
+            }
+            None => {
+                summary.unmatched_credentials += 1;
+            }
+        }
+    }
+    summary
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::dto::MonitorModeDto;
-    use omnyssh_core::ssh::client::{HostSource, MonitorMode};
+    use easyssh_core::ssh::client::{HostSource, MonitorMode};
 
     fn input(name: &str) -> HostInputDto {
         HostInputDto {
@@ -637,6 +807,50 @@ mod tests {
         assert_eq!(hosts[0].hostname, "10.0.0.1");
         assert_eq!(hosts[1].name, "new");
         assert_eq!(hosts[1].source, HostSource::Manual);
+    }
+
+    #[test]
+    fn import_credentials_updates_matches_and_counts_the_rest() {
+        let mut hosts = vec![host_with("web", "10.0.0.1")];
+        let incoming = vec![
+            HostCredential {
+                name: "web".to_string(),
+                username: "deploy".to_string(),
+                password: Some("s3cret".to_string()),
+                passphrase: None,
+            },
+            HostCredential {
+                name: "ghost".to_string(),
+                username: "root".to_string(),
+                password: None,
+                passphrase: None,
+            },
+            HostCredential {
+                name: "  ".to_string(),
+                username: "root".to_string(),
+                password: None,
+                passphrase: None,
+            },
+        ];
+        let summary = merge_credentials(&mut hosts, incoming);
+        assert_eq!(summary.updated, 1);
+        assert_eq!(summary.unmatched_credentials, 1);
+        assert_eq!(summary.failed, 1);
+        // An unmatched credential must never create an address-less host.
+        assert_eq!(hosts.len(), 1);
+        assert_eq!(hosts[0].user, "deploy");
+        assert_eq!(hosts[0].password.as_deref(), Some("s3cret"));
+        assert_eq!(hosts[0].hostname, "10.0.0.1");
+    }
+
+    #[test]
+    fn credentials_detection_ignores_a_hosts_snapshot() {
+        // A `[[hosts]]` snapshot must not read as credentials, or the import would
+        // route the full/config formats into the wrong merge.
+        let toml = hosts_to_export_toml(&[host_with("web", "10.0.0.1")]).expect("serialise");
+        assert!(parse_credentials_toml(&toml)
+            .expect("hosts file")
+            .is_empty());
     }
 
     #[test]

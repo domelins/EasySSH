@@ -171,7 +171,7 @@ pub struct KeySetupComplete {
     pub password_off: bool,
 }
 
-/// Key setup failed (tech-gui.md §4.3). `passwordMayBeOff` is true when OmnySSH could
+/// Key setup failed (tech-gui.md §4.3). `passwordMayBeOff` is true when EasySSH could
 /// not confirm the server's password login is on: the rollback failed, or the disable
 /// step never answered. Otherwise password login was not changed, or was restored.
 #[derive(Debug, Clone, Serialize, Deserialize, specta::Type, tauri_specta::Event)]

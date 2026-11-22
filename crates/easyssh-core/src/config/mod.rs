@@ -165,7 +165,7 @@ pub fn hosts_to_toml(hosts: &[Host]) -> anyhow::Result<String> {
 /// # Errors
 /// Returns an error naming the TOML problem when the file is not a hosts file.
 pub fn parse_hosts_toml(content: &str) -> anyhow::Result<Vec<Host>> {
-    let file: HostsFile = toml::from_str(content).context("This is not an OmnySSH hosts file")?;
+    let file: HostsFile = toml::from_str(content).context("This is not an EasySSH hosts file")?;
     Ok(file.hosts)
 }
 
@@ -184,6 +184,74 @@ pub fn hosts_to_export_toml(hosts: &[Host]) -> anyhow::Result<String> {
         })
         .collect();
     toml::to_string_pretty(&HostsFile { hosts: snapshot }).context("Failed to serialise hosts")
+}
+
+/// Export snapshot stripped of every secret: connection configuration only (`name`,
+/// address, port, user, tags, identity path, proxy jump, forwards, monitoring…).
+/// `password` is cleared so a shared config file can never leak a login password. The
+/// same freezing as [`hosts_to_export_toml`]: SSH-config entries travel as manual ones
+/// with their live tie to `~/.ssh/config` cut.
+pub fn hosts_to_config_toml(hosts: &[Host]) -> anyhow::Result<String> {
+    let snapshot: Vec<Host> = hosts
+        .iter()
+        .cloned()
+        .map(|mut h| {
+            h.source = HostSource::Manual;
+            h.original_ssh_host = None;
+            h.password = None;
+            h
+        })
+        .collect();
+    toml::to_string_pretty(&HostsFile { hosts: snapshot }).context("Failed to serialise hosts")
+}
+
+/// One host's credentials for the credentials-only export/import: identity and secret
+/// fields only, never an address or other connection configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HostCredential {
+    pub name: String,
+    /// The SSH login user (`Host::user`).
+    pub username: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    /// A key passphrase. EasySSH keeps passphrases in process memory only and never
+    /// writes them to disk, so the export always leaves this empty; the field exists so
+    /// a hand-written credentials file may carry one and still parse.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub passphrase: Option<String>,
+}
+
+/// TOML container for the credentials export.
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct HostsCredentialsFile {
+    #[serde(default)]
+    credentials: Vec<HostCredential>,
+}
+
+/// Export snapshot of credentials only: every host's `name`, `username` and `password`
+/// (and a `passphrase` slot that is always empty — passphrases are never persisted). No
+/// address, port, or other connection configuration.
+pub fn hosts_to_credentials_toml(hosts: &[Host]) -> anyhow::Result<String> {
+    let credentials: Vec<HostCredential> = hosts
+        .iter()
+        .map(|h| HostCredential {
+            name: h.name.clone(),
+            username: h.user.clone(),
+            password: h.password.clone(),
+            passphrase: None,
+        })
+        .collect();
+    toml::to_string_pretty(&HostsCredentialsFile { credentials })
+        .context("Failed to serialise credentials")
+}
+
+/// Parse a credentials-only export. A file that is not a credentials export (a hosts
+/// snapshot, SSH config text, or anything else) yields an empty list rather than an
+/// error, so the caller can fall through to the other import formats.
+pub fn parse_credentials_toml(content: &str) -> anyhow::Result<Vec<HostCredential>> {
+    let file: HostsCredentialsFile =
+        toml::from_str(content).context("This is not an EasySSH credentials file")?;
+    Ok(file.credentials)
 }
 
 /// Loads all hosts: manually-added (`hosts.toml`) merged with hosts
@@ -536,6 +604,45 @@ mod tests {
         assert_eq!(parsed[0].tags, vec!["prod"]);
         assert!(parsed[1].identities_only, "the frozen snapshot value");
         assert_eq!(parsed[1].port, 2222);
+    }
+
+    #[test]
+    fn config_export_strips_passwords_but_keeps_connection_config() {
+        let mut manual = host("web", HostSource::Manual);
+        manual.hostname = "10.0.0.1".to_string();
+        manual.identity_file = Some("/keys/id".to_string());
+        manual.proxy_jump = Some("bastion".to_string());
+        manual.tags = vec!["prod".to_string()];
+        manual.password = Some("secret".to_string());
+        let toml = hosts_to_config_toml(&[manual]).expect("serialise");
+        assert!(!toml.contains("password"));
+        assert!(!toml.contains("secret"));
+        let parsed = parse_hosts_toml(&toml).expect("parse");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].name, "web");
+        assert_eq!(parsed[0].hostname, "10.0.0.1");
+        assert_eq!(parsed[0].identity_file.as_deref(), Some("/keys/id"));
+        assert_eq!(parsed[0].proxy_jump.as_deref(), Some("bastion"));
+        assert_eq!(parsed[0].tags, vec!["prod".to_string()]);
+        assert_eq!(parsed[0].password, None);
+    }
+
+    #[test]
+    fn credentials_export_keeps_only_identity_and_secrets() {
+        let mut h = host("web", HostSource::Manual);
+        h.hostname = "10.0.0.1".to_string();
+        h.user = "deploy".to_string();
+        h.password = Some("secret".to_string());
+        let toml = hosts_to_credentials_toml(&[h]).expect("serialise");
+        assert!(toml.contains("[[credentials]]"));
+        assert!(!toml.contains("hostname"));
+        assert!(!toml.contains("10.0.0.1"));
+        let parsed = parse_credentials_toml(&toml).expect("parse");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].name, "web");
+        assert_eq!(parsed[0].username, "deploy");
+        assert_eq!(parsed[0].password.as_deref(), Some("secret"));
+        assert!(parsed[0].passphrase.is_none());
     }
 
     #[test]

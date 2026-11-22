@@ -11,8 +11,8 @@ use russh::server::{self, Auth, ChannelOpenHandle, Msg, Session};
 use russh::{cipher, compression, kex, mac, Channel, ChannelId, Preferred};
 use tokio::net::TcpListener;
 
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::session::SshSession;
 
 const PASSWORD: &str = "algorithms-test";
 

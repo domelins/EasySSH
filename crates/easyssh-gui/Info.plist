@@ -3,6 +3,6 @@
 <plist version="1.0">
 <dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>OmnySSH connects to the SSH servers you add, including ones on your local network.</string>
+	<string>EasySSH connects to the SSH servers you add, including ones on your local network.</string>
 </dict>
 </plist>

@@ -6,7 +6,7 @@
 
 use std::collections::HashSet;
 
-use omnyssh_core::event::{CoreEvent, SessionId};
+use easyssh_core::event::{CoreEvent, SessionId};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::sync::mpsc;
@@ -402,7 +402,7 @@ pub async fn forward_sftp_events(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omnyssh_core::ssh::sftp::FileEntry;
+    use easyssh_core::ssh::sftp::FileEntry;
     use std::collections::HashMap;
 
     #[derive(Debug, PartialEq)]

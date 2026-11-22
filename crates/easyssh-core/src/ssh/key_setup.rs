@@ -368,7 +368,7 @@ pub async fn generate_key_pair(host_name: &str, key_type: KeyType) -> Result<(Pa
 ///
 /// # Examples
 /// ```
-/// use omnyssh_core::ssh::key_setup::sanitize_hostname;
+/// use easyssh_core::ssh::key_setup::sanitize_hostname;
 ///
 /// assert_eq!(sanitize_hostname("web-prod-1"), "web-prod-1");
 /// assert_eq!(sanitize_hostname("my server (prod)"), "my_server__prod_");
@@ -520,7 +520,7 @@ pub fn build_reload_sshd_command() -> String {
 
 /// Builds the emergency rollback command.
 ///
-/// Restores the most recent OmnySSH backup of sshd_config and reloads the daemon.
+/// Restores the most recent EasySSH backup of sshd_config and reloads the daemon.
 /// A missing backup exits 0 so its marker reaches the caller: a checked run drops
 /// the output of a command that fails.
 pub fn build_rollback_command() -> String {
@@ -862,7 +862,7 @@ async fn connect_keys_only(host: &Host) -> Result<SshSession> {
     SshSession::connect_with(host, Passwords::KeysOnly).await
 }
 
-/// Attempts to rollback sshd_config to the most recent OmnySSH backup.
+/// Attempts to rollback sshd_config to the most recent EasySSH backup.
 async fn emergency_rollback(session: &SshSession) -> Result<()> {
     warn!("Attempting emergency rollback of sshd_config");
     let rollback_cmd = build_rollback_command();

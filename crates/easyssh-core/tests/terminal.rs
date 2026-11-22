@@ -13,9 +13,9 @@ use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 use tokio::time::timeout;
 
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::pty::PtyManager;
+use easyssh_core::event::CoreEvent;
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::pty::PtyManager;
 
 const PASSWORD: &str = "terminal-test";
 

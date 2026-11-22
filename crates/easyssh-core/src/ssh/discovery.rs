@@ -107,9 +107,9 @@ mod tests {
     #[test]
     fn test_quick_scan_script_generation() {
         let script = generate_quick_scan_script();
-        assert!(script.contains("===OMNYSSH:OS==="));
-        assert!(script.contains("===OMNYSSH:DOCKER==="));
-        assert!(script.contains("===OMNYSSH:SERVICES==="));
+        assert!(script.contains("===EASYSSH:OS==="));
+        assert!(script.contains("===EASYSSH:DOCKER==="));
+        assert!(script.contains("===EASYSSH:SERVICES==="));
     }
 
     // Integration tests with mock SSH would go here

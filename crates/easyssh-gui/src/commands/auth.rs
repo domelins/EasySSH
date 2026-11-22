@@ -10,7 +10,7 @@ use crate::error::CommandError;
 #[specta::specta]
 pub async fn unlock_identity(key_path: String, passphrase: String) -> Result<(), CommandError> {
     tauri::async_runtime::spawn_blocking(move || {
-        omnyssh_core::ssh::identity::unlock(&key_path, &passphrase)
+        easyssh_core::ssh::identity::unlock(&key_path, &passphrase)
     })
     .await
     .map_err(|e| CommandError {
@@ -27,7 +27,7 @@ pub async fn unlock_identity(key_path: String, passphrase: String) -> Result<(),
 #[tauri::command]
 #[specta::specta]
 pub fn answer_password(request_id: u64, password: Option<String>) -> Result<(), CommandError> {
-    omnyssh_core::ssh::password::answer(request_id, password).map_err(|e| CommandError {
+    easyssh_core::ssh::password::answer(request_id, password).map_err(|e| CommandError {
         message: e.to_string(),
     })
 }

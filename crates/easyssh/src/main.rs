@@ -29,9 +29,9 @@ async fn main() -> anyhow::Result<()> {
     }
 
     // Prune stale rolling log files so they don't accumulate indefinitely.
-    let pruned_logs = omnyssh_core::utils::platform::cleanup_old_logs(
+    let pruned_logs = easyssh_core::utils::platform::cleanup_old_logs(
         &log_dir,
-        omnyssh_core::utils::platform::LOG_RETENTION_DAYS,
+        easyssh_core::utils::platform::LOG_RETENTION_DAYS,
     );
 
     // Use daily rolling file appender
@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
     // A missing file is silently ignored; a malformed file is reported and
     // we fall back to defaults so the app always starts.
     let mut app_config =
-        match omnyssh_core::config::app_config::load_app_config(cli.config.as_deref()) {
+        match easyssh_core::config::app_config::load_app_config(cli.config.as_deref()) {
             Ok(cfg) => {
                 if let Some(ref path) = cli.config {
                     tracing::info!("Loaded config from: {}", path.display());
@@ -89,18 +89,18 @@ async fn main() -> anyhow::Result<()> {
             }
             Err(e) => {
                 tracing::warn!("Config load error (using defaults): {}", e);
-                omnyssh_core::config::app_config::AppConfig::default()
+                easyssh_core::config::app_config::AppConfig::default()
             }
         };
 
     // Apply CLI theme override if provided and save it to config.
     if let Some(ref theme) = cli.theme {
-        if omnyssh_core::config::app_config::UiConfig::is_valid_theme(theme) {
+        if easyssh_core::config::app_config::UiConfig::is_valid_theme(theme) {
             tracing::info!("Applying theme '{}' and saving to config", theme);
             app_config.ui.theme = theme.clone();
 
             // Save theme to config file for persistence
-            if let Err(e) = omnyssh_core::config::app_config::save_theme_to_config(theme) {
+            if let Err(e) = easyssh_core::config::app_config::save_theme_to_config(theme) {
                 eprintln!("Warning: Failed to save theme to config: {}", e);
                 eprintln!("Theme will be applied for this session only.");
             } else {
@@ -110,7 +110,7 @@ async fn main() -> anyhow::Result<()> {
             eprintln!(
                 "Error: Unknown theme '{}'. Available themes: {}",
                 theme,
-                omnyssh_core::config::app_config::UiConfig::available_themes().join(", ")
+                easyssh_core::config::app_config::UiConfig::available_themes().join(", ")
             );
             eprintln!(
                 "Falling back to theme from config: '{}'",

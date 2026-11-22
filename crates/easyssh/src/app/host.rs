@@ -5,8 +5,8 @@ use std::ops::Range;
 use std::time::Duration;
 
 use super::*;
-use omnyssh_core::ssh::client::{HostSource, MonitorMode};
-use omnyssh_core::ssh::tunnel::LocalForward;
+use easyssh_core::ssh::client::{HostSource, MonitorMode};
+use easyssh_core::ssh::tunnel::LocalForward;
 
 // ---------------------------------------------------------------------------
 // Host form (used in Add / Edit popups)
@@ -332,7 +332,7 @@ pub enum HostPopup {
     /// Showing key setup progress.
     KeySetupProgress {
         host_name: String,
-        current_step: Option<omnyssh_core::ssh::key_setup::KeySetupStep>,
+        current_step: Option<easyssh_core::ssh::key_setup::KeySetupStep>,
     },
 }
 

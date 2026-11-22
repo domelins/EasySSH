@@ -20,10 +20,10 @@ pub async fn settings_store_path(app: AppHandle) -> Result<String, CommandError>
         message: e.to_string(),
     };
     let primary = app.path().app_config_dir().map_err(|e| error(&e))?;
-    if omnyssh_core::utils::platform::is_writable(&primary) {
+    if easyssh_core::utils::platform::is_writable(&primary) {
         return Ok(primary.join("settings.json").to_string_lossy().into_owned());
     }
-    let portable = omnyssh_core::utils::platform::portable_config_dir()
+    let portable = easyssh_core::utils::platform::portable_config_dir()
         .ok_or_else(|| error(&"无法定位可执行文件目录"))?;
     std::fs::create_dir_all(&portable).map_err(|e| error(&e))?;
     // No migration of the stale AppData copy: once writes there started failing, the

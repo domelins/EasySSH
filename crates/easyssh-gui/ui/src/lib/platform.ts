@@ -3,6 +3,8 @@
 // title-bar inset, and the e2e suite emulates a platform by its user agent alone.
 export const isMac = /Mac/.test(navigator.userAgent);
 export const isWindows = /Windows/.test(navigator.userAgent);
+// WebKitGTK identifies as "X11; Linux", unlike WKWebView and WebView2.
+export const isLinux = !isMac && !isWindows;
 
 /** An OS drag-and-drop position in CSS pixels. Tauri passes on what the webview
  *  reports: WebView2 counts physical pixels, WKWebView and WebKitGTK the window's

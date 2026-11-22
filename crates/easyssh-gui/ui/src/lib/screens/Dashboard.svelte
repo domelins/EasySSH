@@ -25,6 +25,7 @@
   import {
     saveHost,
     deleteHost,
+    deleteHosts,
     hostPassword,
     reloadHosts,
     startKeySetup,
@@ -48,6 +49,7 @@
     | { kind: 'edit'; host: HostDto }
     | { kind: 'groups'; hosts: HostDto[] }
     | { kind: 'delete'; host: HostDto }
+    | { kind: 'deleteMany'; names: string[] }
     | { kind: 'keySetup'; host: HostDto; rerun: boolean };
 
   let dialog = $state<Dialog | null>(null);
@@ -106,6 +108,7 @@
   );
   const visibleCards = $derived(onScreen(filteredCards));
   const selectedCards = $derived(visibleCards.filter((card) => selectedKeys.includes(keyOf(card.host))));
+  const selectedNames = $derived([...new Set(selectedCards.map((card) => card.host.name))]);
   const allSelected = $derived(visibleCards.length > 0 && selectedCards.length === visibleCards.length);
   const viewChanged = $derived($dashboardView.groupByTag || $dashboardView.sort !== 'custom');
 
@@ -456,6 +459,28 @@
     dialog = null;
   }
 
+  let deletingMany = $state(false);
+  async function confirmDeleteMany(names: string[]): Promise<void> {
+    if (deletingMany) return;
+    deletingMany = true;
+    try {
+      const removed = await deleteHosts(names);
+      await reloadHosts();
+      selectedKeys = [];
+      announcement = `已删除 ${removed} 个主机`;
+      if (removed < names.length) {
+        lastError.set(
+          `已删除 ${removed} 个，其余 ${names.length - removed} 个未删除：SSH config 导入的主机需在 ~/.ssh/config 中移除`
+        );
+      }
+    } catch (error) {
+      lastError.set(message(error));
+    } finally {
+      deletingMany = false;
+    }
+    dialog = null;
+  }
+
   async function copyAddress(card: ServerCard): Promise<void> {
     const key = keyOf(card.host);
     try {
@@ -649,32 +674,33 @@
       <div class="flex h-10 shrink-0 items-center gap-3 border-b border-default bg-surface-inset px-4 text-xs">
         <span>已选择 <strong>{selectedCards.length}</strong> 台主机</span>
         <button type="button" class="{actionButton} bg-accent text-accent-fg" onclick={connectSelected}><Icon name="terminal" size={12} /> 批量连接</button>
+        <button type="button" class="{actionButton} border border-status-crit text-status-crit" onclick={() => (dialog = { kind: 'deleteMany', names: selectedNames })}><Icon name="trash" size={12} /> 删除所选（{selectedCards.length}）</button>
         <button type="button" class="text-muted hover:text-fg" onclick={() => (selectedKeys = [])}>取消选择</button>
       </div>
     {/if}
 
     <div class="min-h-0 flex-1 overflow-auto">
       {#if visibleCards.length}
-        <table class="w-full min-w-[60rem] border-separate border-spacing-0 text-left text-xs">
+        <table class="w-full min-w-[52rem] table-fixed border-separate border-spacing-0 text-left text-xs">
           <thead class="sticky top-0 z-10 bg-surface text-[0.6875rem] text-muted">
             <tr class="h-9 border-b border-default">
-              <th class="w-10 border-b border-default px-3 font-normal">
+              <th class="w-7 border-b border-default px-1 font-normal">
                 <input type="checkbox" class="accent-[var(--accent)]" aria-label="全选主机" checked={allSelected} indeterminate={selectedCards.length > 0 && !allSelected} onchange={toggleAll} />
               </th>
               <th class="w-8 border-b border-default font-normal"><span class="sr-only">调整顺序</span></th>
-              <th class="w-10 border-b border-default font-normal"><span class="sr-only">收藏</span></th>
-              <th class="w-20 border-b border-default px-2 font-medium">系统</th>
-              <th class="w-24 border-b border-default px-2 font-medium" aria-sort={ariaSort('status')}>
+              <th class="w-8 border-b border-default font-normal"><span class="sr-only">收藏</span></th>
+              <th class="w-14 border-b border-default px-1 font-medium">系统</th>
+              <th class="w-16 border-b border-default px-1 font-medium" aria-sort={ariaSort('status')}>
                 <button type="button" class="flex items-center gap-1 hover:text-fg" onclick={() => dashboardView.setSort('status')}>状态 <Icon name="chevron" size={11} /></button>
               </th>
-              <th class="w-24 border-b border-default px-2 font-medium">延迟</th>
-              <th class="w-44 border-b border-default px-2 font-medium" aria-sort={ariaSort('name')}>
+              <th class="w-20 border-b border-default px-1 font-medium">延迟</th>
+              <th class="w-20 border-b border-default px-1 font-medium" aria-sort={ariaSort('name')}>
                 <button type="button" class="flex items-center gap-1 hover:text-fg" onclick={() => dashboardView.setSort('name')}>名称 <Icon name="chevron" size={11} /></button>
               </th>
-              <th class="w-64 border-b border-default px-2 font-medium" aria-sort={ariaSort('address')}>
+              <th class="w-32 border-b border-default px-1 font-medium" aria-sort={ariaSort('address')}>
                 <button type="button" class="flex items-center gap-1 hover:text-fg" onclick={() => dashboardView.setSort('address')}>地址 <Icon name="chevron" size={11} /></button>
               </th>
-              <th class="min-w-56 border-b border-default px-3 font-medium">
+              <th class="w-40 border-b border-default px-2 font-medium">
                 <div class="flex items-center gap-2">
                   <span>实时信息</span>
                   <button type="button" role="switch" aria-label="显示实时指标" aria-checked={$dashboardView.showMetrics} class="relative h-4 w-7 rounded-full {$dashboardView.showMetrics ? 'bg-accent' : 'bg-surface-inset'}" onclick={() => dashboardView.setShowMetrics(!$dashboardView.showMetrics)}>
@@ -682,7 +708,7 @@
                   </button>
                 </div>
               </th>
-              <th class="sticky right-0 z-20 w-44 border-b border-default bg-surface px-3 font-medium">操作</th>
+              <th class="sticky right-0 z-20 w-[10.75rem] border-b border-default bg-surface px-1 font-medium">操作</th>
             </tr>
           </thead>
           <tbody data-cards>
@@ -691,8 +717,8 @@
               {@const favorite = $dashboardView.favorites.includes(key)}
               {@const lift = lifted?.index === index ? lifted : null}
               <tr data-card class="group relative h-14 [&>td]:py-1.5 bg-surface transition-colors hover:bg-surface-hover {lift ? 'z-20 shadow-soft' : ''}" style:transform={lift ? `translate(${lift.dx}px, ${lift.dy}px)` : undefined}>
-                <td class="border-b border-default px-3"><input type="checkbox" class="accent-[var(--accent)]" aria-label="选择 {card.host.name}" checked={selectedKeys.includes(key)} onchange={() => toggleSelection(key)} /></td>
-                <td class="border-b border-default px-1">
+                <td class="border-b border-default px-1"><input type="checkbox" class="accent-[var(--accent)]" aria-label="选择 {card.host.name}" checked={selectedKeys.includes(key)} onchange={() => toggleSelection(key)} /></td>
+                <td class="border-b border-default px-0.5">
                   <button
                     type="button"
                     data-grip
@@ -708,24 +734,24 @@
                     onkeydown={(event) => gripKey(event, visibleCards, index)}
                   ><Icon name="grip" size={13} /></button>
                 </td>
-                <td class="border-b border-default px-1">
+                <td class="border-b border-default px-0.5">
                   <button type="button" class="grid h-7 w-7 place-items-center rounded {favorite ? 'text-status-warn' : 'text-faint hover:text-status-warn'}" title={favorite ? '取消收藏' : '添加收藏'} aria-label="{favorite ? '取消收藏' : '收藏'} {card.host.name}" aria-pressed={favorite} onclick={() => dashboardView.toggleFavorite(key)}>
                     <span class="inline-block {favorite ? '[&>svg]:fill-current' : ''}"><Icon name="star" size={15} /></span>
                   </button>
                 </td>
-                <td class="border-b border-default px-2">
+                <td class="border-b border-default px-1">
                   <span class="inline-flex min-w-10 items-center justify-center rounded border border-default px-1.5 py-1 font-mono text-[0.5625rem] font-semibold text-muted" title={card.osInfo ?? card.host.monitoring}>{systemLabel(card)}</span>
                 </td>
-                <td class="border-b border-default px-2">
+                <td class="border-b border-default px-1">
                   <span class="flex items-center gap-1.5 whitespace-nowrap" title={card.failure}><StatusDot status={card.overall} size={7} /><span class="text-[0.6875rem]">{hostStatusLabel(card)}</span></span>
                 </td>
-                <td class="border-b border-default px-2">
+                <td class="border-b border-default px-1">
                   <div class="flex flex-col gap-0.5 text-[0.625rem] leading-tight tabular-nums" title="从本机测量：TCP 连接与 ping">
                     <span class="flex items-center gap-1"><span class="w-7 shrink-0 text-faint">TCP</span><span class="text-muted">{latencyLabel($latencies.get(card.host.name)?.tcpMs)}</span></span>
                     <span class="flex items-center gap-1"><span class="w-7 shrink-0 text-faint">Ping</span><span class="text-muted">{latencyLabel($latencies.get(card.host.name)?.pingMs)}</span></span>
                   </div>
                 </td>
-                <td class="border-b border-default px-2">
+                <td class="border-b border-default px-1">
                   <div class="min-w-0">
                     <button type="button" class="block max-w-full truncate rounded text-left font-medium text-fg hover:text-accent" title="打开 {card.host.name} 终端" ondblclick={() => spawnSession('terminal', card.host.name)} onclick={() => selectHost(selectedHostKey === key ? null : key)}>{card.host.name}</button>
                     <div class="mt-1 flex items-center gap-1">
@@ -738,7 +764,7 @@
                     </div>
                   </div>
                 </td>
-                <td class="border-b border-default px-2">
+                <td class="border-b border-default px-1">
                   <div class="flex min-w-0 items-center gap-1">
                     <span class="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-muted" title={address(card.host)}>{address(card.host)}</span>
                     <button type="button" class="grid h-6 w-6 shrink-0 place-items-center rounded text-faint hover:bg-surface-inset hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus" title="复制 {address(card.host)}" aria-label="复制 {card.host.name} 的 IP" onclick={() => copyAddress(card)}>
@@ -754,9 +780,9 @@
                     <span class="mt-1 block truncate font-mono text-[0.625rem] text-faint">{card.tunnel.forwards.length} 条转发 · {card.tunnel.label}</span>
                   {/if}
                 </td>
-                <td class="border-b border-default px-3">
+                <td class="border-b border-default px-2">
                   {#if $dashboardView.showMetrics && !card.offline && card.metricRows.length}
-                    <div class="grid grid-cols-3 gap-3">
+                    <div class="grid grid-cols-3 gap-1">
                       {#each card.metricRows as row (row.label)}
                         <div class="min-w-0">
                           <div class="flex items-center justify-between gap-1 text-[0.5625rem] text-faint"><span>{row.label}</span><span class="tabular-nums text-muted">{row.percent == null ? '—' : `${Math.round(row.percent)}%`}</span></div>
@@ -775,9 +801,9 @@
                     <span class="text-faint">—</span>
                   {/if}
                 </td>
-                <td class="sticky right-0 {menuKey === key ? 'z-30' : 'z-10'} border-b border-default bg-surface px-3 after:pointer-events-none after:absolute after:inset-0 after:bg-surface-hover after:opacity-0 after:transition-opacity group-hover:after:opacity-100">
-                  <div class="flex items-center gap-1 whitespace-nowrap">
-                    <button type="button" class="{actionButton} mr-1 bg-accent px-3 text-accent-fg hover:opacity-90" title="在 {card.host.name} 打开 sh" aria-label="连接 {card.host.name}" onclick={() => spawnSession('terminal', card.host.name)}>连接</button>
+                <td class="sticky right-0 {menuKey === key ? 'z-30' : 'z-10'} border-b border-default bg-surface px-1 group-hover:bg-surface-hover">
+                  <div class="flex items-center gap-0.5 whitespace-nowrap">
+                    <button type="button" class="{actionButton} w-11 bg-accent text-accent-fg hover:opacity-90" title="在 {card.host.name} 打开 sh" aria-label="连接 {card.host.name}" onclick={() => spawnSession('terminal', card.host.name)}>连接</button>
                     <button type="button" class={iconButton} title="打开 {card.host.name} 的终端与文件面板" aria-label="{card.host.name} 的文件面板" onclick={() => { spawnSession('terminal', card.host.name); workspaceLayouts.patchLayout(card.host.name, { leftCollapsed: false }); }}><Icon name="sftp" size={13} /></button>
                     <button type="button" class={iconButton} title="编辑 {card.host.name}" aria-label="编辑 {card.host.name}" onclick={() => (dialog = { kind: 'edit', host: card.host })}><Icon name="edit" size={13} /></button>
                     {#if card.host.source === 'manual'}
@@ -877,6 +903,21 @@
       <div class="flex justify-end gap-2 pt-1">
         <Button variant="ghost" onclick={() => (dialog = null)}>取消</Button>
         <Button variant="primary" onclick={() => confirmDelete(host.name)}>删除</Button>
+      </div>
+    </div>
+  </Modal>
+{:else if dialog?.kind === 'deleteMany'}
+  {@const names = dialog.names}
+  <Modal label="删除所选主机" onClose={() => (dialog = null)}>
+    <div class="space-y-3 px-5 py-4">
+      <h2 class="text-sm font-semibold">删除所选主机</h2>
+      <p class="text-sm text-muted">
+        将删除 <span class="text-fg">{names.slice(0, 5).join('、')}</span>{#if names.length > 5} 等 {names.length} 个{/if}，从 <span class="font-mono">hosts.toml</span> 中移除。
+      </p>
+      <p class="text-sm text-status-crit">此操作不可撤销。SSH config 导入的主机没有本地条目，不会被删除。</p>
+      <div class="flex justify-end gap-2 pt-1">
+        <Button variant="ghost" disabled={deletingMany} onclick={() => (dialog = null)}>取消</Button>
+        <Button variant="primary" disabled={deletingMany} onclick={() => confirmDeleteMany(names)}>{deletingMany ? '删除中…' : `删除（${names.length}）`}</Button>
       </div>
     </div>
   </Modal>

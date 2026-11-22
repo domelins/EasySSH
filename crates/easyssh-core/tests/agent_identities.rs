@@ -14,8 +14,8 @@ use russh::server::{self, Auth, ChannelOpenHandle, Msg, Session};
 use russh::Channel;
 use tokio::net::TcpListener;
 
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::session::SshSession;
 
 /// The agent's keys, in the order it lists them. The server takes only the last.
 const KEYS: [&str; 4] = ["work", "github", "old-vps", "app01"];

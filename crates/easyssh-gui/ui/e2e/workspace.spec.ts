@@ -351,6 +351,33 @@ test('navigates the remote tree and reveals hidden files', async ({ page }) => {
   await expect(files.getByText('hosts')).toHaveCount(0);
 });
 
+test('copies the current remote root beside the clickable breadcrumb with temporary feedback', async ({ page }) => {
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await boot(page);
+  await openWorkspace(page);
+  const files = page.getByRole('region', { name: '远程文件' });
+  const path = files.getByRole('navigation', { name: '远程路径' });
+  const copy = path.getByRole('button', { name: '复制路径', exact: true });
+  await expect(copy).toBeVisible();
+  await expect(copy).toHaveAttribute('title', '复制路径');
+  const glyph = await copy.locator('svg').innerHTML();
+  await copy.click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe('/');
+  await expect.poll(() => copy.locator('svg').innerHTML()).not.toBe(glyph);
+  await expect.poll(() => copy.locator('svg').innerHTML()).toBe(glyph);
+
+  // Expanding a child must not copy that child's path: the tree root remains '/'.
+  await files.getByRole('button', { name: 'etc', exact: true }).click();
+  await expect(files.getByRole('button', { name: 'hosts 220 B', exact: true })).toBeVisible();
+  const root = await files.locator('footer span[title]').getAttribute('title');
+  expect(root).toBe('/');
+  await copy.click();
+  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(root);
+  await path.getByRole('button', { name: '/', exact: true }).click();
+  await expect(files.getByRole('button', { name: 'hosts 220 B', exact: true })).toHaveCount(0);
+  await expect(files.getByRole('button', { name: 'notes.txt 120 B', exact: true })).toBeVisible();
+});
+
 test('collapses each side pane and restores it', async ({ page }) => {
   await boot(page);
   await openWorkspace(page);

@@ -30,16 +30,22 @@ function nonLatinLetter(key: string): boolean {
   return /^\p{L}$/u.test(key) && !/\p{Script=Latin}/u.test(key);
 }
 
-/** Ctrl+Shift+C on Windows and Linux, as in GNOME Terminal and Windows Terminal: a bare
- *  Ctrl+C has to stay ^C. macOS needs none — Cmd+C copies there through the Edit menu.
- *  The webview pastes Ctrl+Shift+V natively, except where `layoutFallback` steps in. */
-export function isCopyShortcut(e: KeyPress, mac: boolean): boolean {
+// Windows/Linux reserve Ctrl+Shift+C; bare Ctrl+C copies only a selection, otherwise sends ^C.
+// macOS keeps Ctrl+C as SIGINT and copies through native Cmd+C instead.
+// Only non-Latin layouts substitute physical keys, so Latin layouts keep their own letters.
+export function isCopyShortcut(e: KeyPress, mac: boolean, hasSelection = false): boolean {
   // keyCode 229 marks the keydown that starts an IME composition.
   if (mac || e.type !== 'keydown' || e.isComposing || e.keyCode === 229) return false;
-  if (e.altKey || e.metaKey || !e.ctrlKey || !e.shiftKey) return false;
-  // The physical key stands in only where the layout puts a non-Latin letter on it, so
-  // a Cyrillic layout copies with the same keys while Dvorak's J there stays a J.
+  if (e.altKey || e.metaKey || !e.ctrlKey) return false;
+  if (!e.shiftKey && !hasSelection) return false;
   return e.key === 'c' || e.key === 'C' || (e.code === 'KeyC' && nonLatinLetter(e.key));
+}
+
+// Ctrl+Shift+V stays with native webview paste; macOS keeps Ctrl+V as quoted-insert.
+export function isPasteShortcut(e: KeyPress, mac: boolean): boolean {
+  if (mac || e.type !== 'keydown' || e.isComposing || e.keyCode === 229) return false;
+  if (!e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return false;
+  return e.key === 'v' || e.key === 'V' || (e.code === 'KeyV' && nonLatinLetter(e.key));
 }
 
 /** Enter or Esc, unmodified and outside an IME composition: what closes a tab whose

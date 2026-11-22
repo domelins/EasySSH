@@ -6,7 +6,7 @@
 use std::fs;
 use std::path::Path;
 
-use omnyssh_core::config::ssh_config::load_from_file;
+use easyssh_core::config::ssh_config::load_from_file;
 
 /// The layout from the field report: a top-level config plus a `conf.d` split.
 fn write_fixture(root: &Path) -> std::path::PathBuf {

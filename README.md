@@ -1,182 +1,135 @@
-<div align="center">
+# EasySSH
 
-# OmnySSH
+基于 Rust 与 Tauri 2 的 SSH 客户端，包含主机仪表盘、终端、SFTP 和命令片段，提供终端界面（TUI）与桌面界面（GUI）两种前端。
 
-### Every server you manage, in one window. Dashboard, terminal, SFTP, snippets.
+## 仓库结构
 
+本仓库是一个 cargo workspace：
 
+```
+crates/easyssh-core   引擎：SSH、配置、指标等，与前端无关
+crates/easyssh        TUI 应用，二进制名为 easy
+crates/easyssh-gui    Tauri 2 桌面应用：Rust IPC 在 src/，前端（SvelteKit）在 ui/
+```
 
-[![Downloads](https://img.shields.io/github/downloads/timhartmann7/omnyssh/total?label=total%20installs&color=2ea44f)](https://github.com/timhartmann7/omnyssh/releases)
-[![Latest release](https://img.shields.io/github/v/release/timhartmann7/omnyssh?label=latest)](https://github.com/timhartmann7/omnyssh/releases/latest)
-[![Stars](https://img.shields.io/github/stars/timhartmann7/omnyssh?style=flat)](https://github.com/timhartmann7/omnyssh/stargazers)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Build](https://img.shields.io/github/actions/workflow/status/timhartmann7/omnyssh/ci.yml?branch=main)](https://github.com/timhartmann7/omnyssh/actions)
+workspace 的 `default-members` 只包含 `easyssh-core` 与 `easyssh`。在仓库根目录直接执行 `cargo build` / `cargo test` / `cargo clippy` 时不会编译 GUI，也不需要 Node 或 Tauri 工具链；如需单独处理某个 crate，可使用 `-p easyssh-core`、`-p easyssh` 或 `-p easyssh-gui`。
 
-**[Install](#install)** •
-**[Features](#features)** •
-**[SSH keys](#ssh-key-setup)** •
-**[Comparison](#comparison)** •
-**[TUI version](#the-tui-version)** •
-**[Telegram](#dev-notes)**
+## 环境要求
 
-</div>
+| 工具 | 版本 | 用途 |
+|------|------|------|
+| Rust | stable，1.89 及以上 | 全部 |
+| clippy、rustfmt | 随 Rust 工具链 | 检查 |
+| Node.js | 22（CI 使用的版本） | 仅 GUI |
+| Tauri CLI | v2 | 仅 GUI 打包与开发 |
 
----
+Tauri CLI 可任选一种安装方式：`npm i -g @tauri-apps/cli@^2`（命令为 `tauri`）或 `cargo install tauri-cli`（命令为 `cargo tauri`）。
 
-## Install
-
-One command on macOS and Linux:
+Linux 编译 GUI 还需要 WebKitGTK 与 GTK 开发包，例如 Debian/Ubuntu 上的 `libwebkit2gtk-4.1-dev` 和 `libgtk-3-dev`。
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/timhartmann7/omnyssh/main/install.sh | sh
+rustup component add clippy rustfmt
 ```
 
-The script detects your OS and architecture and installs the latest desktop build — into `/Applications` on macOS, your app menu on Linux. Want the terminal app instead, or both? `curl … | sh -s -- --tui` (or `--both`). Prefer clicking? Grab the file for your platform from [**Releases**](https://github.com/timhartmann7/omnyssh/releases/latest).
+## 构建与运行
 
-| Platform | File |
-|----------|------|
-| macOS Apple Silicon | `OmnySSH-aarch64-apple-darwin.dmg` |
-| macOS Intel | `OmnySSH-x86_64-apple-darwin.dmg` |
-| Linux x86_64 | `OmnySSH-x86_64.AppImage` / `.deb` / `.rpm` |
-| Windows x86_64 | `OmnySSH-x86_64-setup.exe` |
+### TUI
 
-No account, no login screen, no telemetry. The app opens with an empty dashboard and reads your existing `~/.ssh/config` if you have one — hosts behind a bastion (`ProxyJump`) included.
-
----
-
-## What it does
-
-You add a server once. After that it sits on the dashboard as a card with live CPU, RAM and disk, uptime, distro, the top processes eating your CPU, and a badge for what runs on it. One click on `sh` drops you into a real PTY terminal. One click on `files` opens a two panel SFTP browser. Ten servers fit on one screen and refresh on their own.
-
-### Live dashboard
-Cards for every host with CPU, RAM and disk bars, uptime, OS version, top processes, and a Docker badge showing how many containers are up. Bars turn yellow, then red, so a sick server is obvious from across the room. Group the grid by tag, sort it, and in the desktop app drag cards into your own order.
-
-### Real terminals
-Full PTY sessions in tabs. Open as many servers as you need, switch between them from the sidebar, and keep them running while you work in the dashboard.
-
-### Two panel SFTP
-Local on the left, remote on the right. Tick the files and folders you want and move them across, or just drag them from one side to the other, or straight from your file manager onto the server. Watch the progress bar, select many at once, see when each file was last changed. Nobody remembers `scp -r` syntax anyway.
-
-### Snippets
-Save the commands you paste every week. Pick a snippet, tick the hosts to send it to, and it runs on all of them at once. Snippets take parameters, so `sudo systemctl restart {{service}}` asks you for the name.
-
-### Search everything
-Hit ⌘K and start typing. Every host you have, plus every session already open. Enter drops you into a terminal on the host you picked, or back into the session you left.
-
-### Streamer mode
-Swaps every real IP on screen for a fake one. Record a demo or share your screen without leaking client infrastructure.
-
-### Light and dark themes
-Both ship in the app. Switch from the sidebar.
-
-### Small
-Around 130 MB of RAM with several sessions open, on a 20 MB download. Termius on the same machine, doing nothing, sat at 649 MB across nine processes. Full numbers in the [comparison](#comparison).
-
----
-
-## SSH key setup
-
-Password auth on a fresh VPS is the thing you always mean to fix and never do. OmnySSH does it in one click.
-
-Pick a host you added yourself that has no key configured, hit **Set up SSH key**, and the app generates an Ed25519 key, appends the public half to `authorized_keys`, and switches the host over to key auth. It then opens a fresh connection with the new key to prove the key works, and only after that does it turn password login off. There is no confirmation step in between: starting the flow means going through with it.
-
-Before touching `sshd_config` it saves a backup on the server. If any step fails, it restores the backup and leaves your access exactly as it was. Your private key never leaves your machine, and nothing gets sent anywhere except the server you chose.
-
-The code lives in [`crates/omnyssh-core/src/ssh/key_setup.rs`](crates/omnyssh-core/src/ssh/key_setup.rs). Read it before you point this at production. That is the whole point of shipping it open source.
-
-Keys with a passphrase work too. When a key is encrypted, OmnySSH asks for its passphrase once and keeps it in memory until you quit; it is never written to disk. On macOS and Linux a key already loaded in `ssh-agent` is used without asking. The host **Password** field is the server login password, not a key passphrase.
-
----
-
-## Comparison
-
-Memory and CPU measured on an M4 Mac with both apps open and idle.
-
-| | OmnySSH | Termius | tmux + ssh |
-|---|---|---|---|
-| RAM at idle | ~130 MB | ~649 MB | tiny |
-| Processes | 4 | 9 | 1 |
-| Live metrics dashboard | ✅ | ✅ | ❌ |
-| Two panel SFTP | ✅ | ✅ | ❌ |
-| Snippets and broadcast | ✅ | ✅ | ❌ |
-| One click key setup | ✅ | ❌ | ❌ |
-| Account required | ❌ | ✅ | ❌ |
-| Telemetry | ❌ | ✅ | ❌ |
-| Open source | ✅ | ❌ | ✅ |
-| Price | free | 💰 | free |
-
-tmux stays in the table because it is what most of us actually use. It wins on weight and loses on everything visual.
-
----
-
-## The TUI version
-
-OmnySSH started in the terminal, and the TUI is still here, still maintained, still gets releases.
-
-
-
-Same engine underneath: the repo is a cargo workspace where `crates/omnyssh-core` holds the logic and the frontends sit on top. Dashboard, SFTP, snippets, multi session tabs, fuzzy search, plus four themes (`default`, `dracula`, `nord`, `gruvbox`) and remappable keys in `config.toml`.
-
-[![Crates.io](https://img.shields.io/crates/v/omnyssh.svg)](https://crates.io/crates/omnyssh)
-[![Crates downloads](https://img.shields.io/crates/d/omnyssh.svg)](https://crates.io/crates/omnyssh)
+在仓库根目录执行：
 
 ```bash
-# cargo
-cargo install omnyssh
+# 调试构建并运行
+cargo run
 
-# homebrew
-brew install timhartmann7/tap/omnyssh
+# 指定配置文件 / 输出详细日志
+cargo run -- --config ./my-config.toml
+cargo run -- --verbose
 
-# nix
-nix run github:timhartmann7/omnyssh
+# 发布构建，产物为 target/release/easy
+cargo build --release
 ```
 
-Then run `omny`. Press `a` to add a host, `/` to search, `g` to group by tag, `?` for help, `Shift+K` to set up keys on the selected host.
+### GUI
 
-Prebuilt TUI binaries for Linux, macOS, Windows and Termux live on the [Releases](https://github.com/timhartmann7/omnyssh/releases) page under the `omny-*` files. Config sits in `~/.config/omnyssh/` on Linux, `~/Library/Application Support/omnyssh/` on macOS, `%APPDATA%\omnyssh\` on Windows. Your `~/.ssh/config` is read at startup and never written to.
+先安装前端依赖：
 
-Full options, keybindings and config examples: `man omny`.
-
----
-
-## Troubleshooting
-
-**macOS: hosts on your network fail with "No route to host".** macOS lets an app reach devices on the local network only once you allow it. Turn OmnySSH on in System Settings → Privacy & Security → Local Network (off and on again if it already is), then reopen the app. For `omny`, the terminal app it runs in needs the same permission; Apple's Terminal has it already.
-
-**Synology: the terminal ends with "Permission denied, please try again." right after the password.** DSM gives a shell only to members of the administrators group, and only while Control Panel → Terminal & SNMP → Enable SSH service is on. Other accounts can still use SFTP.
-
----
-
-## Dev notes
-
-I write about what I am building on Telegram. Release notes, work in progress screenshots, benchmarks, and the things that broke on the way there. Usually before they show up anywhere else.
-
-### 👉 [**t.me/timhartmanndev**](https://t.me/timhartmanndev)
-
----
-
-## Contributing
-
-Pull requests welcome. [CONTRIBUTING.md](CONTRIBUTING.md) has the setup, the conventions and the checklist. Open an issue first if you plan something big, so we do not both build it.
-
-Workspace layout:
-
-```
-crates/omnyssh-core   engine, frontend agnostic
-crates/omnyssh        TUI application (binary: omny)
-crates/omnyssh-gui    Tauri desktop application
+```bash
+cd crates/easyssh-gui/ui
+npm ci
 ```
 
-## License
+然后在 `crates/easyssh-gui` 目录执行：
 
-Apache 2.0. See [LICENSE](LICENSE).
+```bash
+# 开发模式：自动执行 ui 下的 npm run dev（http://localhost:5173），Rust 侧修改后自动重新编译
+cargo tauri dev
 
-<div align="center">
+# 打包：自动执行 ui 下的 npm run build（输出到 ui/build），产物位于 target/release/bundle
+cargo tauri build
 
-### ⭐ Star the repo if OmnySSH saved you a terminal tab
+# 仅打包 Windows NSIS 安装程序，产物位于 target/release/bundle/nsis/
+cargo tauri build --bundles nsis
+```
 
-[Report a bug](https://github.com/timhartmann7/omnyssh/issues) •
-[Request a feature](https://github.com/timhartmann7/omnyssh/issues) •
-[Discussions](https://github.com/timhartmann7/omnyssh/discussions)
+如果通过 npm 安装了 Tauri CLI，请将上述命令中的 `cargo tauri` 替换为 `tauri`。`tauri.conf.json` 中配置的打包目标为 `dmg`、`appimage`、`deb`、`nsis`、`rpm`。
 
-</div>
+## 测试与检查
+
+### Workspace 默认成员（core + TUI）
+
+在仓库根目录执行：
+
+```bash
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+`cargo clippy` 与 `cargo test` 不加 `-p` 时只作用于默认成员 `easyssh-core` 和 `easyssh`。
+
+### GUI
+
+GUI crate 编译时会嵌入已构建的前端产物，因此运行 cargo 命令前需要先生成 `ui/build`：
+
+```bash
+cd crates/easyssh-gui/ui
+npm ci
+npm run check    # svelte-kit sync + svelte-check
+npm test         # vitest 单元测试
+npm run build    # 生成 ui/build
+```
+
+然后回到仓库根目录执行：
+
+```bash
+cargo clippy -p easyssh-gui --all-targets -- -D warnings
+cargo test -p easyssh-gui
+```
+
+### 前端 e2e
+
+e2e 使用 Playwright，在 `crates/easyssh-gui/ui` 中运行：
+
+```bash
+npx playwright test    # 等同于 npm run test:e2e
+```
+
+`playwright.config.ts` 会先执行 `npm run build`，再用 `npm run preview -- --port 4173 --strictPort` 启动预览服务，并对 `http://localhost:4173` 运行 `e2e/` 下的用例；若本地 4173 端口已有服务，则会直接复用（CI 环境除外）。测试使用 Chromium（Desktop Chrome 配置），并在页面中模拟 Tauri 接口，不需要启动桌面应用。
+
+## 配置与数据
+
+应用配置目录：
+
+- Linux：`~/.config/omnyssh/`
+- macOS：`~/Library/Application Support/omnyssh/`
+- Windows：`%APPDATA%\omnyssh\`
+
+该目录包含 `config.toml`、`hosts.toml` 和 `snippets.toml`。实际使用的目录按以下优先级确定：环境变量 `OMNYSSH_CONFIG_DIR` 指定的目录；其次是可执行文件旁的 `omnyssh-data/`，但仅在其中已有 `hosts.toml` 时生效（该文件只会在默认目录无法写入、保存回退到这里时产生，因此重启后仍读取同一目录，这个目录也可以用作便携安装）；最后是上面的默认目录。
+
+程序启动时会读取 `~/.ssh/config`（Windows 为 `%USERPROFILE%\.ssh\config`）中的主机，但不会写入该文件。
+
+TUI 的命令行选项见 `doc/easy.1`（安装后可用 `man easy` 查看）。`config.toml` 可设置主题（`default`、`dracula`、`nord`、`gruvbox`）与按键映射。
+
+## 许可
+
+Apache-2.0，见 [LICENSE](LICENSE)。

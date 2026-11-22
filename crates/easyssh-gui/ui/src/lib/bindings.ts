@@ -50,11 +50,24 @@ async saveHost(input: HostInputDto) : Promise<Result<null, CommandError>> {
 /**
  * Delete a manual host by name and persist (tech-gui.md §4.2, Stage 4.1). Only manual
  * entries live in `hosts.toml`, so an SSH-config name — or a missing one — is a no-op
- * success: the desired end state (absent) already holds.
+ * success: the desired end state (absent) already holds. Shares the batch-delete path.
  */
 async deleteHost(name: string) : Promise<Result<null, CommandError>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_host", { name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete several manual hosts in one pass: one config read, one disk write, one
+ * `reload_hosts`-level refresh. Unknown names are ignored; returns how many were
+ * actually removed (tech-gui.md §4.2).
+ */
+async deleteHosts(names: string[]) : Promise<Result<number, CommandError>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_hosts", { names }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -77,17 +90,24 @@ async hostPassword(name: string) : Promise<Result<string | null, CommandError>> 
 }
 },
 /**
- * Export every host — manual and SSH-config imports alike — as a `hosts.toml`-shaped
- * snapshot (SSH-config entries frozen as manual ones).
+ * Export every host — manual and SSH-config imports alike — split by `scope`
+ * (SSH-config entries frozen as manual ones):
  * 
- * `path` is where the save dialog put it; without one (a platform without a dialog, or
- * the tests) the file goes to the downloads folder under a fresh name. The file carries
- * passwords in plaintext, exactly like `hosts.toml`; the dialog warns about that.
- * Returns the path written so the UI can show (and copy) it.
+ * - `"both"`: the full `hosts.toml`-shaped snapshot, plaintext passwords included —
+ * the backward-compatible default. File base name `omnyssh-hosts`.
+ * - `"config"`: connection configuration only (name, address, port, user, tags, key
+ * path, proxy jump, forwards…) — never any password. `omnyssh-hosts-config`.
+ * - `"credentials"`: identity and secrets only (`name`, `username`, `password`), no
+ * address or other configuration. `omnyssh-credentials`.
+ * 
+ * An unknown `scope` is an error, never silently treated as `"both"`.
+ * 
+ * `path` is where the save dialog put it; without one the file goes to the downloads
+ * folder under a fresh name. Returns the path written so the UI can show (and copy) it.
  */
-async exportHosts(path: string | null) : Promise<Result<string, CommandError>> {
+async exportHosts(path: string | null, scope: string) : Promise<Result<string, CommandError>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("export_hosts", { path }) };
+    return { status: "ok", data: await TAURI_INVOKE("export_hosts", { path, scope }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -106,11 +126,14 @@ async exportSshConfig(path: string | null) : Promise<Result<string, CommandError
 }
 },
 /**
- * Import hosts from an exported file's text: OmnySSH TOML or OpenSSH config text.
+ * Import hosts from an exported file's text: a full snapshot, a config-only export
+ * (both EasySSH TOML), a credentials export, or OpenSSH config text.
  * 
- * A name that is already known (manual or an SSH-config import) is skipped rather than
- * overwritten: an import must never silently replace an existing login. Rows without a
- * name or address are counted as failed, with the reason kept for the dialog.
+ * A host name that is already known (manual or an SSH-config import) is skipped rather
+ * than overwritten: an import must never silently replace an existing login, and a
+ * config-only file must never clear a stored password. Credentials rows match by name:
+ * a hit updates `user`/`password`, a miss is counted (never creating an address-less
+ * host). Rows without a name or address are counted as failed, with the reason kept.
  */
 async importHosts(content: string) : Promise<Result<ImportSummary, CommandError>> {
     try {
@@ -686,7 +709,7 @@ export type HostInputDto = { name: string; hostname: string; user: string; port:
  */
 export type HostLatency = { hostName: string; tcpMs?: number | null; pingMs?: number | null }
 /**
- * Host origin, mirrors `omnyssh_core::ssh::client::HostSource`.
+ * Host origin, mirrors `easyssh_core::ssh::client::HostSource`.
  */
 export type HostSourceDto = "sshConfig" | "manual"
 /**
@@ -699,10 +722,19 @@ export type HostStatusChanged = { hostName: string; status: ConnectionStatusDto 
  */
 export type HostsLoaded = HostDto[]
 /**
- * What an import did: how many hosts came in, how many were already known, and why
- * the rest were refused. The dialog reports all three.
+ * What an import did: how many hosts came in, how many were already known, how many
+ * hosts had credentials updated, how many credential rows matched nothing, and why the
+ * rest were refused. The dialog reports them all.
  */
-export type ImportSummary = { added: number; skipped: number; failed: number; errors: string[] }
+export type ImportSummary = { added: number; skipped: number; failed: number; 
+/**
+ * How many existing hosts had their credentials updated (credentials import only).
+ */
+updated?: number; 
+/**
+ * How many credential rows named no existing host (so nothing was created).
+ */
+unmatchedCredentials?: number; errors: string[] }
 /**
  * A private key is encrypted and no passphrase is cached yet. Frontends prompt
  * once per key path; the passphrase never crosses back out of the backend.
@@ -715,7 +747,7 @@ export type KeyPassphraseRequired = { hostName: string; keyPath: string }
  */
 export type KeySetupComplete = { hostName: string; keyPath: string; passwordOff: boolean }
 /**
- * Key setup failed (tech-gui.md §4.3). `passwordMayBeOff` is true when OmnySSH could
+ * Key setup failed (tech-gui.md §4.3). `passwordMayBeOff` is true when EasySSH could
  * not confirm the server's password login is on: the rollback failed, or the disable
  * step never answered. Otherwise password login was not changed, or was restored.
  */
@@ -766,7 +798,7 @@ cpuHistory: number[]; ageSeconds: number }
  */
 export type MetricsUpdated = { hostName: string; metrics: MetricsDto }
 /**
- * How a host is watched, mirrors `omnyssh_core::ssh::client::MonitorMode`
+ * How a host is watched, mirrors `easyssh_core::ssh::client::MonitorMode`
  * (tech-gui.md §4.1). `tcpPort` means reachability only — no login, no metrics.
  */
 export type MonitorModeDto = "ssh" | "tcpPort"
@@ -795,7 +827,7 @@ export type ProcessEntryDto = { pid: number; command: string; cpuPercent: number
  */
 export type ServiceDto = { kind: ServiceKindDto; metrics: ServiceMetricDto[] }
 /**
- * A service kind detected on a host, mirrors `omnyssh_core::event::ServiceKind`.
+ * A service kind detected on a host, mirrors `easyssh_core::event::ServiceKind`.
  * Wire names are lowercase (`docker`, `nginx`, `postgresql`, `redis`, `nodejs`);
  * if the core adds a kind, extend this enum so it is never silently dropped
  * (tech-gui.md §4.1).
@@ -851,7 +883,7 @@ export type SnippetDto = { name: string; command: string; scope: SnippetScopeDto
  */
 export type SnippetResult = { hostName: string; snippetName: string; ok: boolean; output: string }
 /**
- * Snippet scope, mirrors `omnyssh_core::config::snippets::SnippetScope`. Wire
+ * Snippet scope, mirrors `easyssh_core::config::snippets::SnippetScope`. Wire
  * names are lowercase (`global`, `host`).
  */
 export type SnippetScopeDto = "global" | "host"

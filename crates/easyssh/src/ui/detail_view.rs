@@ -15,9 +15,9 @@ use ratatui::{
 use crate::app::{forwards_value, AppAction, AppState, SnippetPopup, ViewState};
 use crate::ui::theme::threshold_color;
 use crate::ui::theme::Theme;
-use omnyssh_core::event::{DetectedService, Metrics, ServiceKind};
-use omnyssh_core::ssh::client::{ConnectionStatus, MonitorMode};
-use omnyssh_core::ssh::tunnel::TunnelStatus;
+use easyssh_core::event::{DetectedService, Metrics, ServiceKind};
+use easyssh_core::ssh::client::{ConnectionStatus, MonitorMode};
+use easyssh_core::ssh::tunnel::TunnelStatus;
 
 // ---------------------------------------------------------------------------
 // Render
@@ -158,7 +158,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AppState, view: &ViewState)
 fn render_header(
     frame: &mut Frame,
     area: Rect,
-    host: &omnyssh_core::ssh::client::Host,
+    host: &easyssh_core::ssh::client::Host,
     metrics: Option<&Metrics>,
     status: Option<&ConnectionStatus>,
     tunnel: Option<&TunnelStatus>,
@@ -483,7 +483,7 @@ fn service_hotkey(kind: &ServiceKind) -> String {
 
 /// Get status display for service (e.g., "8 running, 1 stopped", "repl lag: 2.3s").
 fn service_status_display(service: &DetectedService) -> String {
-    use omnyssh_core::event::MetricValue;
+    use easyssh_core::event::MetricValue;
 
     match service.kind {
         ServiceKind::Docker => {

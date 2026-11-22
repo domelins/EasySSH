@@ -187,7 +187,7 @@ export function deriveCard(
   const kind = status?.kind;
   const connected = kind === 'connected';
   const overall: Status = connected ? worstSeverity(metricRows) : kind === 'failed' ? 'off' : 'unknown';
-  // Mirrors the TUI's `is_offline` (crates/omnyssh/src/ui/card.rs): down/unprobed with
+  // Mirrors the TUI's `is_offline` (crates/easyssh/src/ui/card.rs): down/unprobed with
   // no metrics sample at all reads as offline; any sample — even os-info-only from
   // discovery — still renders. Connecting stays live.
   const offline = (kind === undefined || kind === 'unknown' || kind === 'failed') && m === undefined;
@@ -235,7 +235,7 @@ export const serverCards = derived(
 );
 
 // Case-insensitive substring filter over a card's name / hostname / tags / notes,
-// mirroring the TUI host search (crates/omnyssh/src/app/host.rs `filter_hosts`). An
+// mirroring the TUI host search (crates/easyssh/src/app/host.rs `filter_hosts`). An
 // empty query keeps every card.
 export function filterHosts(cards: ServerCard[], query: string): ServerCard[] {
   const q = query.trim().toLowerCase();

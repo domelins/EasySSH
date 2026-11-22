@@ -8,9 +8,9 @@ use std::collections::{HashMap, HashSet};
 use tauri::{AppHandle, State};
 use tauri_specta::Event;
 
-use omnyssh_core::config::snippets::{load_snippets, save_snippets, Snippet};
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::config::snippets::{load_snippets, save_snippets, Snippet};
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::session::SshSession;
 
 use crate::dto::SnippetDto;
 use crate::error::CommandError;

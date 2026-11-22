@@ -1,7 +1,7 @@
 <script lang="ts">
   // Asks before a key setup (tech-gui.md §4.3 note, 2026-10-09): it changes this
   // computer and, with sudo, the server's login for everyone. `rerun` is the "Password
-  // on" badge's second try, which reuses the key OmnySSH made before.
+  // on" badge's second try, which reuses the key EasySSH made before.
   import { onMount } from 'svelte';
   import type { HostDto } from '$lib/bindings';
   import Modal from '$lib/components/Modal.svelte';
@@ -33,7 +33,7 @@
     <ul class="list-disc space-y-1.5 pl-5 text-sm text-muted">
       {#if rerun}
         <li>
-          复用 OmnySSH 之前生成的登录密钥，若已丢失则重新生成：
+          复用 EasySSH 之前生成的登录密钥，若已丢失则重新生成：
           <span class="break-all font-mono text-xs">{keyPath}</span>
         </li>
       {:else}

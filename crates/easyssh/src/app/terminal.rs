@@ -4,8 +4,8 @@
 use std::sync::{Arc, Mutex};
 
 use super::*;
-use omnyssh_core::event::SessionId;
-use omnyssh_core::ssh::pty::PtyManager;
+use easyssh_core::event::SessionId;
+use easyssh_core::ssh::pty::PtyManager;
 
 // ---------------------------------------------------------------------------
 // Terminal multi-session view state
@@ -156,11 +156,11 @@ impl App {
         };
         // Inspect the foreground app under a brief parser lock, then release it.
         let action = match tab.parser.lock() {
-            Ok(parser) => omnyssh_core::utils::scroll::resolve_scroll(delta, parser.screen()),
+            Ok(parser) => easyssh_core::utils::scroll::resolve_scroll(delta, parser.screen()),
             Err(_) => return,
         };
         match action {
-            omnyssh_core::utils::scroll::ScrollAction::Scrollback(d) => {
+            easyssh_core::utils::scroll::ScrollAction::Scrollback(d) => {
                 if d > 0 {
                     // Cap at the vt100 scrollback capacity (1000 lines, see pty.rs).
                     tab.scroll_offset = tab.scroll_offset.saturating_add(d as usize).min(1000);
@@ -168,7 +168,7 @@ impl App {
                     tab.scroll_offset = tab.scroll_offset.saturating_sub((-d) as usize);
                 }
             }
-            omnyssh_core::utils::scroll::ScrollAction::Forward(bytes) => {
+            easyssh_core::utils::scroll::ScrollAction::Forward(bytes) => {
                 let id = tab.session_id;
                 if let Some(mgr) = &mut self.pty_manager {
                     if let Err(e) = mgr.write(id, &bytes) {

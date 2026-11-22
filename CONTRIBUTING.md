@@ -1,4 +1,4 @@
-# Contributing to OmnySSH
+# Contributing to EasySSH
 
 Thank you for your interest in contributing!  This document describes the
 development workflow, coding conventions, and review process.
@@ -31,8 +31,8 @@ development workflow, coding conventions, and review process.
 **Clone and build:**
 
 ```bash
-git clone https://github.com/timhartmann7/omnyssh.git
-cd omnyssh
+git clone https://github.com/timhartmann7/omnyssh.git easyssh
+cd easyssh
 cargo build
 ```
 
@@ -43,14 +43,14 @@ minutes.  Subsequent builds are incremental.
 
 | Crate | Path | Contents |
 |-------|------|----------|
-| `omnyssh-core` | `crates/omnyssh-core` | SSH engine, configs, metrics, domain events, updater — no UI dependencies |
-| `omnyssh` | `crates/omnyssh` | The TUI application (binary `omny`), depends on `omnyssh-core` |
-| `omnyssh-gui` | `crates/omnyssh-gui` | The desktop GUI (Tauri 2 + SvelteKit): Rust IPC in `src/`, the web frontend in `ui/` |
+| `easyssh-core` | `crates/easyssh-core` | SSH engine, configs, metrics, domain events, updater — no UI dependencies |
+| `easyssh` | `crates/easyssh` | The TUI application (binary `easy`), depends on `easyssh-core` |
+| `easyssh-gui` | `crates/easyssh-gui` | The desktop GUI (Tauri 2 + SvelteKit): Rust IPC in `src/`, the web frontend in `ui/` |
 
 Bare `cargo build` / `test` / `install` at the root build **core + TUI only**
 (the GUI is excluded via `default-members`), so contributors without the
 Node/Tauri toolchain are unaffected.  All `cargo` commands below work from the
-repository root; use `-p omnyssh-core` / `-p omnyssh` / `-p omnyssh-gui` to
+repository root; use `-p easyssh-core` / `-p easyssh` / `-p easyssh-gui` to
 target one crate.
 
 **Recommended tools:**
@@ -76,7 +76,7 @@ cargo run -- --verbose
 
 # Release build
 cargo build --release
-./target/release/omny
+./target/release/easy
 ```
 
 During development you can use `cargo watch` to rebuild on every save:
@@ -88,10 +88,10 @@ cargo watch -x run
 ### The desktop GUI
 
 The GUI needs the Node/Tauri toolchain (see prerequisites).  From
-`crates/omnyssh-gui`:
+`crates/easyssh-gui`:
 
 ```bash
-cd crates/omnyssh-gui/ui && npm ci && cd ..
+cd crates/easyssh-gui/ui && npm ci && cd ..
 
 # Dev: hot-reloads the frontend and rebuilds the Rust side on change
 cargo tauri dev
@@ -109,12 +109,12 @@ cargo tauri build
 cargo test
 
 # Only unit tests of one crate (no integration tests)
-cargo test -p omnyssh-core --lib
-cargo test -p omnyssh --lib
+cargo test -p easyssh-core --lib
+cargo test -p easyssh --lib
 
-# Only integration tests in crates/omnyssh-core/tests/
-cargo test -p omnyssh-core --test metrics_parser
-cargo test -p omnyssh-core --test ssh_config_parser
+# Only integration tests in crates/easyssh-core/tests/
+cargo test -p easyssh-core --test metrics_parser
+cargo test -p easyssh-core --test ssh_config_parser
 
 # With output (useful when debugging a failing test)
 cargo test -- --nocapture
@@ -126,8 +126,8 @@ The GUI has its own Rust and frontend suites (not part of the bare workspace
 build):
 
 ```bash
-cargo test -p omnyssh-gui                       # Rust IPC / DTO tests
-cd crates/omnyssh-gui/ui
+cargo test -p easyssh-gui                       # Rust IPC / DTO tests
+cd crates/easyssh-gui/ui
 npm run check                                   # svelte-check + tsc
 npm test                                        # vitest unit tests
 ```
@@ -149,9 +149,9 @@ These conventions are enforced in code review and by CI.
 
 ### Architecture
 
-- **The engine stays UI-free.**  Code in `crates/omnyssh-core` must not depend
+- **The engine stays UI-free.**  Code in `crates/easyssh-core` must not depend
   on terminal-rendering, input, or CLI crates; frontend-specific types and
-  logic belong in `crates/omnyssh`.
+  logic belong in `crates/easyssh`.
 - **Never block the UI thread with SSH operations.**  All network I/O runs in
   background `tokio::spawn` tasks and communicates via `mpsc` channels.
 - **Use `Arc<RwLock<T>>` for shared state**, not `Arc<Mutex<T>>`.  The UI
@@ -192,7 +192,7 @@ size.
 
 ## 5. Commit style
 
-OmnySSH uses [Conventional Commits](https://www.conventionalcommits.org/).
+EasySSH uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ```
 <type>(<optional scope>): <short summary>
@@ -258,7 +258,7 @@ chore: bump ratatui to 0.29
 
 Please open a GitHub Issue with:
 
-- OmnySSH version (`omny --version`, or Settings in the desktop app)
+- EasySSH version (`easy --version`, or Settings in the desktop app)
 - OS and terminal emulator
 - Steps to reproduce
 - Expected behaviour vs. actual behaviour

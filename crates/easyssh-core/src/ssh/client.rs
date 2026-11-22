@@ -96,7 +96,7 @@ pub struct Host {
         deserialize_with = "readable_forwards"
     )]
     pub local_forwards: Vec<LocalForward>,
-    /// Start the tunnel when OmnySSH starts.
+    /// Start the tunnel when EasySSH starts.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub tunnel_autostart: bool,
     /// Lend the local SSH agent to this host's terminals (`ssh -A`). Anyone with
@@ -107,7 +107,7 @@ pub struct Host {
     // -----------------------------------------------------------------------
     // Auto SSH Key Setup metadata
     // -----------------------------------------------------------------------
-    /// Date when SSH key was configured by OmnySSH (ISO 8601 format).
+    /// Date when SSH key was configured by EasySSH (ISO 8601 format).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key_setup_date: Option<String>,
     /// Whether password authentication has been disabled on the server.

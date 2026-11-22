@@ -6,7 +6,7 @@
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use omnyssh_core::config::app_config::KeybindingsConfig;
+use easyssh_core::config::app_config::KeybindingsConfig;
 
 /// A resolved key binding that may optionally require the `Ctrl` modifier.
 #[derive(Debug, Clone, Copy)]
@@ -120,7 +120,7 @@ pub fn parse_keycode(s: &str) -> Option<KeyCode> {
 ///
 /// # Examples
 /// ```
-/// # use omnyssh::keybindings::parse_keybind;
+/// # use easyssh::keybindings::parse_keybind;
 /// // Ctrl+T for screen cycling, freeing Tab for shell completion.
 /// let kb = parse_keybind("Ctrl+T").unwrap();
 /// assert!(kb.ctrl);

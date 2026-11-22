@@ -92,7 +92,7 @@
         />
       </label>
       <p class="text-xs text-faint">
-        仅保存在内存中，退出 OmnySSH 后清除，绝不写入磁盘。
+        仅保存在内存中，退出 EasySSH 后清除，绝不写入磁盘。
       </p>
       {#if prompt.retry}
         <p class="text-xs text-status-crit">权限被拒绝，请重试。</p>

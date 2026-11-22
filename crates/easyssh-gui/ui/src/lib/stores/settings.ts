@@ -11,8 +11,8 @@ const LOCAL_KEY = 'omnyssh-refresh-interval';
 const STORE_KEY = 'refreshInterval';
 
 /** The intervals the settings screen offers, in seconds. */
-export const REFRESH_OPTIONS = [10, 30, 60, 120, 300] as const;
-const DEFAULT = 30;
+export const REFRESH_OPTIONS = [2, 5, 10, 30, 60, 120, 300] as const;
+const DEFAULT = 5;
 
 /** Coerce any stored/typed value to a sane positive interval (seconds). */
 export function clampInterval(value: unknown): number {

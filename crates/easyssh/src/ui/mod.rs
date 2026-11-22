@@ -128,9 +128,9 @@ fn draw(frame: &mut Frame, state: &AppState, view: &ViewState) {
 mod tests {
     use std::sync::{Arc, Mutex};
 
-    use omnyssh_core::event::{Metrics, ProcessInfo};
-    use omnyssh_core::ssh::client::Host;
-    use omnyssh_core::ssh::sftp::FileEntry;
+    use easyssh_core::event::{Metrics, ProcessInfo};
+    use easyssh_core::ssh::client::Host;
+    use easyssh_core::ssh::sftp::FileEntry;
     use ratatui::{backend::TestBackend, buffer::Cell, style::Color, Terminal};
 
     use super::*;

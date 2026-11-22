@@ -38,6 +38,14 @@ export async function deleteHost(name: string): Promise<void> {
   if (res.status === 'error') throw new Error(res.error.message);
 }
 
+/** Delete several manual hosts by name; returns how many were actually removed
+ *  (SSH-config imports have no local entry, so they don't count). */
+export async function deleteHosts(names: string[]): Promise<number> {
+  const res = await commands.deleteHosts(names);
+  if (res.status === 'error') throw new Error(res.error.message);
+  return res.data;
+}
+
 /** The stored login password of a host, for the list's copy action (null when none). */
 export async function hostPassword(name: string): Promise<string | null> {
   const res = await commands.hostPassword(name);
@@ -45,10 +53,15 @@ export async function hostPassword(name: string): Promise<string | null> {
   return res.data;
 }
 
+/** What a TOML export carries: the full snapshot, connection config only, or just
+ *  the login credentials. */
+export type ExportScope = 'both' | 'config' | 'credentials';
+
 /** Export every host (SSH-config imports included) to `path` (or the downloads folder
- *  when null); returns the path. The TOML file carries plaintext passwords. */
-export async function exportHosts(path: string | null = null): Promise<string> {
-  const res = await commands.exportHosts(path);
+ *  when null); returns the path. The `both` and `credentials` files carry plaintext
+ *  passwords; `config` never does. */
+export async function exportHosts(path: string | null = null, scope: ExportScope = 'both'): Promise<string> {
+  const res = await commands.exportHosts(path, scope);
   if (res.status === 'error') throw new Error(res.error.message);
   return res.data;
 }

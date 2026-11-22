@@ -1,6 +1,6 @@
 //! In-app update checker.
 //!
-//! On startup OmnySSH queries the GitHub Releases API for the latest version.
+//! On startup EasySSH queries the GitHub Releases API for the latest version.
 //! Depending on how the binary was installed it can either self-replace the
 //! executable (manual / `install.sh` installs on Linux and macOS) or show the
 //! package-manager command the user should run instead.
@@ -15,7 +15,7 @@ use semver::Version;
 use sha2::{Digest, Sha256};
 use tar::Archive;
 
-/// GitHub repository that hosts OmnySSH releases.
+/// GitHub repository that hosts EasySSH releases.
 const REPO: &str = "timhartmann7/omnyssh";
 /// Timeout applied to every network request the updater makes.
 const HTTP_TIMEOUT: Duration = Duration::from_secs(8);
@@ -166,7 +166,7 @@ async fn fetch_latest_tag() -> Result<String> {
 ///
 /// Only valid when [`UpdateInfo::can_self_update`] is `true`.
 pub async fn perform_update(info: &UpdateInfo) -> Result<()> {
-    let archive_name = format!("omny-{BUILD_TARGET}.tar.gz");
+    let archive_name = format!("easy-{BUILD_TARGET}.tar.gz");
     let base = format!("https://github.com/{REPO}/releases/download/{}", info.tag);
     let client = http_client()?;
 
@@ -235,7 +235,7 @@ fn verify_checksum(archive: &[u8], sums: &str, archive_name: &str) -> Result<()>
     Ok(())
 }
 
-/// Extracts the `omny` binary from a gzip-compressed tar archive.
+/// Extracts the `easy` binary from a gzip-compressed tar archive.
 fn extract_binary(archive: &[u8]) -> Result<Vec<u8>> {
     let mut tar = Archive::new(GzDecoder::new(archive));
     for entry in tar.entries().context("invalid tar archive")? {
@@ -244,7 +244,7 @@ fn extract_binary(archive: &[u8]) -> Result<Vec<u8>> {
             .path()
             .ok()
             .and_then(|p| p.file_name().map(|n| n.to_os_string()))
-            .is_some_and(|n| n == "omny");
+            .is_some_and(|n| n == "easy");
         if is_binary {
             let mut buf = Vec::new();
             entry
@@ -253,7 +253,7 @@ fn extract_binary(archive: &[u8]) -> Result<Vec<u8>> {
             return Ok(buf);
         }
     }
-    anyhow::bail!("archive does not contain the omny binary")
+    anyhow::bail!("archive does not contain the easy binary")
 }
 
 /// Writes `binary` to a temp file next to the current executable and
@@ -309,15 +309,15 @@ mod tests {
     #[test]
     fn detects_install_method_from_path() {
         let cases = [
-            ("/home/u/.cargo/bin/omny", InstallMethod::Cargo),
+            ("/home/u/.cargo/bin/easy", InstallMethod::Cargo),
             (
-                "/opt/homebrew/Cellar/omnyssh/1.0.1/bin/omny",
+                "/opt/homebrew/Cellar/omnyssh/1.0.1/bin/easy",
                 InstallMethod::Homebrew,
             ),
-            ("/usr/local/homebrew/bin/omny", InstallMethod::Homebrew),
-            ("/nix/store/abc-omnyssh-1.0.1/bin/omny", InstallMethod::Nix),
-            ("/usr/local/bin/omny", InstallMethod::Manual),
-            ("/home/u/bin/omny", InstallMethod::Manual),
+            ("/usr/local/homebrew/bin/easy", InstallMethod::Homebrew),
+            ("/nix/store/abc-omnyssh-1.0.1/bin/easy", InstallMethod::Nix),
+            ("/usr/local/bin/easy", InstallMethod::Manual),
+            ("/home/u/bin/easy", InstallMethod::Manual),
         ];
         for (path, expected) in cases {
             assert_eq!(
@@ -365,8 +365,8 @@ mod tests {
     }
 
     #[test]
-    fn extracts_omny_binary_from_archive() {
-        let archive = make_targz(&[("omny", b"fake-binary-bytes")]);
+    fn extracts_easy_binary_from_archive() {
+        let archive = make_targz(&[("easy", b"fake-binary-bytes")]);
         let binary = extract_binary(&archive).expect("extract");
         assert_eq!(binary, b"fake-binary-bytes");
     }
@@ -384,12 +384,12 @@ mod tests {
         hasher.update(archive);
         let digest = format!("{:x}", hasher.finalize());
 
-        let sums = format!("{digest}  omny-x86_64-apple-darwin.tar.gz\nffff  omny-other.tar.gz\n");
-        assert!(verify_checksum(archive, &sums, "omny-x86_64-apple-darwin.tar.gz").is_ok());
+        let sums = format!("{digest}  easy-x86_64-apple-darwin.tar.gz\nffff  easy-other.tar.gz\n");
+        assert!(verify_checksum(archive, &sums, "easy-x86_64-apple-darwin.tar.gz").is_ok());
 
         // Wrong contents fail.
-        assert!(verify_checksum(b"tampered", &sums, "omny-x86_64-apple-darwin.tar.gz").is_err());
+        assert!(verify_checksum(b"tampered", &sums, "easy-x86_64-apple-darwin.tar.gz").is_err());
         // Missing entry fails.
-        assert!(verify_checksum(archive, &sums, "omny-missing.tar.gz").is_err());
+        assert!(verify_checksum(archive, &sums, "easy-missing.tar.gz").is_err());
     }
 }

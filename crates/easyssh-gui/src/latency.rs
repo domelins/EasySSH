@@ -15,14 +15,14 @@ use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 use tauri_specta::Event;
 
-use omnyssh_core::ssh::client::Host;
+use easyssh_core::ssh::client::Host;
 
 use crate::events::HostLatency;
 use crate::state::GuiState;
 
 /// How often every host is measured. Two seconds of timeout plus a round of DNS is the
 /// worst case; the list is small enough to measure all hosts in parallel.
-const INTERVAL: Duration = Duration::from_secs(20);
+const INTERVAL: Duration = Duration::from_secs(10);
 const FIRST_DELAY: Duration = Duration::from_secs(3);
 const TCP_TIMEOUT: Duration = Duration::from_secs(2);
 

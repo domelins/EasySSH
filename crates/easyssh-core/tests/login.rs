@@ -16,10 +16,10 @@ use russh::{Channel, ChannelId};
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::ssh::client::Host;
-use omnyssh_core::ssh::pty::PtyManager;
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::event::CoreEvent;
+use easyssh_core::ssh::client::Host;
+use easyssh_core::ssh::pty::PtyManager;
+use easyssh_core::ssh::session::SshSession;
 
 const PASSWORD: &str = "login-test";
 
@@ -294,7 +294,7 @@ async fn a_login_with_nothing_to_try_says_what_is_missing() {
     assert!(head.contains("no password is saved"), "{message}");
 }
 
-/// A server whose only method is one OmnySSH does not have (Kerberos's
+/// A server whose only method is one EasySSH does not have (Kerberos's
 /// gssapi-with-mic) says so once it turns a key down, instead of being sent a
 /// password no one could get in with.
 #[tokio::test]
@@ -327,7 +327,7 @@ async fn a_server_with_no_method_omnyssh_has_says_so() {
     let e = SshSession::connect(&host).await.err().expect("no way in");
     assert!(
         e.to_string()
-            .contains("offers no login method OmnySSH supports"),
+            .contains("offers no login method EasySSH supports"),
         "{e:#}"
     );
 }

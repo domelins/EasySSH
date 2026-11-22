@@ -102,7 +102,7 @@
     <span
       data-tauri-drag-region
       class="shrink-0 select-none pl-1 pr-2 text-xs font-semibold tracking-wide text-header-fg"
-      >OmnySSH</span
+      >EasySSH</span
     >
   {/if}
   <nav aria-label="工作区" class="flex shrink-0 items-center gap-0.5">
@@ -205,7 +205,7 @@
       aria-label={themeMode($theme) === 'dark' ? '切换到浅色主题' : '切换到深色主题'}
       onclick={() => theme.toggle()}
     ><Icon name={themeMode($theme) === 'dark' ? 'sun' : 'moon'} size={16} /></button>
-    <button type="button" class={iconButton} title="支持 OmnySSH" aria-label="支持 OmnySSH" onclick={() => support.open()}>
+    <button type="button" class={iconButton} title="支持 EasySSH" aria-label="支持 EasySSH" onclick={() => support.open()}>
       <Icon name="telegram" size={15} />
     </button>
     <button

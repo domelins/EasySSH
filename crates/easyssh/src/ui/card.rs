@@ -13,9 +13,9 @@ use ratatui::{
 
 use crate::ui::theme::threshold_color;
 use crate::ui::theme::Theme;
-use omnyssh_core::event::{DetectedService, Metrics, ServiceKind};
-use omnyssh_core::ssh::client::{ConnectionStatus, MonitorMode};
-use omnyssh_core::ssh::tunnel::TunnelStatus;
+use easyssh_core::event::{DetectedService, Metrics, ServiceKind};
+use easyssh_core::ssh::client::{ConnectionStatus, MonitorMode};
+use easyssh_core::ssh::tunnel::TunnelStatus;
 
 // ---------------------------------------------------------------------------
 // Card dimensions (kept in sync with dashboard.rs column calculation)
@@ -450,7 +450,7 @@ fn service_name_short(kind: &ServiceKind) -> &str {
 /// Extract detailed info for a service per A.4.1 spec.
 /// Examples: "8 containers", "repl lag 2.3s", "0 errors/5min"
 fn service_info(service: &DetectedService) -> String {
-    use omnyssh_core::event::MetricValue;
+    use easyssh_core::event::MetricValue;
 
     match service.kind {
         ServiceKind::Docker => {

@@ -151,7 +151,7 @@
       {#if imported}
         <p class="rounded-lg bg-surface-inset px-3 py-2 text-xs text-muted">
           从 <span class="font-mono">~/.ssh/config</span> 导入。保存后会在
-          <span class="font-mono">hosts.toml</span> 中保留你自己的副本，OmnySSH 之后将使用它 ——
+          <span class="font-mono">hosts.toml</span> 中保留你自己的副本，EasySSH 之后将使用它 ——
           你的 SSH 配置文件不会被写入，此后对该文件的修改也不会再反映到这台主机上。
         </p>
       {/if}
@@ -410,12 +410,12 @@
             <span class="font-mono">localhost</span> 指的是服务器自身。
           </p>
           <div class="flex items-center justify-between gap-4 pt-1">
-            <span class="text-sm text-fg">OmnySSH 打开时自动启动隧道</span>
+            <span class="text-sm text-fg">EasySSH 打开时自动启动隧道</span>
             <button
               type="button"
               role="switch"
               aria-checked={fields.tunnelAutostart}
-              aria-label="OmnySSH 打开时自动启动隧道"
+              aria-label="EasySSH 打开时自动启动隧道"
               onclick={() => (fields.tunnelAutostart = !fields.tunnelAutostart)}
               class="relative h-6 w-11 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus {fields.tunnelAutostart
                 ? 'bg-accent'

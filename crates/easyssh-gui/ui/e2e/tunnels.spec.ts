@@ -138,7 +138,7 @@ test('adds a forward in the editor and the row picks it up', async ({ page }) =>
   await editor.getByLabel('转发 1 的本地端口').fill('8080');
   await editor.getByLabel('转发 1 的远程主机').fill('127.0.0.1');
   await editor.getByLabel('转发 1 的远程端口').fill('80');
-  await editor.getByRole('switch', { name: 'OmnySSH 打开时自动启动隧道' }).click();
+  await editor.getByRole('switch', { name: 'EasySSH 打开时自动启动隧道' }).click();
   await editor.getByRole('button', { name: '保存' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   const saved = (await calls(page)).find((call) => call.cmd === 'save_host')?.args.input as Record<string, unknown>;

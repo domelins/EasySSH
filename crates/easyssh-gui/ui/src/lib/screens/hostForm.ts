@@ -1,6 +1,6 @@
 // Pure host form + validation logic (tech-gui.md §4.1, Stage 4.1), kept free of
 // Svelte components so it is unit-testable; `HostEditor.svelte` renders it. The
-// validation mirrors the TUI's `HostForm::to_host` (crates/omnyssh/src/app/host.rs)
+// validation mirrors the TUI's `HostForm::to_host` (crates/easyssh/src/app/host.rs)
 // so both frontends produce the same `hosts.toml` shape and error messages.
 
 import type { HostDto, HostInputDto, LocalForwardDto, MonitorModeDto } from '$lib/bindings';

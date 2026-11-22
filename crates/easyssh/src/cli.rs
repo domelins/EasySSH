@@ -1,13 +1,13 @@
 use clap::Parser;
 
-/// OmnySSH — TUI SSH dashboard & server manager.
+/// EasySSH — TUI SSH dashboard & server manager.
 ///
 /// Manage all your SSH servers from a single terminal window.
 /// Dashboard with live metrics, SFTP file manager, command snippets,
 /// and multi-session tabs with split-view.
 #[derive(Parser, Debug)]
 #[command(
-    name = "omny",
+    name = "easy",
     version,
     about = "TUI SSH dashboard & server manager",
     long_about = None,

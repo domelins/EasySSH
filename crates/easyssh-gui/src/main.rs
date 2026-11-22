@@ -3,7 +3,7 @@
 // people run, and a stray black window next to it reads as the app opening twice.
 #![cfg_attr(windows, windows_subsystem = "windows")]
 
-//! OmnySSH Desktop entry point. Wires the tauri-specta IPC boundary (commands +
+//! EasySSH Desktop entry point. Wires the tauri-specta IPC boundary (commands +
 //! events), regenerates the TypeScript bindings in dev, spawns the core-event
 //! bridge, and boots the window (tech-gui.md §3.3–§3.4).
 
@@ -20,8 +20,8 @@ mod tray;
 
 use commands::auth::{answer_password, unlock_identity};
 use commands::hosts::{
-    delete_host, export_hosts, export_ssh_config, host_password, import_hosts, list_hosts,
-    refresh_metrics, reload_hosts, save_host,
+    delete_host, delete_hosts, export_hosts, export_ssh_config, host_password, import_hosts,
+    list_hosts, refresh_metrics, reload_hosts, save_host,
 };
 use commands::keysetup::start_key_setup;
 use commands::prefs::settings_store_path;
@@ -38,8 +38,8 @@ use commands::tray::set_tray_behavior;
 use commands::tunnels::{tunnel_start, tunnel_stop};
 use commands::update::{check_update, install_update, load_update_config, save_update_config};
 use commands::webview::disable_default_context_menu;
-use omnyssh_core::event::{CoreEvent, SessionId};
-use omnyssh_core::ssh::pty::PtyManager;
+use easyssh_core::event::{CoreEvent, SessionId};
+use easyssh_core::ssh::pty::PtyManager;
 use state::GuiState;
 use std::path::PathBuf;
 use tauri::webview::PageLoadEvent;
@@ -106,6 +106,7 @@ fn specta_builder() -> Builder<tauri::Wry> {
             reload_hosts,
             save_host,
             delete_host,
+            delete_hosts,
             host_password,
             export_hosts,
             export_ssh_config,
@@ -281,16 +282,16 @@ fn prepare_webview_profile() {
                 // Safe here: `main` has not started the Tauri runtime or any other
                 // thread, so nothing can read the environment concurrently.
                 std::env::set_var("WEBVIEW2_USER_DATA_FOLDER", &candidate);
-                eprintln!("OmnySSH: webview profile {}", candidate.display());
+                eprintln!("EasySSH: webview profile {}", candidate.display());
                 return;
             }
             Err(err) => eprintln!(
-                "OmnySSH: webview profile {} unusable ({err}), trying the next",
+                "EasySSH: webview profile {} unusable ({err}), trying the next",
                 candidate.display()
             ),
         }
     }
-    eprintln!("OmnySSH: no writable webview profile directory; using the WebView2 default");
+    eprintln!("EasySSH: no writable webview profile directory; using the WebView2 default");
 }
 
 fn main() {
@@ -391,7 +392,7 @@ fn main() {
                         .is_some_and(|value| value != "0"),
                 ) {
                     eprintln!(
-                        "OmnySSH: the interface never loaded — restarting once with software rendering"
+                        "EasySSH: the interface never loaded — restarting once with software rendering"
                     );
                     // The restarted image claims the single-instance name again, and
                     // finding it still held it would take itself for a second launch
@@ -399,7 +400,7 @@ fn main() {
                     tauri_plugin_single_instance::destroy(&heal);
                     // `exec` returns only on failure; carry on with this process.
                     let err = exec_software_render_retry();
-                    eprintln!("OmnySSH: the restart failed ({err}) — continuing as is");
+                    eprintln!("EasySSH: the restart failed ({err}) — continuing as is");
                 }
             });
 
@@ -415,7 +416,7 @@ fn main() {
             // immediately. A load failure here is non-fatal — the frontend's
             // `reload_hosts` re-attempts and surfaces the error (tech-gui.md §3.4).
             let gui_state = GuiState::new(engine_tx, pty);
-            if let Ok(hosts) = omnyssh_core::config::load_all_hosts() {
+            if let Ok(hosts) = easyssh_core::config::load_all_hosts() {
                 gui_state.set_hosts(hosts);
             }
             app.manage(gui_state);
@@ -442,7 +443,7 @@ fn main() {
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("failed to launch OmnySSH Desktop")
+        .expect("failed to launch EasySSH Desktop")
         .run(tray::on_run_event);
 }
 

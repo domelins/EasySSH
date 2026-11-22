@@ -8,7 +8,7 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-use omnyssh_core::utils::platform::cleanup_old_logs;
+use easyssh_core::utils::platform::cleanup_old_logs;
 
 /// Creates a unique, empty scratch directory under the system temp dir.
 fn scratch_dir(tag: &str) -> PathBuf {

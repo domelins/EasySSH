@@ -107,7 +107,7 @@ test('one merged bar: brand, drag region and caption buttons, no second title ro
   await boot(page);
   const header = page.locator('header[data-tauri-drag-region]');
   await expect(header).toHaveCount(1);
-  await expect(header.getByText('OmnySSH', { exact: true })).toBeVisible();
+  await expect(header.getByText('EasySSH', { exact: true })).toBeVisible();
   for (const name of ['最小化', '最大化', '关闭']) {
     await expect(caption(page, name)).toBeVisible();
   }
@@ -116,7 +116,7 @@ test('one merged bar: brand, drag region and caption buttons, no second title ro
     expect(await caption(page, name).getAttribute('data-tauri-drag-region')).toBeNull();
   }
   // The brand strip itself is draggable.
-  await expect(header.getByText('OmnySSH', { exact: true })).toHaveAttribute('data-tauri-drag-region', '');
+  await expect(header.getByText('EasySSH', { exact: true })).toHaveAttribute('data-tauri-drag-region', '');
 });
 
 test('minimize and maximize call the window API, and the icon follows the state', async ({ page }) => {
@@ -145,7 +145,7 @@ test('a maximized window opens showing the restore control', async ({ page }) =>
 test('the close button asks before quitting and never destroys on its own', async ({ page }) => {
   await boot(page, { tunnel: true });
   await caption(page, '关闭').click();
-  const dialog = page.getByRole('dialog', { name: '退出 OmnySSH？' });
+  const dialog = page.getByRole('dialog', { name: '退出 EasySSH？' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('1 条隧道将被关闭。')).toBeVisible();
   expect(await calls(page)).toContain('plugin:window|close');
@@ -164,7 +164,7 @@ test('with nothing live the close button closes at once', async ({ page }) => {
   await boot(page);
   await caption(page, '关闭').click();
   await expect.poll(() => calls(page)).toContain('plugin:window|destroy');
-  await expect(page.getByRole('dialog', { name: '退出 OmnySSH？' })).toHaveCount(0);
+  await expect(page.getByRole('dialog', { name: '退出 EasySSH？' })).toHaveCount(0);
 });
 
 test('off Tauri the caption buttons stay hidden and the shell still mounts', async ({ page }) => {
@@ -195,7 +195,7 @@ for (const width of [880, 1100]) {
     const workspace = page.getByRole('navigation', { name: '工作区', exact: true });
     const transfer = header.getByRole('button', { name: '导入 / 导出主机', exact: true });
     await expect(tabs.getByRole('button', { name: / · 终端$/ })).toHaveCount(12);
-    await expect(header.getByText('OmnySSH', { exact: true })).toBeVisible();
+    await expect(header.getByText('EasySSH', { exact: true })).toBeVisible();
 
     for (const name of ['最小化', '最大化', '关闭']) {
       await expect(caption(page, name)).toBeInViewport({ ratio: 1 });
@@ -237,7 +237,7 @@ test.describe('on macOS', () => {
     await boot(page);
     await expect(caption(page, '最小化')).toHaveCount(0);
     await expect(caption(page, '关闭')).toHaveCount(0);
-    await expect(page.locator('header').getByText('OmnySSH', { exact: true })).toHaveCount(0);
+    await expect(page.locator('header').getByText('EasySSH', { exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.getAttribute('data-os'))).toBe('macos');
   });
 });

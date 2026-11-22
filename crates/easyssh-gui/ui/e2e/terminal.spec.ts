@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const WINDOWS_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+test.use({ userAgent: WINDOWS_UA });
+
 // Terminal streaming vertical (tech-gui.md §3.1). e2e runs against the static SPA with
 // Tauri absent, so we stub `__TAURI_INTERNALS__` at the boundary (§6.4). The stub is
 // channel-aware: `terminal_open` captures the per-session output Channel and streams a
@@ -82,7 +86,13 @@ async function boot(page: Page): Promise<void> {
             }
             case 'terminal_paste':
               win.__pasted = ((win.__pasted as number | undefined) ?? 0) + 1;
-              return Promise.resolve(null);
+              ((win.__pasteStates ??= []) as { terminalFocused: boolean; menuOpen: boolean }[]).push({
+                terminalFocused: document.activeElement?.classList.contains('xterm-helper-textarea') ?? false,
+                menuOpen: document.querySelector('[role="menu"][aria-label="终端操作"]') !== null
+              });
+              return win.__nativePasteError
+                ? Promise.reject(new Error('native paste denied'))
+                : Promise.resolve(null);
             case 'terminal_resize':
               win.__resizes = ((win.__resizes as number | undefined) ?? 0) + 1;
               return Promise.resolve(null);
@@ -273,6 +283,7 @@ test('a remote exit after output keeps the tab, takes no input, and Enter closes
   await page.locator('.xterm-helper-textarea').focus();
   await page.keyboard.type('ls');
   await page.keyboard.press('Control+C');
+  await page.keyboard.press('Control+V');
   await page.locator('.xterm-helper-textarea').evaluate((el) => {
     const clipboardData = new DataTransfer();
     clipboardData.setData('text/plain', 'uptime');
@@ -329,16 +340,30 @@ test('output arriving after the exit renders without reviving the tab; Esc close
   expect(await writes(page)).toEqual([]);
 });
 
-// Windows and Linux copy with Ctrl+Shift+C. The Desktop Chrome device reports a Windows
-// user agent, so this is the path those platforms take; the clipboard is stubbed at the
-// boundary like the IPC, which also keeps parallel runs apart.
+// Stub the clipboard at the boundary like IPC so parallel runs cannot share clipboard state.
 async function bootWithClipboard(page: Page): Promise<void> {
   await page.addInitScript(() => {
-    const win = window as unknown as { __copied: string[] };
+    const win = window as unknown as {
+      __copied: string[];
+      __clipboardText: string;
+      __clipboardReads: number;
+      __clipboardReadError?: boolean;
+      __clipboardWriteError?: boolean;
+    };
     win.__copied = [];
+    win.__clipboardText = '剪贴板内容';
+    win.__clipboardReads = 0;
     navigator.clipboard.writeText = (text: string) => {
+      if (win.__clipboardWriteError) return Promise.reject(new Error('clipboard denied'));
       win.__copied.push(text);
+      win.__clipboardText = text;
       return Promise.resolve();
+    };
+    navigator.clipboard.readText = () => {
+      win.__clipboardReads++;
+      return win.__clipboardReadError
+        ? Promise.reject(new Error('clipboard denied'))
+        : Promise.resolve(win.__clipboardText);
     };
   });
   await boot(page);
@@ -365,14 +390,24 @@ test('Ctrl+Shift+C copies the selection and sends the shell nothing', async ({ p
   await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
   expect(await writes(page)).toEqual([]);
 
-  // Bare Ctrl+C stays the interrupt, selection or not.
+  // With a selection, bare Ctrl+C copies too, without sending the interrupt.
+  await page.keyboard.press('Control+C');
+  await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>', 'omnyssh-ready>']);
+  expect(await writes(page)).toEqual([]);
+
+  // A plain click collapses the selection to one cell, so bare Ctrl+C now interrupts.
+  // `.xterm-screen` is the hit-testable layer above `.xterm-rows`.
+  await page.locator('.xterm-screen').click();
   await page.keyboard.press('Control+C');
   await expect.poll(() => writes(page)).toEqual([[3]]);
-  expect(await copied(page)).toEqual(['omnyssh-ready>']);
+  expect(await copied(page)).toHaveLength(2);
 
-  // Ctrl+Shift+V is the webview's own paste; xterm must not turn it into ^V or a V.
+  // Ctrl+Shift+V stays the webview's own paste: we neither read the clipboard nor send
+  // ^V. Other specs write real text into the shared OS clipboard, so native paste may
+  // deliver anything — assert only that our handler stayed out.
   await page.keyboard.press('Control+Shift+V');
-  expect(await writes(page)).toEqual([[3]]);
+  expect((await writes(page)).flat()).not.toContain(22);
+  expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
 });
 
 test('Ctrl+Shift+C with nothing selected copies nothing', async ({ page }) => {
@@ -382,6 +417,89 @@ test('Ctrl+Shift+C with nothing selected copies nothing', async ({ page }) => {
   await page.keyboard.press('Control+Shift+C');
   expect(await copied(page)).toEqual([]);
   expect(await writes(page)).toEqual([]);
+});
+
+test('bare Ctrl+C without a selection sends exactly one interrupt', async ({ page }) => {
+  await bootWithClipboard(page);
+  await page.locator('.xterm-helper-textarea').focus();
+  await page.keyboard.press('Control+C');
+  await expect.poll(() => writes(page)).toEqual([[3]]);
+  expect(await copied(page)).toEqual([]);
+});
+
+test('terminal context menu copies, pastes and returns focus; blank selection disables copy', async ({ page }) => {
+  await bootWithClipboard(page);
+  const menu = page.getByRole('menu', { name: '终端操作' });
+  await page.locator('.xterm-screen').click({ button: 'right' });
+  await expect(menu.getByRole('menuitem', { name: '复制', exact: true })).toBeDisabled();
+  await expect(menu.getByRole('menuitem', { name: '粘贴', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(menu).toHaveCount(0);
+  await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+  expect(await writes(page)).toEqual([]);
+
+  await selectPrompt(page);
+  await page.locator('.xterm-screen').click({ button: 'right' });
+  await expect(menu.getByRole('menuitem', { name: '复制', exact: true })).toBeEnabled();
+  await menu.getByRole('menuitem', { name: '复制', exact: true }).click();
+  await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+  await expect(menu).toHaveCount(0);
+  await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+  expect(await writes(page)).toEqual([]);
+
+  await page.evaluate(() => {
+    (window as unknown as { __clipboardText: string }).__clipboardText = '右键粘贴';
+  });
+  await page.locator('.xterm-screen').click({ button: 'right' });
+  await menu.getByRole('menuitem', { name: '粘贴', exact: true }).click();
+  await expect.poll(async () => new TextDecoder().decode(new Uint8Array((await writes(page)).flat()))).toBe('右键粘贴');
+  await expect(menu).toHaveCount(0);
+  await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+  expect(await page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted ?? 0)).toBe(0);
+
+  await page.locator('.xterm-screen').click({ button: 'right' });
+  await page.mouse.click(1, 1);
+  await expect(menu).toHaveCount(0);
+  await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+});
+
+test('Windows Ctrl+V sends UTF-8 through terminal_write, including bracketed and chunked pastes', async ({ page }) => {
+  await bootWithClipboard(page);
+  await page.locator('.xterm-helper-textarea').focus();
+  await page.keyboard.press('Control+V');
+  await expect.poll(async () => (await writes(page)).flat()).toEqual([...new TextEncoder().encode('剪贴板内容')]);
+
+  // Wait for xterm to parse the mode before the next paste.
+  await sendOutput(page, 1, '\x1b[?2004hbracketed-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('bracketed-ready');
+  const text = 'x'.repeat(9000);
+  await page.evaluate((value) => {
+    const win = window as unknown as { __clipboardText: string; __writes: number[][] };
+    win.__clipboardText = value;
+    win.__writes = [];
+  }, text);
+  await page.keyboard.press('Control+V');
+  const expected = [...new TextEncoder().encode(`\x1b[200~${text}\x1b[201~`)];
+  await expect.poll(async () => (await writes(page)).flat()).toEqual(expected);
+  expect((await writes(page)).map((chunk) => chunk.length)).toEqual([8192, expected.length - 8192]);
+  expect(await page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted ?? 0)).toBe(0);
+  expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(2);
+});
+
+test('clipboard failures show Chinese errors and send no input', async ({ page }) => {
+  await bootWithClipboard(page);
+  await page.evaluate(() => {
+    const win = window as unknown as { __clipboardReadError: boolean; __clipboardWriteError: boolean };
+    win.__clipboardReadError = true;
+    win.__clipboardWriteError = true;
+  });
+  await selectPrompt(page);
+  await page.keyboard.press('Control+C');
+  await expect(page.getByRole('contentinfo')).toContainText('复制失败：clipboard denied');
+  await page.keyboard.press('Control+V');
+  await expect(page.getByRole('contentinfo')).toContainText('粘贴失败：clipboard denied');
+  expect(await writes(page)).toEqual([]);
+  expect(await copied(page)).toEqual([]);
 });
 
 test('Ctrl+Shift+S toggles streamer mode and sends the shell no ^S', async ({ page }) => {
@@ -395,34 +513,109 @@ test('Ctrl+Shift+S toggles streamer mode and sends the shell no ^S', async ({ pa
   expect(await writes(page)).toEqual([]);
 });
 
-// WebKitGTK under a Russian layout reports keyCode 0 for letter keys, which is also
-// what a synthetic keydown carries unless told otherwise — so this is the key event
-// xterm gets there: without the fallback, Ctrl+C would send nothing at all.
-test('under a non-Latin layout Ctrl+C still interrupts and Ctrl+Shift+V still pastes', async ({
-  page
-}) => {
-  await bootWithClipboard(page);
-  const press = (code: string, shiftKey: boolean, keyCode = 0) =>
-    page.locator('.xterm-helper-textarea').evaluate(
-      (el, init) => {
-        el.dispatchEvent(new KeyboardEvent('keydown', { ...init, ctrlKey: true, bubbles: true }));
-      },
-      { key: '\u0441', code, shiftKey, keyCode }
-    );
+test.describe('on Linux', () => {
+  test.use({
+    userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko)'
+  });
 
-  await press('KeyC', false);
-  await expect.poll(() => writes(page)).toEqual([[3]]);
+  // WebKitGTK reports keyCode 0 under non-Latin layouts; without the fallback Ctrl+C sends nothing.
+  test('under a non-Latin layout Ctrl+C interrupts and both Ctrl+V chords use native paste', async ({ page }) => {
+    await bootWithClipboard(page);
+    await page.locator('.xterm-helper-textarea').focus();
+    const press = (code: string, shiftKey: boolean, keyCode = 0) =>
+      page.locator('.xterm-helper-textarea').evaluate(
+        (el, init) => {
+          el.dispatchEvent(new KeyboardEvent('keydown', { ...init, ctrlKey: true, bubbles: true }));
+        },
+        { key: '\u0441', code, shiftKey, keyCode }
+      );
 
-  // Where the webview does report the key (WebView2 under the same layout), xterm
-  // sends ^C itself and the fallback stays out: one ^C, not two.
-  await press('KeyC', false, 67);
-  await expect.poll(() => writes(page)).toEqual([[3], [3]]);
+    await press('KeyC', false);
+    await expect.poll(() => writes(page)).toEqual([[3]]);
 
-  await press('KeyV', true);
-  await expect
-    .poll(() => page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted))
-    .toBe(1);
-  expect(await writes(page)).toEqual([[3], [3]]);
+    // A known keyCode must reach xterm, without the fallback sending a second ^C.
+    await press('KeyC', false, 67);
+    await expect.poll(() => writes(page)).toEqual([[3], [3]]);
+
+    await press('KeyV', true);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted)).toBe(1);
+    await press('KeyV', false);
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted)).toBe(2);
+    expect(await writes(page)).toEqual([[3], [3]]);
+    expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
+
+    await selectPrompt(page);
+    await press('KeyC', false);
+    await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+    expect(await writes(page)).toEqual([[3], [3]]);
+  });
+
+  test('Ctrl+V and menu paste invoke native paste only with terminal focus and no open menu', async ({ page }) => {
+    await bootWithClipboard(page);
+    await page.evaluate(() => {
+      (window as unknown as { __clipboardReadError: boolean }).__clipboardReadError = true;
+    });
+    await page.locator('.xterm-helper-textarea').focus();
+    await page.keyboard.press('Control+V');
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted)).toBe(1);
+
+    const menu = page.getByRole('menu', { name: '终端操作' });
+    await page.locator('.xterm-screen').click({ button: 'right' });
+    await expect(menu.getByRole('menuitem', { name: '粘贴', exact: true })).toBeFocused();
+    await menu.getByRole('menuitem', { name: '粘贴', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted)).toBe(2);
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+    expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).__pasteStates)).toEqual([
+      { terminalFocused: true, menuOpen: false },
+      { terminalFocused: true, menuOpen: false }
+    ]);
+    expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
+    expect(await writes(page)).toEqual([]);
+  });
+
+  test('native paste failures show a Chinese error without reading the clipboard', async ({ page }) => {
+    await bootWithClipboard(page);
+    await page.evaluate(() => {
+      (window as unknown as { __nativePasteError: boolean }).__nativePasteError = true;
+    });
+    await page.locator('.xterm-helper-textarea').focus();
+    await page.keyboard.press('Control+V');
+    await expect(page.getByRole('contentinfo')).toContainText('粘贴失败：native paste denied');
+    expect(await page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted)).toBe(1);
+    expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
+    expect(await writes(page)).toEqual([]);
+  });
+
+  test('ended menu disables paste, retains focus when both items are disabled, and Esc closes only the menu', async ({ page }) => {
+    await bootWithClipboard(page);
+    await fireExited(page, 1, true);
+    await expect(terminalTab(page).locator('[role="img"]')).toHaveAttribute('aria-label', '离线');
+
+    const menu = page.getByRole('menu', { name: '终端操作' });
+    await page.locator('.xterm-screen').click({ button: 'right' });
+    await expect(menu.getByRole('menuitem', { name: '复制', exact: true })).toBeDisabled();
+    await expect(menu.getByRole('menuitem', { name: '粘贴', exact: true })).toBeDisabled();
+    await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+    await page.keyboard.press('Control+V');
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('.xterm')).toBeVisible();
+    await expect(page.getByRole('tab')).toHaveCount(1);
+    await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+
+    await selectPrompt(page);
+    await page.locator('.xterm-screen').click({ button: 'right' });
+    await expect(menu.getByRole('menuitem', { name: '复制', exact: true })).toBeEnabled();
+    await expect(menu.getByRole('menuitem', { name: '粘贴', exact: true })).toBeDisabled();
+    await menu.getByRole('menuitem', { name: '复制', exact: true }).click();
+    await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+    await expect(menu).toHaveCount(0);
+    await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
+    expect(await page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted ?? 0)).toBe(0);
+    expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
+    expect(await writes(page)).toEqual([]);
+  });
 });
 
 test.describe('on macOS', () => {
@@ -431,11 +624,27 @@ test.describe('on macOS', () => {
       'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)'
   });
 
+  test('Ctrl+C interrupts even with a selection and Ctrl+V sends quoted-insert', async ({ page }) => {
+    await bootWithClipboard(page);
+    await selectPrompt(page);
+    await page.keyboard.press('Control+C');
+    await expect.poll(() => writes(page)).toEqual([[3]]);
+    await page.keyboard.press('Control+V');
+    await expect.poll(() => writes(page)).toEqual([[3], [22]]);
+    expect(await copied(page)).toEqual([]);
+    expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
+    expect(await page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted ?? 0)).toBe(0);
+  });
+
   test('Ctrl+Shift+C is left alone — Cmd+C copies there', async ({ page }) => {
     await bootWithClipboard(page);
     await selectPrompt(page);
 
     await page.keyboard.press('Control+Shift+C');
     expect(await copied(page)).toEqual([]);
+    await page.keyboard.press('Meta+C');
+    await page.keyboard.press('Meta+V');
+    expect(await copied(page)).toEqual([]);
+    expect(await page.evaluate(() => (window as unknown as { __clipboardReads: number }).__clipboardReads)).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 <script lang="ts">
   // A brief, unobtrusive support dialog opened from the sidebar footer's paper-plane
-  // button. It says OmnySSH is free and open source with no plan to monetize it, then
+  // button. It says EasySSH is free and open source with no plan to monetize it, then
   // offers the two ways to help: a GitHub star and the Telegram channel. Brandbook
   // language (§04) — a calm light-weight headline with a single bold emphasis, flat
   // hairline action rows, and a pill arrow that leans on hover. It is an overlay, never
@@ -38,7 +38,7 @@
   }
 </script>
 
-<Modal label="支持 OmnySSH" onClose={support.close}>
+<Modal label="支持 EasySSH" onClose={support.close}>
   <div class="relative p-6">
     <button
       type="button"
@@ -52,14 +52,14 @@
 
     <div class="mb-5 flex items-center gap-2.5">
       <Logo size={20} />
-      <span class="text-sm font-bold tracking-wide">OmnySSH</span>
+      <span class="text-sm font-bold tracking-wide">EasySSH</span>
     </div>
 
     <h2 class="text-xl font-light leading-snug">
       永久免费，<span class="font-bold">开源</span>。
     </h2>
     <p class="mt-3 text-sm leading-relaxed text-muted">
-      没有付费等级，没有广告，没有推销。OmnySSH 的开发全程公开，我不打算靠它盈利。
+      没有付费等级，没有广告，没有推销。EasySSH 的开发全程公开，我不打算靠它盈利。
     </p>
 
     <p class="mt-5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-faint">

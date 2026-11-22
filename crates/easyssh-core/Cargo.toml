@@ -1,9 +1,9 @@
 [package]
-name = "omnyssh-core"
+name = "easyssh-core"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-description = "SSH engine, configs, metrics, and updater powering OmnySSH frontends"
+description = "SSH engine, configs, metrics, and updater powering EasySSH frontends"
 license.workspace = true
 repository.workspace = true
 keywords = ["ssh", "devops"]

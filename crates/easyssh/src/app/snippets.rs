@@ -2,8 +2,8 @@
 //! execute snippets, quick-execute commands, and quick views.
 
 use super::*;
-use omnyssh_core::config::snippets::SnippetScope;
-use omnyssh_core::ssh::session::SshSession;
+use easyssh_core::config::snippets::SnippetScope;
+use easyssh_core::ssh::session::SshSession;
 
 // ---------------------------------------------------------------------------
 // Snippets structs

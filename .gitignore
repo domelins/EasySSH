@@ -15,10 +15,10 @@ demo.tape
 
 # GUI: node + Tauri build outputs, updater signing key.
 node_modules/
-crates/omnyssh-gui/gen/
-crates/omnyssh-gui/ui/build/
-crates/omnyssh-gui/ui/.svelte-kit/
-crates/omnyssh-gui/ui/test-results/
-crates/omnyssh-gui/ui/playwright-report/
-crates/omnyssh-gui/ui/playwright/.cache/
+crates/easyssh-gui/gen/
+crates/easyssh-gui/ui/build/
+crates/easyssh-gui/ui/.svelte-kit/
+crates/easyssh-gui/ui/test-results/
+crates/easyssh-gui/ui/playwright-report/
+crates/easyssh-gui/ui/playwright/.cache/
 *.tauri.key

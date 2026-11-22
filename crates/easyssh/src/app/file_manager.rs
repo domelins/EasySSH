@@ -4,9 +4,9 @@
 use std::collections::HashSet;
 
 use super::*;
-use omnyssh_core::ssh::identity;
-use omnyssh_core::ssh::password::Prompter;
-use omnyssh_core::ssh::sftp::{self, FileEntry, SftpCommand, SftpManager};
+use easyssh_core::ssh::identity;
+use easyssh_core::ssh::password::Prompter;
+use easyssh_core::ssh::sftp::{self, FileEntry, SftpCommand, SftpManager};
 
 // ---------------------------------------------------------------------------
 // File Manager state (ViewState-only)
@@ -352,7 +352,7 @@ impl App {
                         .await;
                 }
                 Err(e) => {
-                    if let Some(path) = omnyssh_core::ssh::session::passphrase_required(&e) {
+                    if let Some(path) = easyssh_core::ssh::session::passphrase_required(&e) {
                         identity::ask_passphrase(&tx, &host_clone.name, path).await;
                     }
                     let _ = tx

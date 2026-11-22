@@ -6,7 +6,7 @@
   import { Button, Icon } from '$lib/theme';
   import Modal from '$lib/components/Modal.svelte';
   import type { ImportSummary } from '$lib/bindings';
-  import { exportHosts, exportSshConfig, importHosts, reloadHosts } from '$lib/ipc/commands';
+  import { exportHosts, exportSshConfig, importHosts, reloadHosts, type ExportScope } from '$lib/ipc/commands';
 
   let { onClose }: { onClose: () => void } = $props();
 
@@ -14,6 +14,12 @@
   const FORMATS: { id: ExportFormat; title: string; hint: string }[] = [
     { id: 'toml', title: '完整备份', hint: '主机 + 账号密码，可原样导回' },
     { id: 'ssh', title: 'SSH config', hint: '通用 OpenSSH 格式，仅主机配置' }
+  ];
+
+  const SCOPES: { id: ExportScope; title: string; hint: string; file: string }[] = [
+    { id: 'both', title: '完整快照（含密码）', hint: '配置 + 凭据', file: 'omnyssh-hosts.toml' },
+    { id: 'config', title: '仅连接配置（不含密码）', hint: '地址、端口、用户名等连接配置', file: 'omnyssh-hosts-config.toml' },
+    { id: 'credentials', title: '仅凭据（用户名 + 密码）', hint: '不含地址与连接配置', file: 'omnyssh-credentials.toml' }
   ];
 
   let file = $state<File | null>(null);
@@ -26,6 +32,21 @@
   let errorText = $state<string | null>(null);
   let copied = $state(false);
   let exportFormat = $state<ExportFormat>('toml');
+  let exportScope = $state<ExportScope>('both');
+  const scopeFile = $derived(SCOPES.find((scope) => scope.id === exportScope)!.file);
+
+  function onScopeKey(event: KeyboardEvent): void {
+    const step =
+      event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1
+      : event.key === 'ArrowUp' || event.key === 'ArrowLeft' ? -1
+      : 0;
+    if (!step) return;
+    event.preventDefault();
+    const index = SCOPES.findIndex((scope) => scope.id === exportScope);
+    const next = (index + step + SCOPES.length) % SCOPES.length;
+    exportScope = SCOPES[next].id;
+    (event.currentTarget as HTMLElement).querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
+  }
 
   function message(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
@@ -79,8 +100,8 @@
         exportFormat === 'toml'
           ? {
               title: '导出主机到…',
-              defaultPath: 'omnyssh-hosts.toml',
-              filters: [{ name: 'OmnySSH 主机', extensions: ['toml'] }]
+              defaultPath: scopeFile,
+              filters: [{ name: 'EasySSH 主机', extensions: ['toml'] }]
             }
           : {
               title: '导出 SSH config 到…',
@@ -103,7 +124,7 @@
       if (chosen === null) return; // the dialog was dismissed: nothing to write
       exported =
         exportFormat === 'toml'
-          ? await exportHosts(chosen ?? null)
+          ? await exportHosts(chosen ?? null, exportScope)
           : await exportSshConfig(chosen ?? null);
     } catch (error) {
       errorText = message(error);
@@ -235,13 +256,57 @@
           </button>
         {/each}
       </div>
+      {#if exportFormat === 'toml'}
+        <div
+          class="grid gap-1.5"
+          role="radiogroup"
+          aria-label="导出范围"
+          tabindex="-1"
+          onkeydown={onScopeKey}
+        >
+          {#each SCOPES as scope (scope.id)}
+            {@const on = exportScope === scope.id}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={on}
+              aria-label={scope.title}
+              aria-describedby="transfer-scope-{scope.id}"
+              tabindex={on ? 0 : -1}
+              class="flex items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus {on
+                ? 'border-accent bg-surface-inset'
+                : 'border-default hover:border-strong'}"
+              onclick={() => (exportScope = scope.id)}
+            >
+              <span
+                class="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full border {on
+                  ? 'border-accent'
+                  : 'border-strong'}"
+              >
+                <span class="h-1.5 w-1.5 rounded-full {on ? 'bg-accent' : 'bg-transparent'}"></span>
+              </span>
+              <span class="min-w-0">
+                <span class="block text-xs font-medium text-fg">{scope.title}</span>
+                <span id="transfer-scope-{scope.id}" class="block text-[0.6875rem] text-muted">{scope.hint}</span>
+              </span>
+            </button>
+          {/each}
+        </div>
+      {/if}
       <p class="text-xs text-muted">
-        {#if exportFormat === 'toml'}
-          文件<span class="text-status-warn">包含明文登录密码</span>，请妥善保管。
-        {:else}
+        {#if exportFormat === 'ssh'}
           <span class="text-status-warn">不含密码</span>，标签、备注和监控设置也不会导出。
+        {:else if exportScope === 'config'}
+          <span class="text-status-warn">不含密码</span>，只导出连接配置。
+        {:else if exportScope === 'credentials'}
+          文件<span class="text-status-warn">包含明文登录密码</span>（用户名 + 密码），请妥善保管。
+        {:else}
+          文件<span class="text-status-warn">包含明文登录密码</span>，请妥善保管。
         {/if}
       </p>
+      {#if exportFormat === 'toml' && exportScope === 'both'}
+        <p class="text-xs font-medium text-status-warn" role="note">含明文密码，请妥善保管</p>
+      {/if}
       <div class="mt-auto flex items-center gap-2 border-t border-default pt-3">
         {#if exported}
           <span class="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-muted" title={exported}>{exported}</span>
@@ -256,7 +321,7 @@
           </button>
         {:else}
           <span class="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-faint">
-            {exportFormat === 'toml' ? 'omnyssh-hosts.toml' : 'omnyssh-ssh-config.conf'}
+            {exportFormat === 'toml' ? scopeFile : 'omnyssh-ssh-config.conf'}
           </span>
         {/if}
         <Button variant="primary" size="sm" disabled={exporting} onclick={runExport}>

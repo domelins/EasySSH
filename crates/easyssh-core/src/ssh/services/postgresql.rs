@@ -39,14 +39,14 @@ mod tests {
 
     #[test]
     fn test_pg_detect_from_systemd() {
-        let probe = "===OMNYSSH:SERVICES===\npostgresql.service\nsshd.service\n";
+        let probe = "===EASYSSH:SERVICES===\npostgresql.service\nsshd.service\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(PostgreSQLProvider.detect(&parsed));
     }
 
     #[test]
     fn test_pg_detect_from_port() {
-        let probe = "===OMNYSSH:LISTEN===\n0.0.0.0:5432\tLISTEN\n";
+        let probe = "===EASYSSH:LISTEN===\n0.0.0.0:5432\tLISTEN\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(PostgreSQLProvider.detect(&parsed));
     }

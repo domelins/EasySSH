@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn test_docker_detect_from_probe() {
-        let probe_output = "===OMNYSSH:DOCKER===\nabc123\tnginx\tUp 2 hours\tnginx:latest\n";
+        let probe_output = "===EASYSSH:DOCKER===\nabc123\tnginx\tUp 2 hours\tnginx:latest\n";
         let parsed = ProbeOutput::parse(probe_output).expect("should parse");
         let provider = DockerProvider;
         assert!(provider.detect(&parsed));
@@ -71,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_docker_not_detected_when_absent() {
-        let probe_output = "===OMNYSSH:OS===\nUbuntu\n";
+        let probe_output = "===EASYSSH:OS===\nUbuntu\n";
         let parsed = ProbeOutput::parse(probe_output).expect("should parse");
         let provider = DockerProvider;
         assert!(!provider.detect(&parsed));

@@ -4,6 +4,7 @@ import {
   closesEndedTab,
   INPUT_CHUNK,
   isCopyShortcut,
+  isPasteShortcut,
   layoutFallback,
   type KeyPress
 } from './terminalInput';
@@ -60,6 +61,80 @@ describe('isCopyShortcut — Ctrl+Shift+C copies on Windows and Linux', () => {
 
   it('does nothing on macOS, where Cmd+C already copies', () => {
     expect(isCopyShortcut(press({}), true)).toBe(false);
+  });
+});
+
+describe('isCopyShortcut — bare Ctrl+C copies only a selection', () => {
+  const copy = (over: Partial<KeyPress> = {}) => press({ key: 'c', shiftKey: false, ...over });
+
+  it('copies a selection and otherwise leaves the interrupt to xterm', () => {
+    expect(isCopyShortcut(copy(), false, true)).toBe(true);
+    expect(isCopyShortcut(copy({ key: 'C' }), false, true)).toBe(true);
+    expect(isCopyShortcut(copy(), false, false)).toBe(false);
+    expect(isCopyShortcut(copy({ key: '\u0441', keyCode: 0 }), false, true)).toBe(true);
+    expect(isCopyShortcut(copy({ key: '\u0441', keyCode: 0 }), false, false)).toBe(false);
+  });
+
+  it('follows Latin layout letters instead of physical keys', () => {
+    expect(isCopyShortcut(copy({ key: 'j' }), false, true)).toBe(false);
+    expect(isCopyShortcut(copy({ key: 'ç' }), false, true)).toBe(false);
+    expect(isCopyShortcut(copy({ code: 'KeyI' }), false, true)).toBe(true);
+  });
+
+  it('ignores other modifiers, event halves, IME and native macOS chords', () => {
+    for (const over of [
+      { ctrlKey: false }, { altKey: true }, { metaKey: true },
+      { type: 'keyup' }, { type: 'keypress' }, { isComposing: true }, { keyCode: 229 }
+    ]) {
+      expect(isCopyShortcut(copy(over), false, true)).toBe(false);
+    }
+    expect(isCopyShortcut(copy(), true, true)).toBe(false);
+    expect(isCopyShortcut(copy({ shiftKey: true }), true, true)).toBe(false);
+    expect(isCopyShortcut(copy({ ctrlKey: false, metaKey: true }), true, true)).toBe(false);
+  });
+
+  it('does not intercept macOS Ctrl+C even with a selection', () => {
+    for (const hasSelection of [false, true]) {
+      expect(isCopyShortcut(copy(), true, hasSelection)).toBe(false);
+      expect(isCopyShortcut(copy({ key: '\u0441', keyCode: 0 }), true, hasSelection)).toBe(false);
+    }
+  });
+});
+
+describe('isPasteShortcut — bare Ctrl+V uses the clipboard on Windows/Linux', () => {
+  const paste = (over: Partial<KeyPress> = {}) =>
+    press({ key: 'v', code: 'KeyV', keyCode: 86, shiftKey: false, ...over });
+
+  it('accepts either case and non-Latin layouts with known or unknown keyCodes', () => {
+    expect(isPasteShortcut(paste(), false)).toBe(true);
+    expect(isPasteShortcut(paste({ key: 'V' }), false)).toBe(true);
+    expect(isPasteShortcut(paste({ key: '\u043c', keyCode: 0 }), false)).toBe(true);
+    expect(isPasteShortcut(paste({ key: '\u043c' }), false)).toBe(true);
+  });
+
+  it('follows Latin layout letters and leaves accented letters and dead keys alone', () => {
+    expect(isPasteShortcut(paste({ key: 'k' }), false)).toBe(false);
+    expect(isPasteShortcut(paste({ key: 'ü', keyCode: 0 }), false)).toBe(false);
+    expect(isPasteShortcut(paste({ key: 'Dead', keyCode: 0 }), false)).toBe(false);
+    expect(isPasteShortcut(paste({ code: 'KeyK' }), false)).toBe(true);
+  });
+
+  it('leaves native Ctrl+Shift+V, Cmd+V, extra modifiers and IME untouched', () => {
+    for (const over of [
+      { ctrlKey: false }, { shiftKey: true }, { altKey: true }, { metaKey: true },
+      { type: 'keyup' }, { type: 'keypress' }, { isComposing: true }, { keyCode: 229 }
+    ]) {
+      expect(isPasteShortcut(paste(over), false)).toBe(false);
+    }
+    expect(isPasteShortcut(paste({ ctrlKey: false, metaKey: true }), false)).toBe(false);
+  });
+
+  it('leaves macOS Ctrl+V as quoted-insert and Cmd+V as native paste', () => {
+    expect(isPasteShortcut(paste(), true)).toBe(false);
+    expect(isPasteShortcut(paste({ key: 'V' }), true)).toBe(false);
+    expect(isPasteShortcut(paste({ key: '\u043c', keyCode: 0 }), true)).toBe(false);
+    expect(isPasteShortcut(paste({ shiftKey: true }), true)).toBe(false);
+    expect(isPasteShortcut(paste({ ctrlKey: false, metaKey: true }), true)).toBe(false);
   });
 });
 

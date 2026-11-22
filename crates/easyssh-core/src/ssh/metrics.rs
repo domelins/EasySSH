@@ -509,8 +509,10 @@ pub fn parse_top_processes(output: &str) -> Option<Vec<ProcessInfo>> {
     }
 }
 
-/// Parse the full process listing produced by the pool's pid-keeping `ps`
-/// pipeline: `pid cpu mem command` per line (the command keeps its spaces).
+/// Parse the legacy four-column process listing — `pid cpu mem command` per
+/// line (the command keeps its spaces) — as produced by the pool's `ps`
+/// pipeline before it carried the cumulative `time` column. Kept for callers
+/// of the old shape; new callers use [`parse_process_list_timed`].
 ///
 /// Numeric columns are read the way `parse_top_processes` reads them (a header
 /// row and a comma decimal are both handled), and the list stops at `limit`.
@@ -542,6 +544,90 @@ pub fn parse_process_list(output: &str, limit: usize) -> Vec<ProcessEntry> {
             command,
             cpu_percent: cpu,
             mem_percent: mem,
+        });
+    }
+    procs
+}
+
+/// Parse ps's cumulative CPU time column into seconds.
+///
+/// The format is `[DD-]HH:MM:SS` with the smallest unit last: `MM:SS`,
+/// `HH:MM:SS`, or `DD-HH:MM:SS`. macOS and BSD ps print fractional seconds
+/// (`0:03.82`), so the seconds field parses as a float; days, hours and
+/// minutes stay integers. Anything else — a negative value, an out-of-range
+/// minute or second, a non-finite second, a leftover field — is `None`.
+fn parse_ps_time(time: &str) -> Option<f64> {
+    let (days, hms) = match time.split_once('-') {
+        Some((days, rest)) => (days.parse::<u64>().ok()?, rest),
+        None => (0, time),
+    };
+    let mut parts = hms.split(':');
+    let (hours, minutes, seconds) = match (parts.next(), parts.next(), parts.next(), parts.next()) {
+        (Some(h), Some(m), Some(s), None) => (
+            h.parse::<u64>().ok()?,
+            m.parse::<u64>().ok()?,
+            s.parse::<f64>().ok()?,
+        ),
+        (Some(m), Some(s), None, _) => (0, m.parse::<u64>().ok()?, s.parse::<f64>().ok()?),
+        _ => return None,
+    };
+    if minutes >= 60 || !seconds.is_finite() || seconds < 0.0 || seconds >= 60.0 {
+        return None;
+    }
+    let total = days
+        .checked_mul(86_400)?
+        .checked_add(hours.checked_mul(3_600)?)?
+        .checked_add(minutes.checked_mul(60)?)?;
+    Some(total as f64 + seconds)
+}
+
+/// A process row parsed from the pool's timed `ps` pipeline, together with the
+/// cumulative CPU time of its `time` column, in seconds. The real-time CPU
+/// share is computed elsewhere as the delta between two such readings.
+pub struct TimedProcessEntry {
+    pub entry: ProcessEntry,
+    pub cpu_seconds: f64,
+}
+
+/// Parse the pool's timed process listing: `pid cpu mem time command` per line
+/// (the command keeps its spaces), where `time` is ps's cumulative CPU time in
+/// `[DD-]HH:MM:SS` form, with fractional seconds on macOS and BSD.
+///
+/// Columns are read the way [`parse_process_list`] reads them — a header row,
+/// a comma decimal, an illegal line and an unparsable time are all skipped —
+/// and the list stops at `limit`.
+pub fn parse_process_list_timed(output: &str, limit: usize) -> Vec<TimedProcessEntry> {
+    let mut procs: Vec<TimedProcessEntry> = Vec::new();
+    for line in output.lines() {
+        if procs.len() == limit {
+            break;
+        }
+        let mut fields = line.split_whitespace();
+        let (Some(pid_str), Some(cpu_str), Some(mem_str), Some(time_str)) =
+            (fields.next(), fields.next(), fields.next(), fields.next())
+        else {
+            continue;
+        };
+        let (Ok(pid), Ok(cpu), Ok(mem), Some(cpu_seconds)) = (
+            pid_str.parse::<u32>(),
+            normalize_decimal_commas(cpu_str).parse::<f64>(),
+            normalize_decimal_commas(mem_str).parse::<f64>(),
+            parse_ps_time(time_str),
+        ) else {
+            continue;
+        };
+        let command = fields.collect::<Vec<&str>>().join(" ");
+        if command.is_empty() {
+            continue;
+        }
+        procs.push(TimedProcessEntry {
+            entry: ProcessEntry {
+                pid,
+                command,
+                cpu_percent: cpu,
+                mem_percent: mem,
+            },
+            cpu_seconds,
         });
     }
     procs
@@ -1183,6 +1269,108 @@ mod tests {
         assert!((procs[0].cpu_percent - 1.5).abs() < 0.01);
         assert_eq!(procs[1].command, "b");
         assert!(parse_process_list("", 10).is_empty());
+    }
+
+    // ---- Timed process list ----
+
+    #[test]
+    fn test_ps_time_parses_minute_hour_and_day_variants() {
+        assert_eq!(parse_ps_time("12:34"), Some(754.0));
+        assert_eq!(parse_ps_time("1:02:03"), Some(3723.0));
+        assert_eq!(parse_ps_time("3-01:02:03"), Some(3.0 * 86_400.0 + 3723.0));
+        assert_eq!(parse_ps_time("00:00:00"), Some(0.0));
+        assert_eq!(parse_ps_time("0-00:00:05"), Some(5.0));
+    }
+
+    #[test]
+    fn test_ps_time_accepts_fractional_seconds() {
+        // macOS/BSD ps prints tenths in the time column.
+        assert_eq!(parse_ps_time("0:03.82"), Some(3.82));
+        assert_eq!(parse_ps_time("00:00.06"), Some(0.06));
+        assert_eq!(parse_ps_time("1:02:03.50"), Some(3723.5));
+        assert_eq!(
+            parse_ps_time("3-01:02:03.25"),
+            Some(3.0 * 86_400.0 + 3_723.25)
+        );
+    }
+
+    #[test]
+    fn test_ps_time_rejects_malformed_values() {
+        assert_eq!(parse_ps_time(""), None);
+        assert_eq!(parse_ps_time("abc"), None);
+        assert_eq!(parse_ps_time("1:75:03"), None); // minutes out of range
+        assert_eq!(parse_ps_time("12:60"), None); // seconds out of range
+        assert_eq!(parse_ps_time("1:2:3:4"), None); // leftover field
+        assert_eq!(parse_ps_time("1:02:03:04"), None); // leftover field
+        assert_eq!(parse_ps_time("-1:00"), None); // negative day
+        assert_eq!(parse_ps_time("12"), None); // one field only
+        assert_eq!(parse_ps_time("0:03.NaN"), None); // non-finite second
+        assert_eq!(parse_ps_time("0:03.inf"), None); // non-finite second
+        assert_eq!(parse_ps_time("0:60.5"), None); // seconds out of range
+        assert_eq!(parse_ps_time("0:-1.5"), None); // negative second
+    }
+
+    #[test]
+    fn test_process_list_timed_parses_five_columns_with_spaced_commands() {
+        // The pool's awk rewrite: pid cpu mem time command, comm last so its
+        // spaces survive.
+        let out = "  4242  12.3  1.5 01:23:45 nginx: worker process\n\
+                      77   0.5  0.1 00:00:12 python3\n";
+        let procs = parse_process_list_timed(out, 200);
+        assert_eq!(procs.len(), 2);
+        assert_eq!(procs[0].entry.pid, 4242);
+        assert_eq!(procs[0].entry.command, "nginx: worker process");
+        assert!((procs[0].entry.cpu_percent - 12.3).abs() < 0.01);
+        assert_eq!(procs[0].entry.mem_percent, 1.5);
+        assert_eq!(procs[0].cpu_seconds, 5025.0); // 1:23:45
+        assert_eq!(procs[1].entry.command, "python3");
+        assert_eq!(procs[1].cpu_seconds, 12.0);
+    }
+
+    #[test]
+    fn test_process_list_timed_reads_day_sized_cpu_times() {
+        let out = " 1183  1.2  0.3 3-02:04:06 java\n";
+        let procs = parse_process_list_timed(out, 200);
+        assert_eq!(procs.len(), 1);
+        assert_eq!(
+            procs[0].cpu_seconds,
+            3.0 * 86_400.0 + 2.0 * 3_600.0 + 4.0 * 60.0 + 6.0
+        );
+        assert_eq!(procs[0].entry.command, "java");
+    }
+
+    #[test]
+    fn test_process_list_timed_reads_fractional_cpu_seconds() {
+        // macOS/BSD ps: fractional seconds in the time column, spaces in comm.
+        let out = "  501  0.4  0.2 0:03.82 WindowServer\n\
+                     404  0.2  0.1 00:00.06 kernel_task with spaces\n";
+        let procs = parse_process_list_timed(out, 200);
+        assert_eq!(procs.len(), 2);
+        assert_eq!(procs[0].cpu_seconds, 3.82);
+        assert_eq!(procs[0].entry.command, "WindowServer");
+        assert_eq!(procs[1].cpu_seconds, 0.06);
+        assert_eq!(procs[1].entry.command, "kernel_task with spaces");
+    }
+
+    #[test]
+    fn test_process_list_timed_skips_malformed_lines_and_headers() {
+        let out = "  PID %CPU %MEM     TIME COMMAND\n\
+                   garbage line\n\
+                   10 1,5 0,5 00:01:00 a\n\
+                   11 bad bad 00:01:00 b\n\
+                   12 2.5 1.5 not-a-time c\n\
+                   13 3.5 2.5 00:01:00\n";
+        let procs = parse_process_list_timed(out, 200);
+        assert_eq!(procs.len(), 1);
+        assert_eq!(procs[0].entry.pid, 10);
+        assert!((procs[0].entry.cpu_percent - 1.5).abs() < 0.01);
+        assert!(parse_process_list_timed("", 10).is_empty());
+    }
+
+    #[test]
+    fn test_process_list_timed_caps_at_the_limit() {
+        let out = "1 0.1 0.1 00:00:01 a\n2 0.1 0.1 00:00:01 b\n3 0.1 0.1 00:00:01 c\n";
+        assert_eq!(parse_process_list_timed(out, 2).len(), 2);
     }
 
     // ---- Threshold level ----

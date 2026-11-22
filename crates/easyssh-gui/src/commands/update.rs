@@ -10,11 +10,11 @@ use tauri::AppHandle;
 use tauri_plugin_updater::UpdaterExt;
 use tokio::sync::mpsc;
 
-use omnyssh_core::config::app_config::{
+use easyssh_core::config::app_config::{
     load_app_config, save_update_config as core_save_update_config,
 };
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::update;
+use easyssh_core::event::CoreEvent;
+use easyssh_core::update;
 
 use crate::dto::{UpdateConfigDto, UpdateInfoDto};
 use crate::error::CommandError;

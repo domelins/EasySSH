@@ -69,10 +69,10 @@ fn default_include_base() -> Option<PathBuf> {
 }
 
 /// Serialises hosts as OpenSSH config text. Passwords have no directive and are never
-/// written; OmnySSH-only fields (tags, notes, monitoring…) have no place here either.
+/// written; EasySSH-only fields (tags, notes, monitoring…) have no place here either.
 /// `User`/`Port` are always explicit so the snapshot carries the resolved defaults.
 pub fn hosts_to_ssh_config(hosts: &[Host]) -> String {
-    let mut out = String::from("# Exported by OmnySSH. Passwords are NOT included.\n");
+    let mut out = String::from("# Exported by EasySSH. Passwords are NOT included.\n");
     for h in hosts {
         // A `Host` value is a pattern list: whitespace would split it into two aliases.
         if h.name.split_whitespace().count() != 1 {

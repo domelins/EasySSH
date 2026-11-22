@@ -18,7 +18,9 @@ async function boot(
       const state: { hosts: Array<Record<string, unknown>> } = { hosts: hosts.map((host) => ({ ...host })) };
       const win = window as unknown as Record<string, unknown>;
       const calls: string[] = [];
+      const callLog: Array<{ cmd: string; args: Record<string, unknown> }> = [];
       win.__hostCalls = calls;
+      win.__hostCallLog = callLog;
 
       function fire(event: string, payload: unknown): void {
         for (const id of listeners[event] ?? []) {
@@ -30,6 +32,7 @@ async function boot(
       (win as { __TAURI_INTERNALS__: unknown }).__TAURI_INTERNALS__ = {
         invoke: (cmd: string, args: Record<string, unknown>) => {
           calls.push(cmd);
+          callLog.push({ cmd, args });
           switch (cmd) {
             case 'list_hosts':
               return Promise.resolve([...state.hosts]);
@@ -132,6 +135,15 @@ async function boot(
             case 'delete_host':
               state.hosts = state.hosts.filter((host) => (host as { name: string }).name !== args.name);
               return Promise.resolve(null);
+            case 'delete_hosts': {
+              // Like the backend, only hosts.toml entries (manual hosts) can go.
+              const names = args.names as string[];
+              const removable = state.hosts.filter(
+                (host) => host.source === 'manual' && names.includes(host.name as string)
+              );
+              state.hosts = state.hosts.filter((host) => !removable.includes(host));
+              return Promise.resolve(removable.length);
+            }
             case 'list_snippets':
               return Promise.resolve([]);
             case 'plugin:event|listen': {
@@ -366,8 +378,8 @@ test('g is ignored under a modal and while typing', async ({ page }) => {
   // `g` toggles the table's grouping; its indicator is the View options dot.
   const dot = page.getByRole('button', { name: '视图选项' }).locator('span.bg-accent');
   await expect(dot).toHaveCount(0);
-  await page.getByRole('button', { name: '支持 OmnySSH' }).click();
-  await expect(page.getByRole('dialog', { name: '支持 OmnySSH' })).toBeVisible();
+  await page.getByRole('button', { name: '支持 EasySSH' }).click();
+  await expect(page.getByRole('dialog', { name: '支持 EasySSH' })).toBeVisible();
   await page.keyboard.press('g');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -655,6 +667,72 @@ test('copies the stored password from the row', async ({ page }) => {
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('secret-for-web-1');
 });
 
+for (const theme of ['dark', 'light']) {
+  test(`host table fits 1100px with the expanded sidebar and hover leaves actions painted in ${theme}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1100, height: 720 });
+    await page.addInitScript((value) => {
+      localStorage.setItem('omnyssh-theme', value);
+      localStorage.setItem('omnyssh-sidebar-collapsed', 'false');
+    }, theme);
+    await boot(page, [...HOSTS, ...Array.from({ length: 24 }, (_, i) => ({
+      ...HOSTS[0], name: `long-host-name-${i}`, hostname: `long-host-address-${i}.example.com`
+    }))]);
+    await expect(page.getByRole('button', { name: '收起侧栏', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '刷新监控指标' }).click();
+    const table = page.getByRole('table');
+    const scroller = table.locator('..');
+    // Also exercise the width lost to a vertical scrollbar, not just a three-row table.
+    expect(await scroller.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+    expect(await scroller.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await scroller.evaluate((el) => el.scrollLeft)).toBe(0);
+    const sidebar = await page.getByRole('complementary', { name: '主机浏览' }).boundingBox();
+    expect(sidebar!.width).toBe(240);
+    for (const header of await table.getByRole('columnheader').all()) {
+      await expect(header).toBeInViewport({ ratio: 1 });
+    }
+
+    const row = hostRow(page, 'web-1');
+    const metrics = row.locator('td').nth(8);
+    const actions = row.locator('td').last();
+    for (const text of ['CPU', 'RAM', 'Disk', '32%', '41%', '55%', '↓ 1.5 MB/s · ↑ 512 KB/s']) {
+      await expect(metrics.getByText(text, { exact: true })).toBeInViewport({ ratio: 1 });
+    }
+    expect(await metrics.locator('p[title="实时网速"]').evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    expect(await metrics.locator('.grid span').evaluateAll((spans) => spans.every((span) => {
+      const box = span.getBoundingClientRect();
+      const parent = span.parentElement!.getBoundingClientRect();
+      return box.left >= parent.left - 1 && box.right <= parent.right + 1;
+    }))).toBe(true);
+    const metricBox = (await metrics.boundingBox())!;
+    const actionBox = (await actions.boundingBox())!;
+    expect(metricBox.x + metricBox.width).toBeLessThanOrEqual(actionBox.x + 1);
+    expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(1100);
+
+    await row.hover();
+    const connect = row.getByRole('button', { name: '连接 web-1', exact: true });
+    await expect(connect).toHaveText('连接');
+    await expect(connect).toBeVisible();
+    for (const button of await actions.getByRole('button').all()) {
+      await expect(button).toBeInViewport({ ratio: 1 });
+    }
+    await expect(row.getByRole('button', { name: 'web-1 的文件面板' }).locator('svg')).toBeVisible();
+    // Visibility/hit-testing alone misses an opaque, pointer-events:none pseudo-layer.
+    expect(await actions.evaluate((el) => ['none', 'normal'].includes(getComputedStyle(el, '::after').content))).toBe(true);
+    expect(await connect.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return style.visibility === 'visible' && Number(style.opacity) > 0 && style.color !== style.backgroundColor;
+    })).toBe(true);
+    await openMore(page, 'web-1');
+    await expect(row.getByRole('button', { name: '复制 web-1', exact: true })).toBeVisible();
+    expect(await actions.evaluate((el) => getComputedStyle(el).zIndex)).toBe('30');
+    await page.keyboard.press('Escape');
+    await page.setViewportSize({ width: 880, height: 720 });
+    expect(await scroller.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    await scroller.evaluate((el) => { el.scrollLeft = el.scrollWidth; });
+    expect(await scroller.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+  });
+}
+
 test('shows the live network rate on the host row', async ({ page }) => {
   await boot(page);
   await page.getByRole('button', { name: '刷新监控指标' }).click();
@@ -728,7 +806,7 @@ for (const width of [880, 1100]) {
       await expect(tabs.getByRole('button', { name: / · 终端$/ })).toHaveCount(12);
       await expect(header.getByRole('button', { name: 'Dashboard', exact: true })).toHaveCount(0);
       // The merged Windows bar carries the brand itself (no native title row).
-      await expect(header.getByText('OmnySSH', { exact: true })).toBeVisible();
+      await expect(header.getByText('EasySSH', { exact: true })).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       await expect(transfer).toHaveText('导入 / 导出');
       await expect(transfer.locator('svg')).toBeVisible();
@@ -878,4 +956,105 @@ test('shows the TCP and ping latency the prober reports', async ({ page }) => {
   // A host with no measurement shows an em dash for each probe.
   const latencyCell = hostRow(page, 'api-1').locator('div[title="从本机测量：TCP 连接与 ping"]');
   await expect(latencyCell.getByText('—')).toHaveCount(2);
+});
+
+async function callLog(page: Page): Promise<Array<{ cmd: string; args: Record<string, unknown> }>> {
+  return page.evaluate(
+    () => (window as unknown as { __hostCallLog: Array<{ cmd: string; args: Record<string, unknown> }> }).__hostCallLog
+  );
+}
+
+test('exports each TOML scope once with its own filename and IPC scope', async ({ page }) => {
+  await boot(page);
+  await page.getByRole('button', { name: '导入 / 导出主机', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '导入 / 导出主机' });
+  const scopes = dialog.getByRole('radiogroup', { name: '导出范围' });
+  const both = scopes.getByRole('radio', { name: '完整快照（含密码）' });
+  const config = scopes.getByRole('radio', { name: '仅连接配置（不含密码）' });
+  const credentials = scopes.getByRole('radio', { name: '仅凭据（用户名 + 密码）' });
+  await expect(both).toHaveAttribute('aria-checked', 'true');
+  await expect(dialog.getByText('含明文密码，请妥善保管', { exact: true })).toBeVisible();
+
+  await dialog.getByRole('button', { name: '导出…' }).click();
+  await expect(dialog.getByText('D:/Backups/omnyssh-hosts.toml')).toBeVisible();
+
+  await config.click();
+  await expect(config).toHaveAttribute('aria-checked', 'true');
+  await expect(both).toHaveAttribute('aria-checked', 'false');
+  await expect(dialog.getByText('含明文密码，请妥善保管', { exact: true })).toHaveCount(0);
+  await expect(dialog.getByText('不含密码', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: '导出…' }).click();
+  await expect(dialog.getByText('D:/Backups/omnyssh-hosts-config.toml')).toBeVisible();
+
+  // Arrow keys move the selection and the focus together.
+  await config.focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(credentials).toHaveAttribute('aria-checked', 'true');
+  await expect(credentials).toBeFocused();
+  await dialog.getByRole('button', { name: '导出…' }).click();
+  await expect(dialog.getByText('D:/Backups/omnyssh-credentials.toml')).toBeVisible();
+
+  const exports = (await callLog(page)).filter((call) => call.cmd === 'export_hosts');
+  expect(exports.map((call) => call.args.scope)).toEqual(['both', 'config', 'credentials']);
+  expect(exports.map((call) => call.args.path)).toEqual([
+    'D:/Backups/omnyssh-hosts.toml',
+    'D:/Backups/omnyssh-hosts-config.toml',
+    'D:/Backups/omnyssh-credentials.toml'
+  ]);
+});
+
+test('batch deletes the selected hosts after a second confirmation', async ({ page }) => {
+  await boot(page);
+  await page.getByRole('checkbox', { name: '选择 web-1' }).check();
+  await page.getByRole('checkbox', { name: '选择 api-1' }).check();
+  await page.getByRole('button', { name: '删除所选（2）', exact: true }).click();
+  const confirm = page.getByRole('dialog', { name: '删除所选主机' });
+  await expect(confirm).toBeVisible();
+  await expect(confirm.getByText('web-1、api-1')).toBeVisible();
+  await expect(confirm.getByText(/不可撤销/)).toBeVisible();
+  await confirm.getByRole('button', { name: '删除（2）', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(hostRow(page, 'web-1')).toHaveCount(0);
+  await expect(hostRow(page, 'api-1')).toHaveCount(0);
+  await expect(hostRow(page, 'imported')).toBeVisible();
+  await expect(page.locator('[aria-live="polite"]', { hasText: '已删除 2 个主机' })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /^删除所选（/ })).toHaveCount(0);
+
+  const log = await callLog(page);
+  const batch = log.filter((call) => call.cmd === 'delete_hosts');
+  expect(batch).toHaveLength(1);
+  expect(batch[0].args.names).toEqual(['web-1', 'api-1']);
+  // The list refresh follows the delete, not the other way round.
+  const deleteAt = log.indexOf(batch[0]);
+  expect(log.slice(deleteAt + 1).some((call) => call.cmd === 'reload_hosts')).toBe(true);
+});
+
+test('batch delete explains the hosts it could not remove', async ({ page }) => {
+  await boot(page);
+  await page.getByRole('checkbox', { name: '选择 web-1' }).check();
+  await page.getByRole('checkbox', { name: '选择 imported' }).check();
+  await page.getByRole('button', { name: '删除所选（2）', exact: true }).click();
+  const confirm = page.getByRole('dialog', { name: '删除所选主机' });
+  await expect(confirm.getByText(/SSH config 导入的主机/)).toBeVisible();
+  await confirm.getByRole('button', { name: '删除（2）', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(hostRow(page, 'web-1')).toHaveCount(0);
+  // The SSH-config import has no local entry, so it stays and the bar says why.
+  await expect(hostRow(page, 'imported')).toBeVisible();
+  await expect(page.locator('[aria-live="polite"]', { hasText: '已删除 1 个主机' })).toHaveCount(1);
+  await expect(page.getByText(/已删除 1 个，其余 1 个未删除/)).toBeVisible();
+});
+
+test('batch confirmation lists five names at most and cancelling deletes nothing', async ({ page }) => {
+  await boot(page, Array.from({ length: 7 }, (_, i) => ({ ...HOSTS[0], name: `h${i + 1}`, tags: [] })));
+  await page.getByRole('checkbox', { name: '全选主机', exact: true }).check();
+  await page.getByRole('button', { name: '删除所选（7）', exact: true }).click();
+  const confirm = page.getByRole('dialog', { name: '删除所选主机' });
+  await expect(confirm.getByText('h1、h2、h3、h4、h5')).toBeVisible();
+  await expect(confirm.getByText(/等 7 个/)).toBeVisible();
+  await expect(confirm.getByText(/h6/)).toHaveCount(0);
+  await confirm.getByRole('button', { name: '取消' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(hostRow(page, 'h7')).toBeVisible();
+  expect((await callLog(page)).filter((call) => call.cmd === 'delete_hosts')).toEqual([]);
 });

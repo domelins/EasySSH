@@ -10,7 +10,7 @@
 //! - One SSH connection per host, reused across polls.
 //! - All data sent to the main event loop via `mpsc::Sender<CoreEvent>`.
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};
 
 use tokio::net::TcpStream;
@@ -24,8 +24,9 @@ use crate::ssh::identity;
 use crate::ssh::metrics::{
     diskstats_key, parse_cpu_cp_time, parse_cpu_proc_stat, parse_cpu_proc_stat_delta,
     parse_cpu_top, parse_cpu_top_macos, parse_df_mounts, parse_disk_df, parse_diskstats,
-    parse_loadavg, parse_loadavg_uptime, parse_meminfo, parse_net_dev, parse_process_list,
+    parse_loadavg, parse_loadavg_uptime, parse_meminfo, parse_net_dev, parse_process_list_timed,
     parse_ram_free, parse_ram_sysctl, parse_ram_vmstat, parse_uptime, rate_per_sec,
+    TimedProcessEntry,
 };
 use crate::ssh::password;
 use crate::ssh::session::{dial_error, passphrase_required, waiting_login, SshSession};
@@ -425,17 +426,28 @@ async fn send_status(tx: &mpsc::Sender<CoreEvent>, name: &str, status: Connectio
 // Metric collection
 // ---------------------------------------------------------------------------
 
-/// How many CPU samples the poller keeps for the trend line. At the default 30 s
-/// interval that is half an hour; the panel never needs more than its width.
+/// How many CPU samples the poller keeps for the trend line. At the default 5 s
+/// interval that is five minutes; the panel never needs more than its width.
 const CPU_HISTORY_LEN: usize = 60;
 
+/// One process as read by the previous sample: its cumulative CPU seconds, its
+/// `comm` (to spot a PID that has been reused) and the moment it was read. The
+/// real-time CPU share is the CPU delta over the wall-clock delta.
+struct ProcSample {
+    cpu_seconds: f64,
+    command: String,
+    at: Instant,
+}
+
 /// What a sample needs from the previous one: the byte counters whose deltas
-/// become rates, and the CPU trend. Lives in the host's poller task, so two
+/// become rates, the CPU trend, and the per-process CPU times whose deltas
+/// become the real-time CPU share. Lives in the host's poller task, so two
 /// hosts can never mix their counters and a reconnected host starts clean.
 struct SampleClock {
     net: Option<(u64, u64, Instant)>,
     disks: HashMap<String, (u64, u64, Instant)>,
     cpu: VecDeque<f64>,
+    procs: HashMap<u32, ProcSample>,
 }
 
 impl SampleClock {
@@ -444,6 +456,7 @@ impl SampleClock {
             net: None,
             disks: HashMap::new(),
             cpu: VecDeque::with_capacity(CPU_HISTORY_LEN),
+            procs: HashMap::new(),
         }
     }
 
@@ -601,7 +614,9 @@ async fn collect_metrics(
 
     let load_avg = parse_loadavg(&loadavg_str).or_else(|| parse_loadavg_uptime(&uptime_str));
 
-    let processes = collect_processes(session).await;
+    let processes = collect_processes(session, clock).await;
+    // The list arrives in real-time CPU order, so its first three are the
+    // panel's top processes.
     let top_processes = if processes.is_empty() {
         None
     } else {
@@ -649,38 +664,112 @@ async fn collect_metrics(
     })
 }
 
-/// Collects the process table (up to [`PROCESS_LIST_LEN`]) by CPU usage.
+/// Collects the process table for the panel.
 ///
 /// Tries GNU `ps` (Linux) with a server-side sort first, then falls back to
 /// BSD `ps` (macOS, FreeBSD). An empty list means neither variant produced
 /// usable output and the panel says so.
-async fn collect_processes(session: &SshSession) -> Vec<ProcessEntry> {
+///
+/// The server-side `--sort=-pcpu` is only a coarse pre-filter — `pcpu` is the
+/// lifetime average, which hides a busy minute behind a long uptime — so the
+/// fetch is wider than the panel ([`PROCESS_FETCH_LEN`] rows) and
+/// [`finalize_processes`] re-sorts by the real-time CPU share computed from
+/// each process' cumulative `time` column, then truncates to
+/// [`PROCESS_LIST_LEN`].
+async fn collect_processes(session: &SshSession, clock: &mut SampleClock) -> Vec<ProcessEntry> {
     // Linux: GNU ps with server-side sort by CPU; empty `=` headers suppressed.
+    // The `time` column is each process' cumulative CPU time, the base of the
+    // real-time share computed against the previous sample.
     let linux_out = session
         .run_command(&process_list_command(
-            "-eo pid=,ppid=,pcpu=,pmem=,comm= --sort=-pcpu",
-            PROCESS_LIST_LEN,
+            "-eo pid=,ppid=,pcpu=,pmem=,time=,comm= --sort=-pcpu",
+            PROCESS_FETCH_LEN,
         ))
         .await
         .unwrap_or_default();
-    let linux = parse_process_list(&linux_out, PROCESS_LIST_LEN);
+    let linux = parse_process_list_timed(&linux_out, PROCESS_FETCH_LEN);
     if !linux.is_empty() {
-        return linux;
+        return finalize_processes(clock, linux, Instant::now());
     }
     // macOS and FreeBSD: BSD ps sorted by CPU usage (-r). One `-o` per column:
     // FreeBSD reads everything after the first `=` as that column's header.
     let bsd_out = session
         .run_command(&process_list_command(
-            "-Ac -o pid= -o ppid= -o pcpu= -o pmem= -o comm= -r",
-            PROCESS_LIST_LEN,
+            "-Ac -o pid= -o ppid= -o pcpu= -o pmem= -o time= -o comm= -r",
+            PROCESS_FETCH_LEN,
         ))
         .await
         .unwrap_or_default();
-    parse_process_list(&bsd_out, PROCESS_LIST_LEN)
+    finalize_processes(
+        clock,
+        parse_process_list_timed(&bsd_out, PROCESS_FETCH_LEN),
+        Instant::now(),
+    )
 }
 
-/// How many processes the full list asks for; the panel scrolls through them.
+/// How many processes the panel keeps after the real-time re-sort; it scrolls
+/// through them.
 const PROCESS_LIST_LEN: usize = 60;
+
+/// How many rows the server-side `ps` hands over per sample. `--sort=-pcpu`
+/// orders by the lifetime average, so a freshly busy process can sit far below
+/// 60; fetching a wider window lets the real-time re-sort still fill
+/// [`PROCESS_LIST_LEN`] with what is busy now.
+const PROCESS_FETCH_LEN: usize = 200;
+
+/// Compute the real-time CPU share for each parsed row against the previous
+/// sample, re-sort by it and truncate to [`PROCESS_LIST_LEN`].
+///
+/// Each row carries the cumulative CPU time of `ps`'s `time` column; its delta
+/// over the real wall-clock delta since the previous sample of the same PID is
+/// the share the panel shows. The share may exceed 100 — one process can burn
+/// several cores — and is never negative. A row whose PID has no previous
+/// sample (the first round of a connection) or whose `comm` changed or whose
+/// CPU time went backwards (a reused PID, a new process) keeps `ps`'s lifetime
+/// `pcpu` rather than inventing a number. The per-PID sample table keeps only
+/// the PIDs the current fetch still contains, so it stays bounded by the fetch
+/// width.
+fn finalize_processes(
+    clock: &mut SampleClock,
+    rows: Vec<TimedProcessEntry>,
+    now: Instant,
+) -> Vec<ProcessEntry> {
+    // The sample table must never outgrow the fetch: drop every PID this round
+    // did not see. The set is built from the full fetch, not from the rows that
+    // survive the panel truncate below — a process ranked 61..200 keeps its
+    // baseline and, re-entering the top 60 next round, still gets a real delta
+    // instead of falling back to ps's lifetime pcpu.
+    let seen: HashSet<u32> = rows.iter().map(|row| row.entry.pid).collect();
+    clock.procs.retain(|pid, _| seen.contains(pid));
+    let mut out = Vec::with_capacity(rows.len());
+    for TimedProcessEntry {
+        mut entry,
+        cpu_seconds,
+    } in rows
+    {
+        if let Some(previous) = clock.procs.get(&entry.pid) {
+            let elapsed = now.saturating_duration_since(previous.at).as_secs_f64();
+            let delta = cpu_seconds - previous.cpu_seconds;
+            if previous.command == entry.command && delta >= 0.0 && elapsed > 0.0 {
+                entry.cpu_percent = delta / elapsed * 100.0;
+            }
+        }
+        clock.procs.insert(
+            entry.pid,
+            ProcSample {
+                cpu_seconds,
+                command: entry.command.clone(),
+                at: now,
+            },
+        );
+        out.push(entry);
+    }
+    // The server-side `--sort=-pcpu` was only the pre-filter: the real-time
+    // share decides the table order. A stable sort keeps ps's order on a tie.
+    out.sort_by(|a, b| b.cpu_percent.total_cmp(&a.cpu_percent));
+    out.truncate(PROCESS_LIST_LEN);
+    out
+}
 
 /// Builds the remote shell command that lists processes by CPU with the
 /// monitoring connection's own process chain removed. `ps_args` selects the
@@ -700,14 +789,17 @@ const PROCESS_LIST_LEN: usize = 60;
 /// POSIX-sh syntax — a non-Bourne login shell simply yields no output and the
 /// panel degrades to "process data unavailable".
 ///
-/// Each surviving row prints as `pid cpu mem command`: the pid first so the
-/// table can show it, the command last so spaces inside it survive.
+/// Each surviving row prints as `pid cpu mem time command`: the pid first so
+/// the table can show it, the command last so spaces inside it survive, and
+/// `time` (`ps`'s cumulative CPU time) so the poller can derive the real-time
+/// CPU share from two samples. `comm` is the 6th column, which the idle
+/// filter below reads.
 fn process_list_command(ps_args: &str, limit: usize) -> String {
     format!(
         "g=$({PS_LOCALE} ps -o ppid= -p $PPID 2>/dev/null | tr -d ' '); \
          {PS_LOCALE} ps {ps_args} 2>/dev/null | \
          awk -v s=$$ -v p=$PPID -v g=\"$g\" \
-         '$1!=s && $1!=p && $1!=g && $2!=s && $2!=p && !($2==0 && $5==\"idle\") \
+         '$1!=s && $1!=p && $1!=g && $2!=s && $2!=p && !($2==0 && $6==\"idle\") \
          {{pid=$1;$1=\"\";$2=\"\";sub(/^[ \\t]+/,\"\");print pid, $0}}' | \
          head -n {limit}"
     )
@@ -930,7 +1022,10 @@ mod tests {
 
     #[test]
     fn process_list_command_excludes_monitor_pid_chain() {
-        let cmd = process_list_command("-eo pid=,ppid=,pcpu=,pmem=,comm= --sort=-pcpu", 60);
+        let cmd = process_list_command(
+            "-eo pid=,ppid=,pcpu=,pmem=,time=,comm= --sort=-pcpu",
+            PROCESS_FETCH_LEN,
+        );
 
         // The grandparent PID is resolved in a substitution that runs before
         // the pipeline does.
@@ -944,22 +1039,249 @@ mod tests {
         assert!(cmd.contains("$1!=s && $1!=p && $1!=g && $2!=s && $2!=p"));
         // Filtering is by PID only — never by process name.
         assert!(!cmd.contains("sshd"));
-        // Output is capped server-side.
-        assert!(cmd.trim_end().ends_with("head -n 60"));
+        // Output is capped server-side at the fetch width, not the panel length.
+        assert!(cmd
+            .trim_end()
+            .ends_with(&format!("head -n {PROCESS_FETCH_LEN}")));
     }
 
     #[test]
     fn process_list_command_splices_ps_args_verbatim() {
-        let linux = process_list_command("-eo pid=,ppid=,pcpu=,pmem=,comm= --sort=-pcpu", 60);
-        assert!(linux.contains("ps -eo pid=,ppid=,pcpu=,pmem=,comm= --sort=-pcpu 2>/dev/null"));
+        let linux = process_list_command(
+            "-eo pid=,ppid=,pcpu=,pmem=,time=,comm= --sort=-pcpu",
+            PROCESS_FETCH_LEN,
+        );
+        assert!(
+            linux.contains("ps -eo pid=,ppid=,pcpu=,pmem=,time=,comm= --sort=-pcpu 2>/dev/null")
+        );
 
-        let bsd = process_list_command("-Ac -o pid= -o ppid= -o pcpu= -o pmem= -o comm= -r", 60);
-        assert!(bsd.contains("ps -Ac -o pid= -o ppid= -o pcpu= -o pmem= -o comm= -r 2>/dev/null"));
+        let bsd = process_list_command(
+            "-Ac -o pid= -o ppid= -o pcpu= -o pmem= -o time= -o comm= -r",
+            PROCESS_FETCH_LEN,
+        );
+        assert!(bsd.contains(
+            "ps -Ac -o pid= -o ppid= -o pcpu= -o pmem= -o time= -o comm= -r 2>/dev/null"
+        ));
     }
 
     #[test]
     fn process_list_command_drops_only_the_kernel_idle_process() {
-        let cmd = process_list_command("-Ac -o pid= -o ppid= -o pcpu= -o pmem= -o comm= -r", 60);
-        assert!(cmd.contains("!($2==0 && $5==\"idle\")"));
+        let cmd = process_list_command(
+            "-Ac -o pid= -o ppid= -o pcpu= -o pmem= -o time= -o comm= -r",
+            PROCESS_FETCH_LEN,
+        );
+        // The time column sits between pmem and comm, so the idle check reads
+        // the 6th column now — `$5` would filter on the CPU time instead and
+        // FreeBSD's kernel idle would slip through.
+        assert!(cmd.contains("!($2==0 && $6==\"idle\")"));
+    }
+
+    #[test]
+    fn process_deltas_compute_the_real_time_share_between_two_samples() {
+        // Realistic rows from the timed pipeline: pid pcpu pmem time comm.
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let first = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(
+                "  4242  12.3  1.5 01:00:00 nginx: worker process\n\
+                    77   0.5  0.1 00:00:10 python3\n",
+                PROCESS_FETCH_LEN,
+            ),
+            t0,
+        );
+        // No previous sample: the first round keeps ps's lifetime pcpu.
+        assert_eq!(first[0].cpu_percent, 12.3);
+        assert_eq!(first[1].cpu_percent, 0.5);
+
+        let second = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(
+                "  4242  13.0  1.5 01:00:05 nginx: worker process\n\
+                    77   0.6  0.1 00:00:11 python3\n",
+                PROCESS_FETCH_LEN,
+            ),
+            t0 + Duration::from_secs(5),
+        );
+        // 5 s of CPU in 5 s of wall clock, 1 s of CPU in 5 s of wall clock.
+        assert!((second[0].cpu_percent - 100.0).abs() < 1e-9);
+        assert!((second[1].cpu_percent - 20.0).abs() < 1e-9);
+        // The other columns pass through untouched.
+        assert_eq!(second[0].pid, 4242);
+        assert_eq!(second[0].command, "nginx: worker process");
+        assert_eq!(second[0].mem_percent, 1.5);
+    }
+
+    #[test]
+    fn process_deltas_may_exceed_one_hundred_percent_across_cores() {
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  10  0.0  2.0 00:00:00 ffmpeg\n", PROCESS_FETCH_LEN),
+            t0,
+        );
+        let second = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  10  0.0  2.0 00:00:10 ffmpeg\n", PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(5),
+        );
+        // 10 s of CPU over 5 s of wall clock: two cores fully busy.
+        assert_eq!(second[0].cpu_percent, 200.0);
+    }
+
+    #[test]
+    fn process_deltas_fall_back_to_ps_pcpu_on_a_reused_pid() {
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  77  4.0  1.0 00:10:00 old-daemon\n", PROCESS_FETCH_LEN),
+            t0,
+        );
+        // The same PID now names another command — a reused PID, not a CPU spike.
+        let second = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  77  0.2  1.0 00:10:02 new-worker\n", PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(5),
+        );
+        assert_eq!(second[0].command, "new-worker");
+        assert_eq!(second[0].cpu_percent, 0.2);
+
+        // A cumulative CPU time that went backwards is a new process too.
+        let third = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  77  0.3  1.0 00:00:01 new-worker\n", PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(10),
+        );
+        assert_eq!(third[0].cpu_percent, 0.3);
+    }
+
+    #[test]
+    fn process_deltas_need_a_moving_wall_clock() {
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  10  4.0  1.0 00:10:00 a\n", PROCESS_FETCH_LEN),
+            t0,
+        );
+        // Two samples read in the same instant: the elapsed time is zero, so
+        // there is no rate to compute and ps's pcpu stays.
+        let second = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  10  4.1  1.0 00:10:05 a\n", PROCESS_FETCH_LEN),
+            t0,
+        );
+        assert_eq!(second[0].cpu_percent, 4.1);
+    }
+
+    #[test]
+    fn process_list_resorts_by_the_real_time_share_and_truncates_to_the_panel_length() {
+        // 70 rows where ps's lifetime sort (pcpu 0.0) would rank the busy pid
+        // last: the real-time share must move it to the top, and everything
+        // past PROCESS_LIST_LEN must drop off.
+        let listing = |busy_time: &str| -> String {
+            let mut out = String::new();
+            for pid in 1..=70 {
+                let time = if pid == 70 { busy_time } else { "00:00:00" };
+                out.push_str(&format!(" {pid}  0.0  0.5 {time} sleepy-{pid}\n"));
+            }
+            out
+        };
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(&listing("00:00:00"), PROCESS_FETCH_LEN),
+            t0,
+        );
+        let final_list = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(&listing("00:00:30"), PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(30),
+        );
+        assert_eq!(final_list.len(), PROCESS_LIST_LEN);
+        // 30 s of CPU over 30 s of wall clock: 100 % of one core, leading the
+        // table whatever the server-side sort said.
+        assert_eq!(final_list[0].pid, 70);
+        assert!((final_list[0].cpu_percent - 100.0).abs() < 1e-9);
+        // Every other survivor kept its zero real-time share, and the tail
+        // beyond the panel length was dropped entirely.
+        assert!(final_list.iter().skip(1).all(|p| p.cpu_percent == 0.0));
+        assert!(!final_list.iter().any(|p| p.pid == 60));
+    }
+
+    #[test]
+    fn process_samples_drop_pids_that_left_the_fetch() {
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(
+                "  10  1.0  0.5 00:10:00 first\n  20  2.0  0.5 00:20:00 second\n",
+                PROCESS_FETCH_LEN,
+            ),
+            t0,
+        );
+        assert!(clock.procs.contains_key(&10));
+        assert!(clock.procs.contains_key(&20));
+
+        // The next sample no longer contains pid 20: its baseline must be
+        // dropped rather than accumulating in the map forever.
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed("  10  1.1  0.5 00:10:05 first\n", PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(5),
+        );
+        assert!(clock.procs.contains_key(&10));
+        assert!(!clock.procs.contains_key(&20));
+    }
+
+    #[test]
+    fn process_samples_keep_the_baseline_of_a_row_cut_by_the_panel_truncate() {
+        // 70 rows: pid 70 spikes in round 2 and pushes pid 60 out of the 60-row
+        // panel (not out of the 200-row fetch). In round 3 pid 60 spikes: it
+        // must still compute a real delta — the baseline survives the truncate
+        // because retention follows the full fetch.
+        let listing = |pid60_time: &str, pid70_time: &str| -> String {
+            let mut out = String::new();
+            for pid in 1..=70 {
+                let time = match pid {
+                    60 => pid60_time,
+                    70 => pid70_time,
+                    _ => "00:00:00",
+                };
+                out.push_str(&format!(" {pid}  0.0  0.5 {time} sleepy-{pid}\n"));
+            }
+            out
+        };
+        let mut clock = SampleClock::new();
+        let t0 = Instant::now();
+        let _ = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(&listing("00:00:00", "00:00:00"), PROCESS_FETCH_LEN),
+            t0,
+        );
+
+        // Round 2: pid 70 takes the top, pid 60 lands past the panel length.
+        let second = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(&listing("00:00:00", "00:00:30"), PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(30),
+        );
+        assert_eq!(second[0].pid, 70);
+        assert!(!second.iter().any(|p| p.pid == 60));
+        assert!(clock.procs.contains_key(&60));
+
+        // Round 3: pid 60 re-enters the panel and its delta is real (100 %),
+        // not a fallback to ps's lifetime pcpu (which the fixture leaves 0.0).
+        let third = finalize_processes(
+            &mut clock,
+            parse_process_list_timed(&listing("00:00:15", "00:00:30"), PROCESS_FETCH_LEN),
+            t0 + Duration::from_secs(45),
+        );
+        assert_eq!(third[0].pid, 60);
+        assert!((third[0].cpu_percent - 100.0).abs() < 1e-9);
     }
 }

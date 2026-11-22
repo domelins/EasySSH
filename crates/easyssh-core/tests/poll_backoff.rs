@@ -11,9 +11,9 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::sync::mpsc;
 
-use omnyssh_core::event::CoreEvent;
-use omnyssh_core::ssh::client::{ConnectionStatus, Host, MonitorMode};
-use omnyssh_core::ssh::pool::PollManager;
+use easyssh_core::event::CoreEvent;
+use easyssh_core::ssh::client::{ConnectionStatus, Host, MonitorMode};
+use easyssh_core::ssh::pool::PollManager;
 
 /// Counts connections, answering none of them.
 async fn dead_listener() -> (u16, Arc<AtomicUsize>) {

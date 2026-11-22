@@ -33,7 +33,7 @@ pub fn build(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             &PredefinedMenuItem::hide_others(app, None)?,
             &PredefinedMenuItem::show_all(app, None)?,
             &separator()?,
-            &MenuItem::with_id(app, QUIT_ID, "退出 OmnySSH", true, Some("CmdOrCtrl+Q"))?,
+            &MenuItem::with_id(app, QUIT_ID, "退出 EasySSH", true, Some("CmdOrCtrl+Q"))?,
         ],
     )?;
     // Closing goes through `CloseRequested`, so the tray or the page's question still apply.

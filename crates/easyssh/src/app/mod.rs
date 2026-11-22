@@ -19,15 +19,15 @@ use crate::event::{spawn_event_thread, AppEvent};
 use crate::keybindings::ParsedKeybindings;
 use crate::ui;
 use crate::ui::theme::Theme;
-use omnyssh_core::config;
-use omnyssh_core::config::app_config::AppConfig;
-use omnyssh_core::config::snippets::Snippet;
-use omnyssh_core::event::{CoreEvent, Metrics, ServiceKind, TransferId};
-use omnyssh_core::ssh::client::{ConnectionStatus, Host};
-use omnyssh_core::ssh::pool::PollManager;
-use omnyssh_core::ssh::pty::PtyManager;
-use omnyssh_core::ssh::sftp::{SftpCommand, SftpManager};
-use omnyssh_core::ssh::tunnel::{TunnelManager, TunnelStatus};
+use easyssh_core::config;
+use easyssh_core::config::app_config::AppConfig;
+use easyssh_core::config::snippets::Snippet;
+use easyssh_core::event::{CoreEvent, Metrics, ServiceKind, TransferId};
+use easyssh_core::ssh::client::{ConnectionStatus, Host};
+use easyssh_core::ssh::pool::PollManager;
+use easyssh_core::ssh::pty::PtyManager;
+use easyssh_core::ssh::sftp::{SftpCommand, SftpManager};
+use easyssh_core::ssh::tunnel::{TunnelManager, TunnelStatus};
 
 mod action;
 mod actions;
@@ -121,7 +121,7 @@ pub struct AppState {
     /// Saved command snippets.
     pub snippets: Vec<Snippet>,
     /// Detected services per host.
-    pub services: HashMap<String, Vec<omnyssh_core::event::DetectedService>>,
+    pub services: HashMap<String, Vec<easyssh_core::event::DetectedService>>,
     /// Status of each host's tunnel, keyed by `host.name`. No entry means none
     /// is running.
     pub tunnel_statuses: HashMap<String, TunnelStatus>,
@@ -367,7 +367,7 @@ impl App {
             let tx = self.core_tx.clone();
             let skip_version = self.config.update.skip_version.clone();
             tokio::spawn(async move {
-                if let Some(info) = omnyssh_core::update::check().await {
+                if let Some(info) = easyssh_core::update::check().await {
                     if info.latest != skip_version {
                         let _ = tx.send(CoreEvent::UpdateAvailable(info)).await;
                     }
@@ -994,7 +994,7 @@ impl App {
                 if let Some(popup) = &mut self.view.update_popup {
                     popup.phase = match result {
                         Ok(()) => UpdatePopupPhase::Done {
-                            message: "Update installed. Restart omny to use \
+                            message: "Update installed. Restart easy to use \
                                       the new version."
                                 .to_string(),
                             ok: true,

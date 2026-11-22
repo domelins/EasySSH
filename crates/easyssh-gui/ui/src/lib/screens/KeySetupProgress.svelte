@@ -100,10 +100,10 @@
                 服务器的 SSH 设置已更改；备份保存在
                 <span class="break-all font-mono">{BACKUP}</span>。
               </p>
-              <p class="text-xs text-faint">OmnySSH 中保存的密码已删除。</p>
+              <p class="text-xs text-faint">EasySSH 中保存的密码已删除。</p>
             {:else}
               <p class="text-sm font-medium">
-                密钥登录已可用。密码登录仍开启——OmnySSH 需要免密 sudo
+                密钥登录已可用。密码登录仍开启——EasySSH 需要免密 sudo
                 才能更改服务器设置。
               </p>
               <p class="break-all font-mono text-xs text-muted">{phase.keyPath}</p>
@@ -155,7 +155,7 @@
           <div class="min-w-0 space-y-1">
             <p class="text-sm font-medium">密码登录已重新开启</p>
             <p class="text-xs text-muted">
-              关闭密码登录之后的某个步骤失败，OmnySSH 已从备份恢复服务器的
+              关闭密码登录之后的某个步骤失败，EasySSH 已从备份恢复服务器的
               SSH 设置。密码登录与之前一样可用。
             </p>
             <p class="break-words text-xs text-faint">原因：{$maskText(phase.result)}</p>

@@ -41,9 +41,9 @@
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50';
 </script>
 
-<Modal label="退出 OmnySSH？" onClose={cancel}>
+<Modal label="退出 EasySSH？" onClose={cancel}>
   <div class="space-y-3 px-5 py-4">
-    <h2 class="text-sm font-semibold">退出 OmnySSH？</h2>
+    <h2 class="text-sm font-semibold">退出 EasySSH？</h2>
     <p class="text-sm text-muted">{summary}将被关闭。</p>
     <label class="flex items-center gap-2 text-sm text-muted">
       <input type="checkbox" class="accent-accent" bind:checked={dontAsk} />

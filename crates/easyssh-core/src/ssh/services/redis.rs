@@ -43,21 +43,21 @@ mod tests {
 
     #[test]
     fn test_redis_detect_from_port() {
-        let probe = "===OMNYSSH:LISTEN===\n0.0.0.0:6379\tLISTEN\n";
+        let probe = "===EASYSSH:LISTEN===\n0.0.0.0:6379\tLISTEN\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(RedisProvider.detect(&parsed));
     }
 
     #[test]
     fn test_redis_detect_from_process() {
-        let probe = "===OMNYSSH:PROCESS===\nredis 1234 redis-server\n";
+        let probe = "===EASYSSH:PROCESS===\nredis 1234 redis-server\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(RedisProvider.detect(&parsed));
     }
 
     #[test]
     fn test_redis_not_detected() {
-        let probe = "===OMNYSSH:SERVICES===\nsshd.service\n";
+        let probe = "===EASYSSH:SERVICES===\nsshd.service\n";
         let parsed = ProbeOutput::parse(probe).expect("should parse");
         assert!(!RedisProvider.detect(&parsed));
     }

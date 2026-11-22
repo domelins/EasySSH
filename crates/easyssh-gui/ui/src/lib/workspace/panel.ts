@@ -55,7 +55,7 @@ export async function openDetachedPanel(panel: DetachedPanel, host: string): Pro
     }
     const window = new WebviewWindow(label, {
       url: panelUrl(panel, host),
-      title: `OmnySSH · ${host}`,
+      title: `EasySSH · ${host}`,
       width: panel === 'monitor' ? 420 : 520,
       height: 720,
       minWidth: 300,

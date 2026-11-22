@@ -1,4 +1,4 @@
-//! The system tray: an opt-in place to keep OmnySSH — every terminal, file browser
+//! The system tray: an opt-in place to keep EasySSH — every terminal, file browser
 //! and tunnel in it — running with no window on screen. Off until the user turns it
 //! on, and the window only ever hides into an icon that exists: on a desktop without
 //! a tray it would have nowhere to come back from.
@@ -208,11 +208,11 @@ fn hide_icon(app: &AppHandle) {
 }
 
 fn build_icon(app: &AppHandle) -> tauri::Result<()> {
-    let show = MenuItem::with_id(app, SHOW_ID, "显示 OmnySSH", true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, QUIT_ID, "退出 OmnySSH", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, SHOW_ID, "显示 EasySSH", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, QUIT_ID, "退出 EasySSH", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&show, &quit])?;
     let mut builder = TrayIconBuilder::with_id(TRAY_ID)
-        .tooltip("OmnySSH")
+        .tooltip("EasySSH")
         .menu(&menu)
         // A menu bar extra opens its menu on click; a Windows tray icon brings the
         // window back and keeps its menu for the right button.

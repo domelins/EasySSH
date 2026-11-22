@@ -167,7 +167,7 @@ describe('masking addresses in text', () => {
     const plain = [
       'listen on 127.0.0.1:8080, [::1]:22, 0.0.0.0:80, :: and *:443 failed',
       'key SHA256:nas+Zm9vYmFy/nas and ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub',
-      'OmnySSH 1.1.4 at 2026-10-09 12:30:45, file id_ed25519.pub in /srv/10.0.0.5/logs',
+      'EasySSH 1.1.4 at 2026-10-09 12:30:45, file id_ed25519.pub in /srv/10.0.0.5/logs',
       'link aa:bb:cc:dd:ee:ff up; std::io error; github.com is fine'
     ];
     for (const text of plain) expect(mask(text)).toBe(text);
