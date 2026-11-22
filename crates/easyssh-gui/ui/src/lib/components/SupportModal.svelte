@@ -1,7 +1,7 @@
 <script lang="ts">
   // A brief, unobtrusive support dialog opened from the sidebar footer's paper-plane
   // button. It says EasySSH is free and open source with no plan to monetize it, then
-  // offers the two ways to help: a GitHub star and the Telegram channel. Brandbook
+  // offers one way to help: a GitHub star. Brandbook
   // language (§04) — a calm light-weight headline with a single bold emphasis, flat
   // hairline action rows, and a pill arrow that leans on hover. It is an overlay, never
   // the active entity, so it leaves the exactly-one-active invariant untouched (§2).
@@ -18,14 +18,8 @@
     {
       icon: 'star',
       title: '在 GitHub 上点星',
-      locator: 'github.com/timhartmann7/omnyssh',
-      url: 'https://github.com/timhartmann7/omnyssh'
-    },
-    {
-      icon: 'telegram',
-      title: '关注 Telegram 频道',
-      locator: '@timhartmanndev',
-      url: 'https://t.me/timhartmanndev'
+      locator: 'github.com/domelins/EasySSH',
+      url: 'https://github.com/domelins/EasySSH'
     }
   ];
 
@@ -63,7 +57,7 @@
     </p>
 
     <p class="mt-5 text-[0.6875rem] font-medium uppercase tracking-[0.18em] text-faint">
-      两件小事就能帮它成长
+      一件小事就能帮它成长
     </p>
 
     <div class="mt-2.5 space-y-2.5">
@@ -89,9 +83,5 @@
         </button>
       {/each}
     </div>
-
-    <p class="mt-4 text-xs leading-relaxed text-faint">
-      我会在 Telegram 上发布更新说明，以及我其他作品的动态。
-    </p>
   </div>
 </Modal>

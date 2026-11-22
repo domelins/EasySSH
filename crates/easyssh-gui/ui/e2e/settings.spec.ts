@@ -11,7 +11,7 @@ const HOSTS = [
 
 const UPDATE = {
   version: '2.0.0',
-  url: 'https://github.com/timhartmann7/omnyssh/releases/tag/v2.0.0',
+  url: 'https://github.com/domelins/EasySSH/releases/tag/v2.0.0',
   tag: 'v2.0.0',
   canSelfUpdate: true
 };

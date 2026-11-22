@@ -31,7 +31,7 @@ development workflow, coding conventions, and review process.
 **Clone and build:**
 
 ```bash
-git clone https://github.com/timhartmann7/omnyssh.git easyssh
+git clone https://github.com/domelins/EasySSH.git easyssh
 cd easyssh
 cargo build
 ```

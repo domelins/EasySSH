@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 use tar::Archive;
 
 /// GitHub repository that hosts EasySSH releases.
-const REPO: &str = "timhartmann7/omnyssh";
+const REPO: &str = "domelins/EasySSH";
 /// Timeout applied to every network request the updater makes.
 const HTTP_TIMEOUT: Duration = Duration::from_secs(8);
 /// Target triple this binary was built for (provided by `build.rs`).
