@@ -59,7 +59,7 @@ jobs:
 
       - name: Verify committed man page is up to date
         if: runner.os == 'Linux'
-        run: git diff --exit-code doc/omny.1
+        run: git diff --exit-code doc/easy.1
 
       - name: Run tests
         run: cargo test --verbose
@@ -70,7 +70,7 @@ jobs:
       - name: Check formatting
         run: cargo fmt --check
 
-  # The workspace `default-members` keeps omnyssh-gui out of a bare `cargo build`
+  # The workspace `default-members` keeps easyssh-gui out of a bare `cargo build`
   # (see `tui-build-independence` below), so nothing above ever compiles it. This
   # job is where the GUI's own gates run — including the startup contract, whose
   # whole point is to guard link-time settings no other test can reach.
@@ -91,7 +91,7 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: crates/omnyssh-gui/ui/package-lock.json
+          cache-dependency-path: crates/easyssh-gui/ui/package-lock.json
 
       - name: Cache cargo registry
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
@@ -127,11 +127,11 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev
 
       - name: Install frontend dependencies
-        working-directory: crates/omnyssh-gui/ui
+        working-directory: crates/easyssh-gui/ui
         run: npm ci
 
       - name: Frontend checks
-        working-directory: crates/omnyssh-gui/ui
+        working-directory: crates/easyssh-gui/ui
         run: |
           npm run check
           npm test
@@ -140,14 +140,14 @@ jobs:
       # until it exists. `tauri build` does this via beforeBuildCommand; plain cargo
       # does not.
       - name: Build the frontend
-        working-directory: crates/omnyssh-gui/ui
+        working-directory: crates/easyssh-gui/ui
         run: npm run build
 
       - name: Clippy (no warnings)
-        run: cargo clippy -p omnyssh-gui --all-targets -- -D warnings
+        run: cargo clippy -p easyssh-gui --all-targets -- -D warnings
 
       - name: Run tests
-        run: cargo test -p omnyssh-gui
+        run: cargo test -p easyssh-gui
 
   tui-build-independence:
     name: TUI builds without the GUI toolchain
@@ -183,8 +183,8 @@ jobs:
           test -z "$(command -v node)" || { echo "node still present"; exit 1; }
           cargo build --locked
           cargo test --locked
-          test -f target/debug/omny || { echo "omny missing"; exit 1; }
-          if [ -f target/debug/OmnySSH ]; then
+          test -f target/debug/easy || { echo "easy missing"; exit 1; }
+          if [ -f target/debug/EasySSH ]; then
             echo "GUI leaked into the bare build"; exit 1
           fi
-          echo "OK: bare build produced omny, excluded OmnySSH, needed no Node."
+          echo "OK: bare build produced easy, excluded EasySSH, needed no Node."
