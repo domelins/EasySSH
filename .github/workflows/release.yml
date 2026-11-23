@@ -31,7 +31,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ci-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ci-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
 
       - run: cargo test --verbose
       - run: cargo clippy --all-targets -- -D warnings
@@ -111,9 +111,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.target }}-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ matrix.target }}-cargo-
+            ${{ matrix.target }}-cargo-v2-
 
       # Cross-linker for the aarch64-musl target. Rust bundles the musl libc
       # itself; gcc-aarch64-linux-gnu only supplies the ELF linker.
@@ -225,9 +225,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: gui-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: gui-v2-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            gui-${{ matrix.target }}-cargo-
+            gui-v2-${{ matrix.target }}-cargo-
 
       # Tauri v2 build dependencies (webkit2gtk + appindicator; patchelf/file for
       # the AppImage, squashfs-tools to unpack it again below). Only Linux needs

@@ -50,9 +50,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-v2-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-cargo-v2-
 
       - name: Build
         run: cargo build --verbose
@@ -103,9 +103,9 @@ jobs:
           # Deliberately outside the `${{ runner.os }}-cargo-` namespace: this job's
           # target tree contains the GUI binary, and `tui-build-independence` restores
           # by that prefix and fails when it finds one.
-          key: gui-ci-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: gui-ci-v2-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            gui-ci-${{ runner.os }}-cargo-
+            gui-ci-v2-${{ runner.os }}-cargo-
 
       # The pkg-config libraries behind gtk-sys and webkit2gtk-sys. The release job
       # installs more, but those are the bundler's (icons, AppImage) and this job only
@@ -167,9 +167,9 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: ${{ runner.os }}-cargo-independence-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-independence-v2-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-cargo-v2-
 
       - name: Remove Node/npm from PATH
         run: |
