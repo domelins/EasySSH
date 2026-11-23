@@ -1423,7 +1423,7 @@ dependencies = [
  "tracing-appender",
  "tracing-subscriber",
  "unicode-width 0.2.0",
- "vt100-omnyssh",
+ "vt100-easyssh",
 ]
 
 [[package]]
@@ -1449,7 +1449,7 @@ dependencies = [
  "tokio",
  "toml 0.8.23",
  "tracing",
- "vt100-omnyssh",
+ "vt100-easyssh",
  "windows-sys 0.61.2",
 ]
 
@@ -6605,10 +6605,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "vt100-omnyssh"
+name = "vt100-easyssh"
 version = "0.15.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc1793a14359bbe90829cb53f3ac015db4d8f80beb55055018073ab396f0bfae"
 dependencies = [
  "itoa",
  "log",
