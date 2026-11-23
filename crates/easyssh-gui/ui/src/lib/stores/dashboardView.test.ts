@@ -5,7 +5,7 @@ import { get } from 'svelte/store';
 const backend = { get: vi.fn(), set: vi.fn(), save: vi.fn() };
 vi.mock('@tauri-apps/plugin-store', () => ({ load: vi.fn(async () => backend) }));
 
-const LOCAL_KEY = 'omnyssh-dashboard-view';
+const LOCAL_KEY = 'easyssh-dashboard-view';
 
 async function fresh() {
   vi.resetModules();

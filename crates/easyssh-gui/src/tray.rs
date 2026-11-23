@@ -296,7 +296,7 @@ fn request_quit(app: &AppHandle) {
 }
 
 /// Set by the page while its close handler is registered (`routes/+layout.svelte`).
-const CLOSE_GUARD: &str = "window.__omnysshAsksOnClose === true ? 1 : 0";
+const CLOSE_GUARD: &str = "window.__easysshAsksOnClose === true ? 1 : 0";
 
 /// Once the page listens for closes Tauri leaves every close to it, so a hung page
 /// would hold the window open for good. `destroy` skips `CloseRequested`.

@@ -73,7 +73,7 @@ const _: () = assert!(RENDER_HEAL_DEADLINE.as_secs() > REVEAL_FALLBACK.as_secs()
 /// Marks the child of a software-rendering retry so it can only ever happen once.
 /// Exporting it by hand disables the retry — the intended escape hatch.
 #[cfg(all(target_os = "linux", not(debug_assertions)))]
-const RETRY_MARKER: &str = "OMNYSSH_SOFTWARE_RENDER_RETRY";
+const RETRY_MARKER: &str = "EASYSSH_SOFTWARE_RENDER_RETRY";
 
 /// What the window-state plugin is allowed to restore. Geometry only: it applies every
 /// flag from `on_window_ready`, before the page exists, and only sizing and moving leave
@@ -272,9 +272,9 @@ fn prepare_webview_profile() {
         }
     }
     if let Some(local) = std::env::var_os("LOCALAPPDATA") {
-        candidates.push(PathBuf::from(local).join("OmnySSH").join("WebView2"));
+        candidates.push(PathBuf::from(local).join("EasySSH").join("WebView2"));
     }
-    candidates.push(std::env::temp_dir().join("OmnySSH-WebView2"));
+    candidates.push(std::env::temp_dir().join("EasySSH-WebView2"));
 
     for candidate in candidates {
         match std::fs::create_dir_all(&candidate) {
@@ -455,7 +455,7 @@ mod tests {
     /// without mutating the tracked file (tech-gui.md §0.2 acceptance, §3.3).
     #[test]
     fn committed_bindings_are_in_sync() {
-        let tmp = std::env::temp_dir().join(format!("omnyssh-bindings-{}.ts", std::process::id()));
+        let tmp = std::env::temp_dir().join(format!("easyssh-bindings-{}.ts", std::process::id()));
         export_bindings(&tmp);
         let generated = std::fs::read_to_string(&tmp).expect("read fresh bindings");
         let _ = std::fs::remove_file(&tmp);

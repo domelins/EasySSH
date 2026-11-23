@@ -5,7 +5,7 @@ import { loadSettingsStore } from '$lib/stores/settingsStore';
 // rem-based dimension follows), distinct from the terminal font preference.
 // Persisted like the other UI prefs: tauri-plugin-store canonical, localStorage
 // mirror the app.html boot reads before first frame.
-const LOCAL_KEY = 'omnyssh-ui-font-size';
+const LOCAL_KEY = 'easyssh-ui-font-size';
 const STORE_KEY = 'uiFontSize';
 
 export const DEFAULT_UI_SIZE = 16;

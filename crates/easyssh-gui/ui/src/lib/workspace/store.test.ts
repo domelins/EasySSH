@@ -8,7 +8,7 @@ const backend = { get: vi.fn(), set: vi.fn(), save: vi.fn() };
 vi.mock('@tauri-apps/plugin-store', () => ({ load: vi.fn(async () => backend) }));
 vi.mock('$lib/ipc/commands', () => ({ settingsStorePath: vi.fn(async () => 'settings.json') }));
 
-const LOCAL_KEY = 'omnyssh-workspace-layouts';
+const LOCAL_KEY = 'easyssh-workspace-layouts';
 
 const layout = (patch: Partial<WorkspaceLayout> = {}): WorkspaceLayout => ({
   ...DEFAULT_LAYOUT,

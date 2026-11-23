@@ -22,7 +22,7 @@ const HOSTS = [
 async function boot(page: Page, streamer: boolean, hosts: unknown[] = HOSTS): Promise<void> {
   await page.addInitScript(
     ({ hosts, streamer }) => {
-      localStorage.setItem('omnyssh-streamer-mode', String(streamer));
+      localStorage.setItem('easyssh-streamer-mode', String(streamer));
       let cbid = 0;
       const listeners: Record<string, number[]> = {};
       const win = window as unknown as Record<string, unknown>;

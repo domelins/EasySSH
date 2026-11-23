@@ -39,7 +39,7 @@ describe('ui font size store', () => {
     const size = await freshUiFontSize();
     size.set(18);
     expect(document.documentElement.style.fontSize).toBe('18px');
-    expect(localStorage.getItem('omnyssh-ui-font-size')).toBe('18');
+    expect(localStorage.getItem('easyssh-ui-font-size')).toBe('18');
     await vi.waitFor(() => {
       expect(backend.set).toHaveBeenCalledWith('uiFontSize', 18);
       expect(backend.save).toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe('ui font size store', () => {
   });
 
   it('seeds from the mirror before hydrate and applies it to the root', async () => {
-    localStorage.setItem('omnyssh-ui-font-size', '14');
+    localStorage.setItem('easyssh-ui-font-size', '14');
     const size = await freshUiFontSize();
     let value = 0;
     size.subscribe((v) => (value = v))();

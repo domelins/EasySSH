@@ -873,7 +873,7 @@ Host internal
 
     #[test]
     fn standalone_import_ignores_include_but_the_live_parser_follows_it() {
-        let dir = std::env::temp_dir().join(format!("omnyssh-ssh-inc-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("easyssh-ssh-inc-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("scratch dir");
         let included = dir.join("extra.conf");
         std::fs::write(&included, "Host from-include\n    HostName 10.9.9.9\n")

@@ -2,7 +2,7 @@ import type { Store } from '@tauri-apps/plugin-store';
 
 // Every UI preference shares one store file. Its location is resolved once through
 // the backend: the profile's AppData directory while it accepts writes, otherwise the
-// portable `omnyssh-data` beside the executable — the same fallback `hosts.toml` uses
+// portable `easyssh-data` beside the executable — the same fallback `hosts.toml` uses
 // when a security product protects AppData. A relative 'settings.json' would always
 // land in AppData, where such a machine refuses the save silently and the next launch
 // hydrates the stale file (the theme "resetting" on restart).

@@ -35,7 +35,7 @@ describe('theme canonical persistence', () => {
     await theme.hydrate();
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     // Mirror must be rewritten or the next boot script repaints the stale theme.
-    expect(localStorage.getItem('omnyssh-theme')).toBe('light');
+    expect(localStorage.getItem('easyssh-theme')).toBe('light');
   });
 
   it('hydrate does not clobber a fresh user toggle', async () => {
@@ -51,7 +51,7 @@ describe('theme canonical persistence', () => {
     const theme = await freshTheme();
     await theme.hydrate();
     expect(document.documentElement.getAttribute('data-theme')).toBe('nord');
-    expect(localStorage.getItem('omnyssh-theme')).toBe('nord');
+    expect(localStorage.getItem('easyssh-theme')).toBe('nord');
   });
 
   it('hydrate ignores an unknown stored id', async () => {

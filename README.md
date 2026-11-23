@@ -120,11 +120,11 @@ npx playwright test    # 等同于 npm run test:e2e
 
 应用配置目录：
 
-- Linux：`~/.config/omnyssh/`
-- macOS：`~/Library/Application Support/omnyssh/`
-- Windows：`%APPDATA%\omnyssh\`
+- Linux：`~/.config/easyssh/`
+- macOS：`~/Library/Application Support/easyssh/`
+- Windows：`%APPDATA%\easyssh\`
 
-该目录包含 `config.toml`、`hosts.toml` 和 `snippets.toml`。实际使用的目录按以下优先级确定：环境变量 `OMNYSSH_CONFIG_DIR` 指定的目录；其次是可执行文件旁的 `omnyssh-data/`，但仅在其中已有 `hosts.toml` 时生效（该文件只会在默认目录无法写入、保存回退到这里时产生，因此重启后仍读取同一目录，这个目录也可以用作便携安装）；最后是上面的默认目录。
+该目录包含 `config.toml`、`hosts.toml` 和 `snippets.toml`。实际使用的目录按以下优先级确定：环境变量 `EASYSSH_CONFIG_DIR` 指定的目录；其次是可执行文件旁的 `easyssh-data/`，但仅在其中已有 `hosts.toml` 时生效（该文件只会在默认目录无法写入、保存回退到这里时产生，因此重启后仍读取同一目录，这个目录也可以用作便携安装）；最后是上面的默认目录。
 
 程序启动时会读取 `~/.ssh/config`（Windows 为 `%USERPROFILE%\.ssh\config`）中的主机，但不会写入该文件。
 

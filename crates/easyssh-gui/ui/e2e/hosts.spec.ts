@@ -69,11 +69,11 @@ async function boot(
               return Promise.resolve(`secret-for-${String(args.name)}`);
             case 'export_hosts':
               return Promise.resolve(
-                (args.path as string) ?? 'C:/Users/test/Downloads/omnyssh-hosts.toml'
+                (args.path as string) ?? 'C:/Users/test/Downloads/easyssh-hosts.toml'
               );
             case 'export_ssh_config':
               return Promise.resolve(
-                (args.path as string) ?? 'C:/Users/test/Downloads/omnyssh-ssh-config.conf'
+                (args.path as string) ?? 'C:/Users/test/Downloads/easyssh-ssh-config.conf'
               );
             case 'plugin:dialog|save': {
               const options = (args.options ?? args) as { defaultPath?: string };
@@ -671,8 +671,8 @@ for (const theme of ['dark', 'light']) {
   test(`host table fits 1100px with the expanded sidebar and hover leaves actions painted in ${theme}`, async ({ page }) => {
     await page.setViewportSize({ width: 1100, height: 720 });
     await page.addInitScript((value) => {
-      localStorage.setItem('omnyssh-theme', value);
-      localStorage.setItem('omnyssh-sidebar-collapsed', 'false');
+      localStorage.setItem('easyssh-theme', value);
+      localStorage.setItem('easyssh-sidebar-collapsed', 'false');
     }, theme);
     await boot(page, [...HOSTS, ...Array.from({ length: 24 }, (_, i) => ({
       ...HOSTS[0], name: `long-host-name-${i}`, hostname: `long-host-address-${i}.example.com`
@@ -789,7 +789,7 @@ for (const width of [880, 1100]) {
   for (const theme of ['dark', 'light']) {
     test(`top bar keeps transfer and navigation visible at ${width}px in ${theme}`, async ({ page }) => {
       await page.setViewportSize({ width, height: 720 });
-      await page.addInitScript((value) => localStorage.setItem('omnyssh-theme', value), theme);
+      await page.addInitScript((value) => localStorage.setItem('easyssh-theme', value), theme);
       const manyHosts = Array.from({ length: 12 }, (_, i) => ({
         ...HOSTS[0],
         name: `qa-long-host-${i + 1}`,
@@ -848,11 +848,11 @@ test('imports and exports the host list', async ({ page }) => {
 
   // Export asks where to save (the dialog's path) and reports it back.
   await dialog.getByRole('button', { name: '导出…' }).click();
-  await expect(dialog.getByText('D:/Backups/omnyssh-hosts.toml')).toBeVisible();
+  await expect(dialog.getByText('D:/Backups/easyssh-hosts.toml')).toBeVisible();
 
   // Import reads the picked file, adds the host and reports the counts.
   await dialog.getByLabel('选择主机文件').setInputFiles({
-    name: 'omnyssh-hosts.toml',
+    name: 'easyssh-hosts.toml',
     mimeType: 'text/plain',
     buffer: Buffer.from('[[hosts]]\nname = "imported-1"\nhostname = "imported.example.com"\n')
   });
@@ -872,7 +872,7 @@ test('exports SSH config format and imports ssh config text', async ({ page }) =
   await expect(sshToggle).toHaveAttribute('aria-pressed', 'true');
   await expect(dialog.getByText('不含密码')).toBeVisible();
   await dialog.getByRole('button', { name: '导出…' }).click();
-  await expect(dialog.getByText('D:/Backups/omnyssh-ssh-config.conf')).toBeVisible();
+  await expect(dialog.getByText('D:/Backups/easyssh-ssh-config.conf')).toBeVisible();
 
   // Import accepts plain ssh config text and adds the Host block as a manual host.
   await dialog.getByLabel('选择主机文件').setInputFiles({
@@ -976,7 +976,7 @@ test('exports each TOML scope once with its own filename and IPC scope', async (
   await expect(dialog.getByText('含明文密码，请妥善保管', { exact: true })).toBeVisible();
 
   await dialog.getByRole('button', { name: '导出…' }).click();
-  await expect(dialog.getByText('D:/Backups/omnyssh-hosts.toml')).toBeVisible();
+  await expect(dialog.getByText('D:/Backups/easyssh-hosts.toml')).toBeVisible();
 
   await config.click();
   await expect(config).toHaveAttribute('aria-checked', 'true');
@@ -984,7 +984,7 @@ test('exports each TOML scope once with its own filename and IPC scope', async (
   await expect(dialog.getByText('含明文密码，请妥善保管', { exact: true })).toHaveCount(0);
   await expect(dialog.getByText('不含密码', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: '导出…' }).click();
-  await expect(dialog.getByText('D:/Backups/omnyssh-hosts-config.toml')).toBeVisible();
+  await expect(dialog.getByText('D:/Backups/easyssh-hosts-config.toml')).toBeVisible();
 
   // Arrow keys move the selection and the focus together.
   await config.focus();
@@ -992,14 +992,14 @@ test('exports each TOML scope once with its own filename and IPC scope', async (
   await expect(credentials).toHaveAttribute('aria-checked', 'true');
   await expect(credentials).toBeFocused();
   await dialog.getByRole('button', { name: '导出…' }).click();
-  await expect(dialog.getByText('D:/Backups/omnyssh-credentials.toml')).toBeVisible();
+  await expect(dialog.getByText('D:/Backups/easyssh-credentials.toml')).toBeVisible();
 
   const exports = (await callLog(page)).filter((call) => call.cmd === 'export_hosts');
   expect(exports.map((call) => call.args.scope)).toEqual(['both', 'config', 'credentials']);
   expect(exports.map((call) => call.args.path)).toEqual([
-    'D:/Backups/omnyssh-hosts.toml',
-    'D:/Backups/omnyssh-hosts-config.toml',
-    'D:/Backups/omnyssh-credentials.toml'
+    'D:/Backups/easyssh-hosts.toml',
+    'D:/Backups/easyssh-hosts-config.toml',
+    'D:/Backups/easyssh-credentials.toml'
   ]);
 });
 

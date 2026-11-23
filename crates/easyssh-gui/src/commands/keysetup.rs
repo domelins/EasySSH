@@ -178,7 +178,7 @@ mod tests {
 
     fn result(state: KeySetupState, password_may_be_off: bool) -> KeySetupResult {
         KeySetupResult {
-            key_path: PathBuf::from("/k/omnyssh_web_ed25519"),
+            key_path: PathBuf::from("/k/easyssh_web_ed25519"),
             state,
             error_message: Some("boom".to_string()),
             password_may_be_off,
@@ -190,7 +190,7 @@ mod tests {
         let ev = |state, off| outcome_event("web".to_string(), result(state, off));
         assert!(matches!(
             ev(KeySetupState::Success, false),
-            CoreEvent::KeySetupComplete(h, p) if h == "web" && p.ends_with("omnyssh_web_ed25519")
+            CoreEvent::KeySetupComplete(h, p) if h == "web" && p.ends_with("easyssh_web_ed25519")
         ));
         assert!(matches!(
             ev(KeySetupState::PartialSuccess, false),

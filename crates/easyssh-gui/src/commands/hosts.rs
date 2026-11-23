@@ -283,11 +283,11 @@ const EXPORT_HEADER_CREDENTIALS: &str = "# EasySSH 主机凭据：含用户名�
 /// (SSH-config entries frozen as manual ones):
 ///
 /// - `"both"`: the full `hosts.toml`-shaped snapshot, plaintext passwords included —
-///   the backward-compatible default. File base name `omnyssh-hosts`.
+///   the backward-compatible default. File base name `easyssh-hosts`.
 /// - `"config"`: connection configuration only (name, address, port, user, tags, key
-///   path, proxy jump, forwards…) — never any password. `omnyssh-hosts-config`.
+///   path, proxy jump, forwards…) — never any password. `easyssh-hosts-config`.
 /// - `"credentials"`: identity and secrets only (`name`, `username`, `password`), no
-///   address or other configuration. `omnyssh-credentials`.
+///   address or other configuration. `easyssh-credentials`.
 ///
 /// An unknown `scope` is an error, never silently treated as `"both"`.
 ///
@@ -314,14 +314,14 @@ fn export_hosts_blocking(target: Option<&str>, scope: &str) -> Result<String, Co
             let toml = hosts_to_export_toml(&hosts).map_err(|e| CommandError {
                 message: format!("{e:#}"),
             })?;
-            ("omnyssh-hosts", format!("{}{}", EXPORT_HEADER_BOTH, toml))
+            ("easyssh-hosts", format!("{}{}", EXPORT_HEADER_BOTH, toml))
         }
         "config" => {
             let toml = hosts_to_config_toml(&hosts).map_err(|e| CommandError {
                 message: format!("{e:#}"),
             })?;
             (
-                "omnyssh-hosts-config",
+                "easyssh-hosts-config",
                 format!("{}{}", EXPORT_HEADER_CONFIG, toml),
             )
         }
@@ -330,7 +330,7 @@ fn export_hosts_blocking(target: Option<&str>, scope: &str) -> Result<String, Co
                 message: format!("{e:#}"),
             })?;
             (
-                "omnyssh-credentials",
+                "easyssh-credentials",
                 format!("{}{}", EXPORT_HEADER_CREDENTIALS, toml),
             )
         }
@@ -353,7 +353,7 @@ pub async fn export_ssh_config(path: Option<String>) -> Result<String, CommandEr
             message: format!("{e:#}"),
         })?;
         let content = ssh_config::hosts_to_ssh_config(&hosts);
-        write_export(path.as_deref(), "omnyssh-ssh-config", "conf", content)
+        write_export(path.as_deref(), "easyssh-ssh-config", "conf", content)
     })
     .await
     .map_err(|e| CommandError {
@@ -388,7 +388,7 @@ fn write_export(
     Ok(path.display().to_string())
 }
 
-/// `omnyssh-hosts.toml`, then `-2`, `-3`… so a second export never overwrites the first.
+/// `easyssh-hosts.toml`, then `-2`, `-3`… so a second export never overwrites the first.
 fn unique_export_path(dir: &Path, base: &str, ext: &str) -> PathBuf {
     let first = dir.join(format!("{base}.{ext}"));
     if !first.exists() {
@@ -922,12 +922,12 @@ mod tests {
 
     #[test]
     fn write_export_writes_the_chosen_path_for_both_formats() {
-        let dir = std::env::temp_dir().join(format!("omnyssh-export-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("easyssh-export-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("scratch dir");
         let toml_path = dir.join("hosts.toml");
         let written = write_export(
             Some(toml_path.to_str().expect("utf8 path")),
-            "omnyssh-hosts",
+            "easyssh-hosts",
             "toml",
             "# toml body".to_string(),
         )
@@ -941,7 +941,7 @@ mod tests {
         let conf_path = dir.join("ssh.conf");
         write_export(
             Some(conf_path.to_str().expect("utf8 path")),
-            "omnyssh-ssh-config",
+            "easyssh-ssh-config",
             "conf",
             "Host web\n".to_string(),
         )
@@ -955,13 +955,13 @@ mod tests {
 
     #[test]
     fn unique_export_path_never_overwrites_an_earlier_export() {
-        let dir = std::env::temp_dir().join(format!("omnyssh-unique-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("easyssh-unique-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("scratch dir");
-        let first = unique_export_path(&dir, "omnyssh-hosts", "toml");
-        assert_eq!(first, dir.join("omnyssh-hosts.toml"));
+        let first = unique_export_path(&dir, "easyssh-hosts", "toml");
+        assert_eq!(first, dir.join("easyssh-hosts.toml"));
         std::fs::write(&first, b"x").expect("first export");
-        let second = unique_export_path(&dir, "omnyssh-hosts", "toml");
-        assert_eq!(second, dir.join("omnyssh-hosts-2.toml"));
+        let second = unique_export_path(&dir, "easyssh-hosts", "toml");
+        assert_eq!(second, dir.join("easyssh-hosts-2.toml"));
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -10,7 +10,7 @@ import type { Session } from '$lib/stores/sessions';
 // Persistence mirrors the other UI prefs: tauri-plugin-store canonical, a
 // localStorage copy for the first paint, writes debounced like a layout drag.
 
-const LOCAL_KEY = 'omnyssh-open-tabs';
+const LOCAL_KEY = 'easyssh-open-tabs';
 const STORE_KEY = 'openTabs';
 const WRITE_DELAY_MS = 250;
 

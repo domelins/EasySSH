@@ -70,9 +70,9 @@ describe('reduceProgress', () => {
 
 describe('terminal reducers', () => {
   it('reduceComplete carries the key path and whether password login is off', () => {
-    expect(reduceComplete('web-1', '/home/me/.ssh/omnyssh_web-1_ed25519', false)).toEqual({
+    expect(reduceComplete('web-1', '/home/me/.ssh/easyssh_web-1_ed25519', false)).toEqual({
       hostName: 'web-1',
-      phase: { kind: 'complete', keyPath: '/home/me/.ssh/omnyssh_web-1_ed25519', passwordOff: false }
+      phase: { kind: 'complete', keyPath: '/home/me/.ssh/easyssh_web-1_ed25519', passwordOff: false }
     });
   });
 
@@ -105,14 +105,14 @@ describe('keyFilePath', () => {
     ['e\u0301x', 'e_x'],
     ['', 'unnamed_host']
   ])('sanitizes %j to %s', (name, sanitized) => {
-    expect(keyFilePath(name, false)).toBe(`~/.ssh/omnyssh_${sanitized}_ed25519`);
+    expect(keyFilePath(name, false)).toBe(`~/.ssh/easyssh_${sanitized}_ed25519`);
   });
 
   it('cuts the name to 64 code points', () => {
-    expect(keyFilePath('λ'.repeat(70), false)).toBe(`~/.ssh/omnyssh_${'λ'.repeat(64)}_ed25519`);
+    expect(keyFilePath('λ'.repeat(70), false)).toBe(`~/.ssh/easyssh_${'λ'.repeat(64)}_ed25519`);
   });
 
   it('shows the Windows profile folder on Windows', () => {
-    expect(keyFilePath('web.1', true)).toBe('%USERPROFILE%\\.ssh\\omnyssh_web_1_ed25519');
+    expect(keyFilePath('web.1', true)).toBe('%USERPROFILE%\\.ssh\\easyssh_web_1_ed25519');
   });
 });

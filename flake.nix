@@ -64,15 +64,15 @@
       {
         checks = {
           inherit easyssh;
-          omnyssh-fmt = craneLib.cargoFmt { inherit pname version src; };
-          omnyssh-clippy = craneLib.cargoClippy (
+          easyssh-fmt = craneLib.cargoFmt { inherit pname version src; };
+          easyssh-clippy = craneLib.cargoClippy (
             commonArgs
             // {
               inherit cargoArtifacts;
               cargoClippyExtraArgs = "--workspace --all-targets -- --deny warnings";
             }
           );
-          omnyssh-test = craneLib.cargoTest (
+          easyssh-test = craneLib.cargoTest (
             commonArgs
             // {
               inherit cargoArtifacts;

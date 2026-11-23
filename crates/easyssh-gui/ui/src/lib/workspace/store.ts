@@ -17,7 +17,7 @@ import {
 // a localStorage copy renders the right widths on first paint (and in a plain browser
 // under Playwright). Writes are debounced because a gutter drag emits a value per frame.
 
-const LOCAL_KEY = 'omnyssh-workspace-layouts';
+const LOCAL_KEY = 'easyssh-workspace-layouts';
 const STORE_KEY = 'workspaceLayouts';
 export const WRITE_DELAY_MS = 250;
 

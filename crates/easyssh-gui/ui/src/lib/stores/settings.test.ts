@@ -49,7 +49,7 @@ describe('refresh interval persistence', () => {
   });
 
   it('keeps an old localStorage value before hydrate', async () => {
-    localStorage.setItem('omnyssh-refresh-interval', '30');
+    localStorage.setItem('easyssh-refresh-interval', '30');
     const store = await fresh();
     expect(get(store)).toBe(30);
     await store.hydrate();
@@ -62,7 +62,7 @@ describe('refresh interval persistence', () => {
     await store.hydrate();
     expect(backend.get).toHaveBeenCalledWith('refreshInterval');
     expect(get(store)).toBe(120);
-    expect(localStorage.getItem('omnyssh-refresh-interval')).toBe('120');
+    expect(localStorage.getItem('easyssh-refresh-interval')).toBe('120');
     expect(backend.set).not.toHaveBeenCalled();
   });
 
@@ -72,7 +72,7 @@ describe('refresh interval persistence', () => {
     store.set(2);
     await store.hydrate();
     expect(get(store)).toBe(2);
-    expect(localStorage.getItem('omnyssh-refresh-interval')).toBe('2');
+    expect(localStorage.getItem('easyssh-refresh-interval')).toBe('2');
     await vi.waitFor(() => {
       expect(backend.set).toHaveBeenCalledWith('refreshInterval', 2);
       expect(backend.save).toHaveBeenCalled();

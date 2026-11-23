@@ -15,9 +15,9 @@ use clap::Parser;
 pub struct Cli {
     /// Path to a custom config file.
     ///
-    /// Defaults to ~/.config/omnyssh/config.toml (Linux),
-    /// ~/Library/Application Support/omnyssh/config.toml (macOS),
-    /// or %APPDATA%\\omnyssh\\config.toml (Windows).
+    /// Defaults to ~/.config/easyssh/config.toml (Linux),
+    /// ~/Library/Application Support/easyssh/config.toml (macOS),
+    /// or %APPDATA%\\easyssh\\config.toml (Windows).
     #[arg(short, long, value_name = "FILE")]
     pub config: Option<std::path::PathBuf>,
 

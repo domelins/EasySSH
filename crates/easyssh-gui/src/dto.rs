@@ -1070,7 +1070,7 @@ mod tests {
     fn file_entry_dto_maps_a_file_and_a_directory() {
         let file = FileEntry {
             name: "config.toml".to_string(),
-            path: "/etc/omnyssh/config.toml".to_string(),
+            path: "/etc/easyssh/config.toml".to_string(),
             size: 4096,
             is_dir: false,
             is_symlink: false,
@@ -1078,7 +1078,7 @@ mod tests {
         };
         let dto = FileEntryDto::from(&file);
         assert_eq!(dto.name, "config.toml");
-        assert_eq!(dto.path, "/etc/omnyssh/config.toml");
+        assert_eq!(dto.path, "/etc/easyssh/config.toml");
         assert_eq!(dto.size, 4096);
         assert!(!dto.is_dir);
         assert!(!dto.is_symlink);

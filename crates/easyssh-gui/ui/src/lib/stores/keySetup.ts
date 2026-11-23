@@ -62,11 +62,11 @@ export function reduceRollback(hostName: string, result: string): KeySetupRun {
 }
 
 /** The key file the core creates (or reuses) for `hostName`, as the user would find it:
- *  `omnyssh_<name>_ed25519` in ~/.ssh. Mirrors the core's `sanitize_hostname`: each
+ *  `easyssh_<name>_ed25519` in ~/.ssh. Mirrors the core's `sanitize_hostname`: each
  *  code point outside Unicode Alphabetic / Numeric, `-` and `_` becomes `_`, cut to 64
  *  code points, and an empty name is `unnamed_host`. Pure. */
 export function keyFilePath(hostName: string, windows: boolean): string {
   const kept = [...hostName].map((c) => (/^[\p{Alphabetic}\p{N}_-]$/u.test(c) ? c : '_'));
-  const file = `omnyssh_${kept.slice(0, 64).join('') || 'unnamed_host'}_ed25519`;
+  const file = `easyssh_${kept.slice(0, 64).join('') || 'unnamed_host'}_ed25519`;
   return windows ? `%USERPROFILE%\\.ssh\\${file}` : `~/.ssh/${file}`;
 }

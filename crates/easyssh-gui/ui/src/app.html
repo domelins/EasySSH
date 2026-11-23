@@ -11,7 +11,7 @@
       (function () {
         var ids = ['light', 'dark', 'ocean', 'nord', 'sakura', 'mocha', 'violet'];
         try {
-          var t = localStorage.getItem('omnyssh-theme');
+          var t = localStorage.getItem('easyssh-theme');
           document.documentElement.setAttribute('data-theme', ids.indexOf(t) >= 0 ? t : 'dark');
         } catch (e) {
           document.documentElement.setAttribute('data-theme', 'dark');
@@ -25,7 +25,7 @@
         } catch (e) {}
         // No-FOUC for the interface font size: mirrors stores/uiFontSize.ts (12–20px).
         try {
-          var s = parseInt(localStorage.getItem('omnyssh-ui-font-size'), 10);
+          var s = parseInt(localStorage.getItem('easyssh-ui-font-size'), 10);
           if (s >= 12 && s <= 20) document.documentElement.style.fontSize = s + 'px';
         } catch (e) {}
       })();

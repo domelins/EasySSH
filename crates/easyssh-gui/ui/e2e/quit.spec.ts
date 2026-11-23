@@ -127,7 +127,7 @@ test("Don't ask again sticks, and the next close quits without asking", async ({
   await dialog(page).getByLabel('不再询问').check();
   await dialog(page).getByRole('button', { name: '退出' }).click();
   await expect.poll(() => calls(page)).toContain('plugin:window|destroy');
-  expect(await page.evaluate(() => localStorage.getItem('omnyssh-confirm-quit'))).toBe('false');
+  expect(await page.evaluate(() => localStorage.getItem('easyssh-confirm-quit'))).toBe('false');
   const stored = await page.evaluate(() =>
     (window as unknown as { __calls: Call[] }).__calls.find((c) => c.cmd === 'plugin:store|set')?.args
   );
@@ -146,7 +146,7 @@ test("Don't ask again sticks, and the next close quits without asking", async ({
   await expect(ask).toHaveAttribute('aria-checked', 'false');
   await ask.click();
   await expect(ask).toHaveAttribute('aria-checked', 'true');
-  expect(await page.evaluate(() => localStorage.getItem('omnyssh-confirm-quit'))).toBe('true');
+  expect(await page.evaluate(() => localStorage.getItem('easyssh-confirm-quit'))).toBe('true');
 });
 
 test('with nothing live the window closes at once', async ({ page }) => {

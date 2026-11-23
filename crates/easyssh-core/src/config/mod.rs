@@ -1,8 +1,8 @@
 //! Application configuration modules.
 //!
-//! - [`app_config`]  — main `~/.config/omnyssh/config.toml`
+//! - [`app_config`]  — main `~/.config/easyssh/config.toml`
 //! - [`ssh_config`]  — parser for `~/.ssh/config`
-//! - [`snippets`]    — `~/.config/omnyssh/snippets.toml`
+//! - [`snippets`]    — `~/.config/easyssh/snippets.toml`
 //!
 //! Top-level functions in this module handle loading and persisting the
 //! host list (`hosts.toml`).
@@ -28,7 +28,7 @@ struct HostsFile {
     hosts: Vec<Host>,
 }
 
-/// Loads manually-added hosts from `~/.config/omnyssh/hosts.toml`.
+/// Loads manually-added hosts from `~/.config/easyssh/hosts.toml`.
 ///
 /// Returns an empty `Vec` if the file does not exist yet.
 ///
@@ -51,14 +51,14 @@ pub fn load_hosts() -> anyhow::Result<Vec<Host>> {
 }
 
 /// Persists the manually-added hosts (source == `Manual`) to
-/// `~/.config/omnyssh/hosts.toml`.
+/// `~/.config/easyssh/hosts.toml`.
 ///
 /// SSH-config-derived hosts are intentionally **not** written — they are
 /// re-imported from `~/.ssh/config` on every startup.
 ///
 /// When the profile directory refuses the file — a locked-down or
 /// security-protected `%APPDATA%` is the common case on Windows — the same list is
-/// written to a portable `omnyssh-data` directory beside the binary instead, so an
+/// written to a portable `easyssh-data` directory beside the binary instead, so an
 /// edit is never silently lost. From then on [`platform::app_config_dir`] reads that
 /// directory, which is what makes the fallback survive a restart.
 ///
@@ -507,7 +507,7 @@ mod tests {
 
     /// A unique scratch directory for one test.
     fn scratch(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("omnyssh-cfg-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("easyssh-cfg-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).expect("scratch dir");
         dir

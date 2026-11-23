@@ -76,7 +76,7 @@
         if (disposed) return off();
         stopClose = off;
         // The backend's liveness probe reads this before it trusts the page with a close.
-        (window as { __omnysshAsksOnClose?: boolean }).__omnysshAsksOnClose = true;
+        (window as { __easysshAsksOnClose?: boolean }).__easysshAsksOnClose = true;
       })
       .catch(() => {});
     return () => {
@@ -84,7 +84,7 @@
       document.removeEventListener('contextmenu', blockContextMenu);
       stop?.();
       stopClose?.();
-      delete (window as { __omnysshAsksOnClose?: boolean }).__omnysshAsksOnClose;
+      delete (window as { __easysshAsksOnClose?: boolean }).__easysshAsksOnClose;
       stopRefresh();
       stopTray();
     };

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 /// section markers for structured parsing. All commands use stderr
 /// redirection to /dev/null for graceful failure.
 pub fn generate_quick_scan_script() -> &'static str {
-    r#"cat << 'OMNYSSH_PROBE_EOF' | bash
+    r#"cat << 'EASYSSH_PROBE_EOF' | bash
 echo "===EASYSSH:OS==="
 cat /etc/os-release 2>/dev/null | head -5
 echo "===EASYSSH:SERVICES==="
@@ -23,7 +23,7 @@ echo "===EASYSSH:LISTEN==="
 ss -tlnp 2>/dev/null | tail -n +2 | head -30
 echo "===EASYSSH:PROCESS==="
 ps aux --sort=-%mem 2>/dev/null | head -15
-OMNYSSH_PROBE_EOF
+EASYSSH_PROBE_EOF
 "#
 }
 

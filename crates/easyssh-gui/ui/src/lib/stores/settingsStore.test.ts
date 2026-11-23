@@ -20,15 +20,15 @@ describe('shared settings store loader', () => {
   });
 
   it('loads the store at the path the backend resolved', async () => {
-    settingsStorePath.mockResolvedValue('D:/portable/omnyssh-data/settings.json');
+    settingsStorePath.mockResolvedValue('D:/portable/easyssh-data/settings.json');
     const loadSettingsStore = await freshLoader();
     const store = await loadSettingsStore();
     expect(store).toBe(backend);
-    expect(load).toHaveBeenCalledWith('D:/portable/omnyssh-data/settings.json');
+    expect(load).toHaveBeenCalledWith('D:/portable/easyssh-data/settings.json');
   });
 
   it('resolves the path once for every caller', async () => {
-    settingsStorePath.mockResolvedValue('D:/portable/omnyssh-data/settings.json');
+    settingsStorePath.mockResolvedValue('D:/portable/easyssh-data/settings.json');
     const loadSettingsStore = await freshLoader();
     await loadSettingsStore();
     await loadSettingsStore();

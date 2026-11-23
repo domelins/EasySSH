@@ -65,9 +65,9 @@ impl InstallMethod {
     pub fn upgrade_command(self) -> Option<&'static str> {
         match self {
             Self::Manual => None,
-            Self::Homebrew => Some("brew upgrade omnyssh"),
-            Self::Cargo => Some("cargo install omnyssh --force"),
-            Self::Nix => Some("nix profile upgrade omnyssh"),
+            Self::Homebrew => Some("brew upgrade easyssh"),
+            Self::Cargo => Some("cargo install easyssh --force"),
+            Self::Nix => Some("nix profile upgrade easyssh"),
         }
     }
 }
@@ -187,7 +187,7 @@ pub async fn perform_update(info: &UpdateInfo) -> Result<()> {
 /// Builds the shared HTTP client. GitHub requires a `User-Agent` header.
 fn http_client() -> Result<reqwest::Client> {
     reqwest::Client::builder()
-        .user_agent(concat!("omnyssh/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("easyssh/", env!("CARGO_PKG_VERSION")))
         .timeout(HTTP_TIMEOUT)
         .build()
         .context("failed to build HTTP client")
@@ -311,11 +311,11 @@ mod tests {
         let cases = [
             ("/home/u/.cargo/bin/easy", InstallMethod::Cargo),
             (
-                "/opt/homebrew/Cellar/omnyssh/1.0.1/bin/easy",
+                "/opt/homebrew/Cellar/easyssh/1.0.1/bin/easy",
                 InstallMethod::Homebrew,
             ),
             ("/usr/local/homebrew/bin/easy", InstallMethod::Homebrew),
-            ("/nix/store/abc-omnyssh-1.0.1/bin/easy", InstallMethod::Nix),
+            ("/nix/store/abc-easyssh-1.0.1/bin/easy", InstallMethod::Nix),
             ("/usr/local/bin/easy", InstallMethod::Manual),
             ("/home/u/bin/easy", InstallMethod::Manual),
         ];

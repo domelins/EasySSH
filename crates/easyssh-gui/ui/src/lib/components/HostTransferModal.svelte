@@ -17,9 +17,9 @@
   ];
 
   const SCOPES: { id: ExportScope; title: string; hint: string; file: string }[] = [
-    { id: 'both', title: '完整快照（含密码）', hint: '配置 + 凭据', file: 'omnyssh-hosts.toml' },
-    { id: 'config', title: '仅连接配置（不含密码）', hint: '地址、端口、用户名等连接配置', file: 'omnyssh-hosts-config.toml' },
-    { id: 'credentials', title: '仅凭据（用户名 + 密码）', hint: '不含地址与连接配置', file: 'omnyssh-credentials.toml' }
+    { id: 'both', title: '完整快照（含密码）', hint: '配置 + 凭据', file: 'easyssh-hosts.toml' },
+    { id: 'config', title: '仅连接配置（不含密码）', hint: '地址、端口、用户名等连接配置', file: 'easyssh-hosts-config.toml' },
+    { id: 'credentials', title: '仅凭据（用户名 + 密码）', hint: '不含地址与连接配置', file: 'easyssh-credentials.toml' }
   ];
 
   let file = $state<File | null>(null);
@@ -105,7 +105,7 @@
             }
           : {
               title: '导出 SSH config 到…',
-              defaultPath: 'omnyssh-ssh-config.conf',
+              defaultPath: 'easyssh-ssh-config.conf',
               filters: [{ name: 'SSH config', extensions: ['conf', 'txt'] }]
             }
       );
@@ -321,7 +321,7 @@
           </button>
         {:else}
           <span class="min-w-0 flex-1 truncate font-mono text-[0.6875rem] text-faint">
-            {exportFormat === 'toml' ? scopeFile : 'omnyssh-ssh-config.conf'}
+            {exportFormat === 'toml' ? scopeFile : 'easyssh-ssh-config.conf'}
           </span>
         {/if}
         <Button variant="primary" size="sm" disabled={exporting} onclick={runExport}>

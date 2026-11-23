@@ -298,7 +298,7 @@ async fn a_login_with_nothing_to_try_says_what_is_missing() {
 /// gssapi-with-mic) says so once it turns a key down, instead of being sent a
 /// password no one could get in with.
 #[tokio::test]
-async fn a_server_with_no_method_omnyssh_has_says_so() {
+async fn a_server_with_no_method_easyssh_has_says_so() {
     isolate_home();
     let config = Arc::new(server::Config {
         keys: vec![host_key()],

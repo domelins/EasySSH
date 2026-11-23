@@ -15,7 +15,7 @@ describe('theme store', () => {
   it('sets data-theme and mirrors to localStorage', () => {
     theme.set('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(localStorage.getItem('omnyssh-theme')).toBe('light');
+    expect(localStorage.getItem('easyssh-theme')).toBe('light');
     expect(get(theme)).toBe('light');
   });
 
@@ -23,7 +23,7 @@ describe('theme store', () => {
     for (const id of THEME_IDS) {
       theme.set(id);
       expect(document.documentElement.getAttribute('data-theme')).toBe(id);
-      expect(localStorage.getItem('omnyssh-theme')).toBe(id);
+      expect(localStorage.getItem('easyssh-theme')).toBe(id);
       expect(get(theme)).toBe(id);
     }
   });
@@ -32,12 +32,12 @@ describe('theme store', () => {
     theme.toggle();
     expect(get(theme)).toBe('light');
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
-    expect(localStorage.getItem('omnyssh-theme')).toBe('light');
+    expect(localStorage.getItem('easyssh-theme')).toBe('light');
 
     theme.toggle();
     expect(get(theme)).toBe('dark');
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
-    expect(localStorage.getItem('omnyssh-theme')).toBe('dark');
+    expect(localStorage.getItem('easyssh-theme')).toBe('dark');
   });
 
   it('toggle flips by base mode, not by id', () => {

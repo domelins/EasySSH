@@ -406,8 +406,8 @@ install_gui_macos() {
 # so `easyssh` on the command line keeps running it.
 drop_appimage_install() {
     sudo rm -f "$INSTALL_DIR/easyssh" 2>/dev/null || true
-    rm -f "$HOME/.local/share/applications/omnyssh.desktop" 2>/dev/null || true
-    rm -f "$HOME/.local/share/icons/omnyssh.png" 2>/dev/null || true
+    rm -f "$HOME/.local/share/applications/easyssh.desktop" 2>/dev/null || true
+    rm -f "$HOME/.local/share/icons/easyssh.png" 2>/dev/null || true
 }
 
 install_gui_linux() {
@@ -477,13 +477,13 @@ install_gui_linux() {
     ICON_DIR="$HOME/.local/share/icons"
     mkdir -p "$APPS_DIR" "$ICON_DIR"
     curl -fsSL "https://raw.githubusercontent.com/$REPO/$VERSION/crates/easyssh-gui/icons/128x128.png" \
-        -o "$ICON_DIR/omnyssh.png" 2>/dev/null || true
-    cat > "$APPS_DIR/omnyssh.desktop" <<EOF
+        -o "$ICON_DIR/easyssh.png" 2>/dev/null || true
+    cat > "$APPS_DIR/easyssh.desktop" <<EOF
 [Desktop Entry]
 Name=EasySSH
 Comment=SSH dashboard, terminal, and SFTP file manager
 Exec=$TARGET_BIN
-Icon=omnyssh
+Icon=easyssh
 Type=Application
 Categories=Utility;Network;
 Terminal=false
@@ -514,16 +514,16 @@ Usage: install.sh [--gui | --tui | --both]
   --tui    Install the terminal app 'easy'
   --both   Install both
 
-Environment: OMNYSSH_INSTALL=gui|tui|both has the same effect.
+Environment: EASYSSH_INSTALL=gui|tui|both has the same effect.
 Piped runs (curl | sh) default to --gui; pick another with:
   curl -fsSL .../install.sh | sh -s -- --tui
 EOF
 }
 
-# Decide what to install: CLI flag > OMNYSSH_INSTALL env > interactive prompt >
+# Decide what to install: CLI flag > EASYSSH_INSTALL env > interactive prompt >
 # 'gui' default (the flagship app; the TUI has its own cargo/brew/nix channels).
 select_components() {
-    COMPONENTS="${OMNYSSH_INSTALL:-}"
+    COMPONENTS="${EASYSSH_INSTALL:-}"
     while [ $# -gt 0 ]; do
         case "$1" in
             --tui) COMPONENTS="tui" ;;
@@ -602,9 +602,9 @@ main() {
     print_success "Installation complete!"
     echo ""
     case "$PLATFORM" in
-        apple-darwin)    CONFIG_DIR="~/Library/Application Support/omnyssh/" ;;
-        pc-windows-msvc) CONFIG_DIR="%APPDATA%\\omnyssh\\" ;;
-        *)               CONFIG_DIR="~/.config/omnyssh/" ;;
+        apple-darwin)    CONFIG_DIR="~/Library/Application Support/easyssh/" ;;
+        pc-windows-msvc) CONFIG_DIR="%APPDATA%\\easyssh\\" ;;
+        *)               CONFIG_DIR="~/.config/easyssh/" ;;
     esac
 
     print_info "Next steps:"

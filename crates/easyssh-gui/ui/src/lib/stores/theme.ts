@@ -30,7 +30,7 @@ function isTheme(value: unknown): value is Theme {
   return typeof value === 'string' && (THEME_IDS as readonly string[]).includes(value);
 }
 
-const LOCAL_KEY = 'omnyssh-theme';
+const LOCAL_KEY = 'easyssh-theme';
 const STORE_KEY = 'theme';
 
 /** The theme the app.html no-FOUC script already painted, so the store agrees

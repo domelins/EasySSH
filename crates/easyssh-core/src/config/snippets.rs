@@ -13,7 +13,7 @@ pub enum SnippetScope {
     Host,
 }
 
-/// A saved command snippet stored in `~/.config/omnyssh/snippets.toml`.
+/// A saved command snippet stored in `~/.config/easyssh/snippets.toml`.
 /// Mirrors the format defined in §7 of the technical specification.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snippet {
@@ -34,7 +34,7 @@ pub struct SnippetsFile {
     pub snippets: Vec<Snippet>,
 }
 
-/// Loads snippets from `~/.config/omnyssh/snippets.toml`.
+/// Loads snippets from `~/.config/easyssh/snippets.toml`.
 ///
 /// Returns an empty `Vec` if the file does not exist yet.
 ///
@@ -56,7 +56,7 @@ pub fn load_snippets() -> anyhow::Result<Vec<Snippet>> {
     Ok(file.snippets)
 }
 
-/// Persists snippets to `~/.config/omnyssh/snippets.toml`.
+/// Persists snippets to `~/.config/easyssh/snippets.toml`.
 ///
 /// # Errors
 /// Returns an error if the directory cannot be created or the file cannot

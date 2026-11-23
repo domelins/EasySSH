@@ -4,8 +4,8 @@ use std::time::{Duration, SystemTime};
 /// Rolling log files older than this many days are pruned at startup.
 pub const LOG_RETENTION_DAYS: u64 = 7;
 
-/// Prefix shared by every rolling log file (`omnyssh.log`, `omnyssh.log.YYYY-MM-DD`).
-const LOG_FILE_PREFIX: &str = "omnyssh.log";
+/// Prefix shared by every rolling log file (`easyssh.log`, `easyssh.log.YYYY-MM-DD`).
+const LOG_FILE_PREFIX: &str = "easyssh.log";
 
 /// Returns the path to the user's SSH config file.
 ///
@@ -19,16 +19,16 @@ pub fn ssh_config_path() -> Option<PathBuf> {
 
 /// Returns the application config directory.
 ///
-/// - Linux:   `~/.config/omnyssh/`
-/// - macOS:   `~/Library/Application Support/omnyssh/`
-/// - Windows: `%APPDATA%\omnyssh\`
+/// - Linux:   `~/.config/easyssh/`
+/// - macOS:   `~/Library/Application Support/easyssh/`
+/// - Windows: `%APPDATA%\easyssh\`
 ///
-/// `OMNYSSH_CONFIG_DIR` overrides it outright, and a portable directory beside the
+/// `EASYSSH_CONFIG_DIR` overrides it outright, and a portable directory beside the
 /// binary wins once it holds a `hosts.toml`: that file only appears there when the
 /// profile directory turned out to be unwritable (see [`save_hosts`]), and keeping
 /// reads on the same directory is what makes such a fallback survive a restart.
 pub fn app_config_dir() -> Option<PathBuf> {
-    if let Some(dir) = std::env::var_os("OMNYSSH_CONFIG_DIR") {
+    if let Some(dir) = std::env::var_os("EASYSSH_CONFIG_DIR") {
         return Some(PathBuf::from(dir));
     }
     if let Some(portable) = portable_config_dir() {
@@ -36,16 +36,16 @@ pub fn app_config_dir() -> Option<PathBuf> {
             return Some(portable);
         }
     }
-    dirs::config_dir().map(|d| d.join("omnyssh"))
+    dirs::config_dir().map(|d| d.join("easyssh"))
 }
 
-/// The portable config directory: `omnyssh-data` beside the executable. It is the
+/// The portable config directory: `easyssh-data` beside the executable. It is the
 /// fallback for a profile directory this process cannot write (a locked-down
 /// AppData, a security product protecting it), and doubles as a portable install.
 pub fn portable_config_dir() -> Option<PathBuf> {
     std::env::current_exe()
         .ok()
-        .and_then(|exe| exe.parent().map(|dir| dir.join("omnyssh-data")))
+        .and_then(|exe| exe.parent().map(|dir| dir.join("easyssh-data")))
 }
 
 /// Whether `dir` exists (or can be created) and accepts a small file. Probing the
@@ -88,7 +88,7 @@ pub fn snippets_config_path() -> Option<PathBuf> {
 /// or a failed delete is skipped rather than propagated, so log cleanup never
 /// blocks application startup. File age is taken from the filesystem
 /// modification time, which keeps the logic identical on every OS. Only files
-/// whose name starts with `omnyssh.log` are considered, so config and other
+/// whose name starts with `easyssh.log` are considered, so config and other
 /// data files in the same directory are never touched.
 ///
 /// Returns the number of files removed.
@@ -140,7 +140,7 @@ mod tests {
         let dir = portable_config_dir().expect("a running binary has a directory");
         assert_eq!(
             dir.file_name().and_then(|n| n.to_str()),
-            Some("omnyssh-data")
+            Some("easyssh-data")
         );
         let exe = std::env::current_exe().expect("exe");
         assert_eq!(dir.parent(), exe.parent());
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn writable_reports_a_fresh_directory() {
-        let dir = std::env::temp_dir().join(format!("omnyssh-writable-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("easyssh-writable-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         assert!(is_writable(&dir));
         assert!(dir.is_dir());
@@ -164,7 +164,7 @@ mod tests {
 
     #[test]
     fn writable_rejects_a_path_under_a_file() {
-        let root = std::env::temp_dir().join(format!("omnyssh-blocked-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("easyssh-blocked-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&root);
         std::fs::create_dir_all(&root).expect("root");
         let file = root.join("file");

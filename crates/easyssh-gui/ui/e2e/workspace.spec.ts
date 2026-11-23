@@ -50,7 +50,7 @@ async function boot(page: Page, options: { parked?: Record<string, number>; path
   await page.addInitScript(
     ({ hosts, files, parked }) => {
       // A "next start" can be simulated by seeding the persisted tab counts.
-      if (parked) localStorage.setItem('omnyssh-open-tabs', JSON.stringify(parked));
+      if (parked) localStorage.setItem('easyssh-open-tabs', JSON.stringify(parked));
       let cbid = 0;
       let nextSession = 0;
       const win = window as unknown as Record<string, unknown>;
@@ -87,7 +87,7 @@ async function boot(page: Page, options: { parked?: Record<string, number>; path
               const sid = ++nextSession;
               win.__lastTerminal = sid;
               win.__terminalOpens = ((win.__terminalOpens as number | undefined) ?? 0) + 1;
-              setTimeout(() => sendToChannel(chId, 'omnyssh-ready> '), 0);
+              setTimeout(() => sendToChannel(chId, 'easyssh-ready> '), 0);
               return Promise.resolve(sid);
             }
             case 'terminal_write':
@@ -217,7 +217,7 @@ async function boot(page: Page, options: { parked?: Record<string, number>; path
                 { side: 'remote', action, dir, name, archive, dest }
               ];
               // A beat of latency so the pane's preparing/progress states are observable.
-              const answer = action === 'pack' || action === 'temp' ? '/tmp/omnyssh-TEST1234' : null;
+              const answer = action === 'pack' || action === 'temp' ? '/tmp/easyssh-TEST1234' : null;
               return new Promise((resolve) => setTimeout(() => resolve(answer), 150));
             }
             case 'local_archive': {
@@ -226,7 +226,7 @@ async function boot(page: Page, options: { parked?: Record<string, number>; path
                 ...((win.__archiveCalls as unknown[] | undefined) ?? []),
                 { side: 'local', action, path, dest }
               ];
-              const answer = action === 'pack' ? 'C:\\Temp\\omnyssh-TEST9999.tar.gz' : null;
+              const answer = action === 'pack' ? 'C:\\Temp\\easyssh-TEST9999.tar.gz' : null;
               return new Promise((resolve) => setTimeout(() => resolve(answer), 150));
             }
             case 'sftp_upload':
@@ -294,7 +294,7 @@ test('opens one host workspace with files, terminal tabs and the live monitor', 
   await expect(files).toBeVisible();
   await expect(monitor).toBeVisible();
   await expect(page.getByRole('tablist', { name: '终端标签' })).toBeVisible();
-  await expect(page.locator('.xterm-rows').first()).toContainText('omnyssh-ready>');
+  await expect(page.locator('.xterm-rows').first()).toContainText('easyssh-ready>');
 
   // The listing lands in the files pane: hidden entries are filtered, symlinks marked.
   await expect(files.getByText('etc')).toBeVisible();
@@ -411,7 +411,7 @@ test('drags the splitter and keeps the width across a reload', async ({ page }) 
   const after = (await files.boundingBox())?.width ?? 0;
   expect(after).toBeGreaterThan(before + 40);
 
-  const saved = await page.evaluate(() => localStorage.getItem('omnyssh-workspace-layouts'));
+  const saved = await page.evaluate(() => localStorage.getItem('easyssh-workspace-layouts'));
   expect(saved).toContain('web-1');
 
   await page.reload();
@@ -459,7 +459,7 @@ test('reconnects a terminal whose remote shell has exited', async ({ page }) => 
   // One tab again: the new session replaced the one whose shell was gone.
   await expect(page.getByRole('tab')).toHaveCount(1);
   await expect(reconnect).toHaveCount(0);
-  await expect(page.locator('.xterm-rows').first()).toContainText('omnyssh-ready>');
+  await expect(page.locator('.xterm-rows').first()).toContainText('easyssh-ready>');
 });
 test('restores parked tabs on the next start and connects only the one opened', async ({ page }) => {
   await boot(page, { parked: { 'web-1': 2 } });
@@ -474,7 +474,7 @@ test('restores parked tabs on the next start and connects only the one opened', 
   // Opening one wakes exactly that tab; its sibling stays parked.
   await tabs.first().click();
   await expect(page.getByRole('tab')).toHaveCount(2);
-  await expect(page.locator('.xterm-rows').first()).toContainText('omnyssh-ready>');
+  await expect(page.locator('.xterm-rows').first()).toContainText('easyssh-ready>');
   expect(await opens()).toBe(1);
 });
 
@@ -513,8 +513,8 @@ test('a folder download packs, transfers one archive and unpacks, seamlessly', a
   const transfers = await transferCalls(page);
   expect(transfers).toHaveLength(1);
   expect(transfers[0].cmd).toBe('sftp_download');
-  expect(transfers[0].remote).toBe('/tmp/omnyssh-TEST1234');
-  expect(transfers[0].local).toContain('omnyssh-TEST1234');
+  expect(transfers[0].remote).toBe('/tmp/easyssh-TEST1234');
+  expect(transfers[0].local).toContain('easyssh-TEST1234');
 });
 
 test('a folder upload packs locally and unpacks on the host', async ({ page }) => {
@@ -536,12 +536,12 @@ test('a folder upload packs locally and unpacks on the host', async ({ page }) =
   ]);
   const calls = await archiveCalls(page);
   expect(calls[0].path).toBe('D:\\Photos');
-  expect(calls[2]).toMatchObject({ archive: '/tmp/omnyssh-TEST1234', dest: '/home' });
+  expect(calls[2]).toMatchObject({ archive: '/tmp/easyssh-TEST1234', dest: '/home' });
   const transfers = await transferCalls(page);
   expect(transfers).toHaveLength(1);
   expect(transfers[0].cmd).toBe('sftp_upload');
-  expect(transfers[0].local).toBe('C:\\Temp\\omnyssh-TEST9999.tar.gz');
-  expect(transfers[0].remote).toBe('/tmp/omnyssh-TEST1234');
+  expect(transfers[0].local).toBe('C:\\Temp\\easyssh-TEST9999.tar.gz');
+  expect(transfers[0].remote).toBe('/tmp/easyssh-TEST1234');
 });
 
 test('a failed folder transfer says why and still cleans both archives', async ({ page }) => {

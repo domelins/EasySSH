@@ -35,7 +35,7 @@
   let reloadedFor = $state<string | null>(null);
   // The terminal waits for it, so it connects with the key the backend just saved.
   let reloaded: Promise<unknown> = Promise.resolve();
-  const BACKUP = '/etc/ssh/sshd_config.omnyssh_backup.*';
+  const BACKUP = '/etc/ssh/sshd_config.easyssh_backup.*';
 
   async function openTerminal(hostName: string): Promise<void> {
     await reloaded;

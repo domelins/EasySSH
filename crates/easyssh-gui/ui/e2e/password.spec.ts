@@ -179,7 +179,7 @@ test('a click beside the dialog does not cancel the login', async ({ page }) => 
 });
 
 test('streamer mode keeps the host out of the prompt', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('omnyssh-streamer-mode', 'true'));
+  await page.addInitScript(() => localStorage.setItem('easyssh-streamer-mode', 'true'));
   await boot(page);
   await page.getByRole('button', { name: '连接 nas' }).click();
 

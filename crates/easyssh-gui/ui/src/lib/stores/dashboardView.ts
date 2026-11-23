@@ -5,7 +5,7 @@ import { loadSettingsStore } from '$lib/stores/settingsStore';
 // the custom host order. Like the sidebar collapse (./ui.ts) they survive restarts: persisted
 // canonically via tauri-plugin-store, mirrored to localStorage for first paint and for a
 // plain browser (Playwright, vite preview).
-const LOCAL_KEY = 'omnyssh-dashboard-view';
+const LOCAL_KEY = 'easyssh-dashboard-view';
 const STORE_KEY = 'dashboardView';
 
 /** How the dashboard orders cards: the user's own order, by name, or by status. */

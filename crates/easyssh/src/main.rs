@@ -21,7 +21,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Create log directory if it doesn't exist
     let log_dir = dirs::config_dir()
-        .map(|d| d.join("omnyssh"))
+        .map(|d| d.join("easyssh"))
         .unwrap_or_else(|| std::path::PathBuf::from("."));
 
     if let Err(e) = std::fs::create_dir_all(&log_dir) {
@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
     // Use daily rolling file appender
     // IMPORTANT: _guard must live for the entire duration of the program.
     // If it's dropped, logs will stop being written to the file.
-    let file_appender = tracing_appender::rolling::daily(&log_dir, "omnyssh.log");
+    let file_appender = tracing_appender::rolling::daily(&log_dir, "easyssh.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
 
     // russh dumps auth packets, login passwords included: its client auth code

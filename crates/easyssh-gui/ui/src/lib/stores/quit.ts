@@ -10,7 +10,7 @@ import { snippetRun, type SnippetRun } from './snippets';
 // Quitting ends every terminal, transfer, tunnel and snippet run at once, so the app
 // asks first while any is live (tech-gui.md §4.3). `confirmQuit` persists
 // like the other UI prefs (tauri-plugin-store + a localStorage mirror).
-const LOCAL_KEY = 'omnyssh-confirm-quit';
+const LOCAL_KEY = 'easyssh-confirm-quit';
 const STORE_KEY = 'confirmQuit';
 
 function mirrored(): boolean {

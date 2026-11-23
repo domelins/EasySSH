@@ -611,11 +611,11 @@ mod tests {
 
     #[test]
     fn key_setup_outcomes_carry_the_password_state() {
-        let key = std::path::PathBuf::from("/k/omnyssh_web_ed25519");
+        let key = std::path::PathBuf::from("/k/easyssh_web_ed25519");
         assert_eq!(
             key_setup_json(CoreEvent::KeySetupComplete("web".into(), key.clone())),
             serde_json::json!({
-                "hostName": "web", "keyPath": "/k/omnyssh_web_ed25519", "passwordOff": true
+                "hostName": "web", "keyPath": "/k/easyssh_web_ed25519", "passwordOff": true
             })
         );
         assert_eq!(

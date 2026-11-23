@@ -265,7 +265,7 @@ impl Default for KeySetupMachine {
 /// - .ssh directory is created with mode 0700 if it doesn't exist.
 pub async fn generate_key_pair(host_name: &str, key_type: KeyType) -> Result<(PathBuf, PathBuf)> {
     let sanitized = sanitize_hostname(host_name);
-    let key_filename = format!("omnyssh_{}_{}", sanitized, key_type.extension());
+    let key_filename = format!("easyssh_{}_{}", sanitized, key_type.extension());
 
     let ssh_dir = dirs::home_dir()
         .ok_or_else(|| anyhow!("Cannot determine home directory"))?
@@ -319,7 +319,7 @@ pub async fn generate_key_pair(host_name: &str, key_type: KeyType) -> Result<(Pa
         .arg("-N")
         .arg("") // No passphrase
         .arg("-C")
-        .arg(format!("omnyssh-{}", host_name)); // Comment
+        .arg(format!("easyssh-{}", host_name)); // Comment
 
     // CREATE_NO_WINDOW: the GUI has no console to lend the child, so without this
     // Windows opens one for it. Output is piped either way, so nothing is lost.
@@ -468,14 +468,14 @@ pub fn build_disable_password_command() -> String {
     let pam = force_sshd_directive("UsePAM", "no");
 
     format!(
-        r#"sudo -n true 2>/dev/null || {{ echo "OMNYSSH_NO_SUDO"; exit 1; }}; \
-           sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.omnyssh_backup.{timestamp} && \
+        r#"sudo -n true 2>/dev/null || {{ echo "EASYSSH_NO_SUDO"; exit 1; }}; \
+           sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.easyssh_backup.{timestamp} && \
            sudo sed -i.bak 's|^Include /etc/ssh/sshd_config.d/|#Include /etc/ssh/sshd_config.d/|' /etc/ssh/sshd_config && \
            {password} && \
            {challenge} && \
            {kbd} && \
            {pam} && \
-           sudo sshd -t || {{ echo "OMNYSSH_CONFIG_ERROR"; sudo cp /etc/ssh/sshd_config.omnyssh_backup.{timestamp} /etc/ssh/sshd_config; exit 1; }}"#
+           sudo sshd -t || {{ echo "EASYSSH_CONFIG_ERROR"; sudo cp /etc/ssh/sshd_config.easyssh_backup.{timestamp} /etc/ssh/sshd_config; exit 1; }}"#
     )
 }
 
@@ -513,7 +513,7 @@ pub fn build_reload_sshd_command() -> String {
        elif command -v service &>/dev/null; then \
            sudo service sshd reload 2>/dev/null || sudo service ssh reload 2>/dev/null; \
        else \
-           echo "OMNYSSH_NO_INIT_SYSTEM"; exit 1; \
+           echo "EASYSSH_NO_INIT_SYSTEM"; exit 1; \
        fi"#
     .to_string()
 }
@@ -524,12 +524,12 @@ pub fn build_reload_sshd_command() -> String {
 /// A missing backup exits 0 so its marker reaches the caller: a checked run drops
 /// the output of a command that fails.
 pub fn build_rollback_command() -> String {
-    r#"BACKUP=$(find /etc/ssh -maxdepth 1 -name 'sshd_config.omnyssh_backup.*' 2>/dev/null | sort | tail -1); \
+    r#"BACKUP=$(find /etc/ssh -maxdepth 1 -name 'sshd_config.easyssh_backup.*' 2>/dev/null | sort | tail -1); \
        if [ -n "$BACKUP" ]; then \
            sudo cp "$BACKUP" /etc/ssh/sshd_config && \
            (sudo systemctl reload sshd 2>/dev/null || sudo systemctl reload ssh 2>/dev/null || sudo service sshd reload 2>/dev/null || sudo service ssh reload); \
        else \
-           echo "OMNYSSH_NO_BACKUP"; \
+           echo "EASYSSH_NO_BACKUP"; \
        fi"#
     .to_string()
 }
@@ -775,12 +775,12 @@ async fn setup_key_internal(
         machine.disable_answered();
     }
     match disabled {
-        Ok(Ok(output)) if output.contains("OMNYSSH_NO_SUDO") => {
+        Ok(Ok(output)) if output.contains("EASYSSH_NO_SUDO") => {
             machine.set_has_sudo(false);
             machine.step_result(KeySetupStep::VerifyKeyAuth, Ok(()));
             return Ok(());
         }
-        Ok(Ok(output)) if output.contains("OMNYSSH_CONFIG_ERROR") => {
+        Ok(Ok(output)) if output.contains("EASYSSH_CONFIG_ERROR") => {
             machine.step_result(KeySetupStep::DisablePassword, Err(anyhow!("Config error")));
             return Err(anyhow!("sshd config validation failed. Backup restored."));
         }
@@ -877,7 +877,7 @@ async fn emergency_rollback(session: &SshSession) -> Result<()> {
 /// Reads the rollback command's checked run.
 fn rollback_outcome(output: Result<String>) -> Result<()> {
     match output {
-        Ok(output) if output.contains("OMNYSSH_NO_BACKUP") => {
+        Ok(output) if output.contains("EASYSSH_NO_BACKUP") => {
             Err(anyhow!("No backup file found for rollback"))
         }
         Ok(_) => {
@@ -1051,7 +1051,7 @@ mod tests {
 
     #[test]
     fn test_answered_disable_failure_is_known() {
-        // OMNYSSH_CONFIG_ERROR: the command restored its backup itself.
+        // EASYSSH_CONFIG_ERROR: the command restored its backup itself.
         let mut machine = KeySetupMachine::new();
         machine.disable_sent();
         machine.disable_answered();
@@ -1099,7 +1099,7 @@ mod tests {
             .to_string()
             .starts_with("Rollback failed"));
 
-        let none = rollback_outcome(Ok("OMNYSSH_NO_BACKUP\n".to_string()));
+        let none = rollback_outcome(Ok("EASYSSH_NO_BACKUP\n".to_string()));
         assert_eq!(
             none.unwrap_err().to_string(),
             "No backup file found for rollback"
@@ -1112,7 +1112,7 @@ mod tests {
     fn test_rollback_command_reports_missing_backup_with_exit_zero() {
         // A checked run drops the output of a failing command, marker included.
         let cmd = build_rollback_command();
-        assert!(cmd.contains("echo \"OMNYSSH_NO_BACKUP\";"));
+        assert!(cmd.contains("echo \"EASYSSH_NO_BACKUP\";"));
         assert!(!cmd.contains("exit 1"));
     }
 
@@ -1134,7 +1134,7 @@ mod tests {
         let cmd = build_disable_password_command();
 
         // Should create timestamped backup.
-        assert!(cmd.contains("omnyssh_backup."));
+        assert!(cmd.contains("easyssh_backup."));
         // Should run sshd -t for validation.
         assert!(cmd.contains("sshd -t"));
         // Should comment out cloud-init Include directive to prevent overrides.

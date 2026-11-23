@@ -569,7 +569,7 @@ mod tests {
     }
 
     #[test]
-    fn a_legacy_refusal_says_the_file_is_omnysshs_own() {
+    fn a_legacy_refusal_says_the_file_is_easysshs_own() {
         let file = Path::new(r"C:\Users\me\ssh\known_hosts");
         let message = changed_message("192.168.1.25", 22, &ed25519(), file, &[], true);
         assert_eq!(

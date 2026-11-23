@@ -12,7 +12,7 @@ use easyssh_core::utils::platform::cleanup_old_logs;
 
 /// Creates a unique, empty scratch directory under the system temp dir.
 fn scratch_dir(tag: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("omnyssh-test-{}-{}", tag, std::process::id()));
+    let dir = std::env::temp_dir().join(format!("easyssh-test-{}-{}", tag, std::process::id()));
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(&dir).expect("create scratch dir");
     dir
@@ -29,14 +29,14 @@ fn write_aged(dir: &Path, name: &str, age_days: u64) {
 #[test]
 fn removes_logs_older_than_retention() {
     let dir = scratch_dir("old");
-    write_aged(&dir, "omnyssh.log.2026-01-01", 30);
-    write_aged(&dir, "omnyssh.log.2026-01-02", 14);
+    write_aged(&dir, "easyssh.log.2026-01-01", 30);
+    write_aged(&dir, "easyssh.log.2026-01-02", 14);
 
     let removed = cleanup_old_logs(&dir, 7);
 
     assert_eq!(removed, 2);
-    assert!(!dir.join("omnyssh.log.2026-01-01").exists());
-    assert!(!dir.join("omnyssh.log.2026-01-02").exists());
+    assert!(!dir.join("easyssh.log.2026-01-01").exists());
+    assert!(!dir.join("easyssh.log.2026-01-02").exists());
 
     let _ = fs::remove_dir_all(&dir);
 }
@@ -44,14 +44,14 @@ fn removes_logs_older_than_retention() {
 #[test]
 fn keeps_recent_logs() {
     let dir = scratch_dir("recent");
-    write_aged(&dir, "omnyssh.log.2026-05-29", 0);
-    write_aged(&dir, "omnyssh.log.2026-05-25", 3);
+    write_aged(&dir, "easyssh.log.2026-05-29", 0);
+    write_aged(&dir, "easyssh.log.2026-05-25", 3);
 
     let removed = cleanup_old_logs(&dir, 7);
 
     assert_eq!(removed, 0);
-    assert!(dir.join("omnyssh.log.2026-05-29").exists());
-    assert!(dir.join("omnyssh.log.2026-05-25").exists());
+    assert!(dir.join("easyssh.log.2026-05-29").exists());
+    assert!(dir.join("easyssh.log.2026-05-25").exists());
 
     let _ = fs::remove_dir_all(&dir);
 }
@@ -62,7 +62,7 @@ fn never_touches_non_log_files() {
     write_aged(&dir, "config.toml", 90);
     write_aged(&dir, "hosts.toml", 90);
     write_aged(&dir, "snippets.toml", 90);
-    write_aged(&dir, "omnyssh.log.2026-01-01", 90);
+    write_aged(&dir, "easyssh.log.2026-01-01", 90);
 
     let removed = cleanup_old_logs(&dir, 7);
 
@@ -76,7 +76,7 @@ fn never_touches_non_log_files() {
 
 #[test]
 fn missing_directory_is_a_no_op() {
-    let dir = std::env::temp_dir().join("omnyssh-test-missing-does-not-exist");
+    let dir = std::env::temp_dir().join("easyssh-test-missing-does-not-exist");
     let _ = fs::remove_dir_all(&dir);
 
     assert_eq!(cleanup_old_logs(&dir, 7), 0);

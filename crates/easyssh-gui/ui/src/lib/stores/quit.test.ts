@@ -159,7 +159,7 @@ describe('confirmQuit persistence', () => {
 
   it('defaults to asking and reads the localStorage mirror', async () => {
     expect(get(await fresh())).toBe(true);
-    localStorage.setItem('omnyssh-confirm-quit', 'false');
+    localStorage.setItem('easyssh-confirm-quit', 'false');
     expect(get(await fresh())).toBe(false);
   });
 
@@ -168,7 +168,7 @@ describe('confirmQuit persistence', () => {
     await confirmQuit.set(false);
     expect(backend.set).toHaveBeenCalledWith('confirmQuit', false);
     expect(backend.save).toHaveBeenCalled();
-    expect(localStorage.getItem('omnyssh-confirm-quit')).toBe('false');
+    expect(localStorage.getItem('easyssh-confirm-quit')).toBe('false');
   });
 
   it('hydrate applies the stored value without clobbering a fresh user flip', async () => {

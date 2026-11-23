@@ -262,7 +262,7 @@ Please open a GitHub Issue with:
 - OS and terminal emulator
 - Steps to reproduce
 - Expected behaviour vs. actual behaviour
-- Relevant log output (run with `--verbose 2>omnyssh.log` and attach the log)
+- Relevant log output (run with `--verbose 2>easyssh.log` and attach the log)
 
 For security issues, please **do not** open a public issue.  Email the
 maintainers directly.

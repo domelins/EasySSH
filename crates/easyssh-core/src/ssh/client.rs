@@ -43,7 +43,7 @@ impl MonitorMode {
 /// A single host entry used for SSH connections.
 ///
 /// Populated either from `~/.ssh/config` (via the parser) or from
-/// `~/.config/omnyssh/hosts.toml` (manual entries added through the TUI).
+/// `~/.config/easyssh/hosts.toml` (manual entries added through the TUI).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Host {
     /// Display name / alias (e.g. `"web-prod-1"`).

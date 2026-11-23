@@ -9,7 +9,7 @@ import { isMac } from '$lib/platform';
 // tauri-plugin-store, and mirror to localStorage so the SPA renders the right width
 // on first paint — and so a plain browser (Playwright, vite preview) persists it
 // too. This mirrors the theme store's persistence shape.
-const LOCAL_KEY = 'omnyssh-sidebar-collapsed';
+const LOCAL_KEY = 'easyssh-sidebar-collapsed';
 const STORE_KEY = 'sidebarCollapsed';
 
 function mirroredCollapsed(): boolean {

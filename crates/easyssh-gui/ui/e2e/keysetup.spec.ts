@@ -53,7 +53,7 @@ async function boot(page: Page, outcome: Outcome = 'success', options: { manual?
         }
         setTimeout(() => {
           const h = state.hosts.find((x) => (x as { name: string }).name === name);
-          const keyPath = `/home/me/.ssh/omnyssh_${name}_ed25519`;
+          const keyPath = `/home/me/.ssh/easyssh_${name}_ed25519`;
           if (outcome === 'success' || outcome === 'partial') {
             // The real backend persists before emitting complete.
             if (h) {
@@ -139,7 +139,7 @@ test('asks before key setup, with Cancel focused, and Cancel starts nothing', as
   const confirm = page.getByRole('dialog', { name: '设置密钥登录' });
   await expect(confirm.getByText('为 pw-host 设置密钥登录？')).toBeVisible();
   // Desktop Chrome's user agent says Windows, so the path is the Windows one.
-  await expect(confirm.getByText('%USERPROFILE%\\.ssh\\omnyssh_pw-host_ed25519')).toBeVisible();
+  await expect(confirm.getByText('%USERPROFILE%\\.ssh\\easyssh_pw-host_ed25519')).toBeVisible();
   await expect(confirm.getByText('root@pw.example.com')).toBeVisible();
   await expect(confirm.getByText(/所有账户和设备/)).toBeVisible();
   await expect(confirm.getByRole('button', { name: '取消' })).toBeFocused();
@@ -163,7 +163,7 @@ test('a full success says password login is off and the card shows the shield', 
   const dialog = page.getByRole('dialog', { name: '密钥设置' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('密钥登录已设置，密码登录已关闭')).toBeVisible();
-  await expect(dialog.getByText(/omnyssh_pw-host_ed25519/)).toBeVisible();
+  await expect(dialog.getByText(/easyssh_pw-host_ed25519/)).toBeVisible();
   await expect(dialog.getByText('EasySSH 中保存的密码已删除。')).toBeVisible();
   expect(await startCalls(page)).toBe(1);
 

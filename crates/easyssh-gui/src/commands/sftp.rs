@@ -277,7 +277,7 @@ pub async fn remote_archive(
                 return Err(bad("无法打包：路径包含不支持的内容"));
             }
             format!(
-                "p=$(mktemp \"${{TMPDIR:-/tmp}}/omnyssh-XXXXXXXX\") || exit 1; \
+                "p=$(mktemp \"${{TMPDIR:-/tmp}}/easyssh-XXXXXXXX\") || exit 1; \
                  if tar -czf \"$p\" -C {} {}; then printf '%s' \"$p\"; else rm -f \"$p\"; exit 1; fi",
                 shell_word(&dir),
                 shell_word(&name)
@@ -299,7 +299,7 @@ pub async fn remote_archive(
                 shell_word(&archive)
             )
         }
-        "temp" => "mktemp \"${TMPDIR:-/tmp}/omnyssh-XXXXXXXX\"".to_string(),
+        "temp" => "mktemp \"${TMPDIR:-/tmp}/easyssh-XXXXXXXX\"".to_string(),
         "remove" => {
             let archive = archive.ok_or_else(|| bad("无法清理：缺少压缩包"))?;
             if archive.contains('\0') {
@@ -381,7 +381,7 @@ fn local_archive_blocking(
                 .map(|d| d.as_nanos())
                 .unwrap_or(0);
             let archive =
-                std::env::temp_dir().join(format!("omnyssh-{}-{stamp}.tar.gz", std::process::id()));
+                std::env::temp_dir().join(format!("easyssh-{}-{stamp}.tar.gz", std::process::id()));
             let file = std::fs::File::create(&archive).map_err(|e| fail("打包失败", e))?;
             let encoder = flate2::write::GzEncoder::new(file, flate2::Compression::fast());
             let mut builder = tar::Builder::new(encoder);

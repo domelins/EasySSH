@@ -1,7 +1,7 @@
 //! Where the frontend's shared UI-pref store lives. tauri-plugin-store resolves a
 //! relative path against the profile's AppData directory; when a security product
 //! refuses this process writes there — the same case that sends `hosts.toml` to the
-//! portable `omnyssh-data` directory — every preference save silently fails and the
+//! portable `easyssh-data` directory — every preference save silently fails and the
 //! next launch hydrates the stale file, so the theme "resets" on every restart. The
 //! store file follows the same fallback the core already uses.
 
@@ -10,7 +10,7 @@ use tauri::{AppHandle, Manager};
 use crate::error::CommandError;
 
 /// Absolute path of the shared UI settings store (`settings.json`): the profile's
-/// AppData directory while it accepts writes, otherwise `omnyssh-data` beside the
+/// AppData directory while it accepts writes, otherwise `easyssh-data` beside the
 /// executable. The frontend passes the result to `load()` as an absolute path, which
 /// the store plugin keeps verbatim.
 #[tauri::command]

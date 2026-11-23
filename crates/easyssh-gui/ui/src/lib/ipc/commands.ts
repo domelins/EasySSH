@@ -255,7 +255,7 @@ export async function setTrayBehavior(
 }
 
 /** Absolute path of the shared UI settings store: AppData while writable, else the
- *  portable `omnyssh-data` beside the executable. */
+ *  portable `easyssh-data` beside the executable. */
 export async function settingsStorePath(): Promise<string> {
   const res = await commands.settingsStorePath();
   if (res.status === 'error') throw new Error(res.error.message);

@@ -2,7 +2,7 @@ use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 /// Main application configuration, loaded from
-/// `~/.config/omnyssh/config.toml`.
+/// `~/.config/easyssh/config.toml`.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppConfig {
@@ -180,7 +180,7 @@ impl Default for KeybindingsConfig {
 // ---------------------------------------------------------------------------
 
 /// Loads the application config from `path`, or from the default location
-/// (`~/.config/omnyssh/config.toml`) when `path` is `None`.
+/// (`~/.config/easyssh/config.toml`) when `path` is `None`.
 ///
 /// A missing config file is silently ignored and [`AppConfig::default`] is
 /// returned.  Parse errors are propagated so the user sees them at startup.

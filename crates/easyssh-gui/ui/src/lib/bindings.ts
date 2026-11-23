@@ -94,11 +94,11 @@ async hostPassword(name: string) : Promise<Result<string | null, CommandError>> 
  * (SSH-config entries frozen as manual ones):
  * 
  * - `"both"`: the full `hosts.toml`-shaped snapshot, plaintext passwords included —
- * the backward-compatible default. File base name `omnyssh-hosts`.
+ * the backward-compatible default. File base name `easyssh-hosts`.
  * - `"config"`: connection configuration only (name, address, port, user, tags, key
- * path, proxy jump, forwards…) — never any password. `omnyssh-hosts-config`.
+ * path, proxy jump, forwards…) — never any password. `easyssh-hosts-config`.
  * - `"credentials"`: identity and secrets only (`name`, `username`, `password`), no
- * address or other configuration. `omnyssh-credentials`.
+ * address or other configuration. `easyssh-credentials`.
  * 
  * An unknown `scope` is an error, never silently treated as `"both"`.
  * 
@@ -534,7 +534,7 @@ async setTrayBehavior(minimizeToTray: boolean, closeToTray: boolean) : Promise<R
 },
 /**
  * Absolute path of the shared UI settings store (`settings.json`): the profile's
- * AppData directory while it accepts writes, otherwise `omnyssh-data` beside the
+ * AppData directory while it accepts writes, otherwise `easyssh-data` beside the
  * executable. The frontend passes the result to `load()` as an absolute path, which
  * the store plugin keeps verbatim.
  */

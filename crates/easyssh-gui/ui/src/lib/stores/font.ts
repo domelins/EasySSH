@@ -4,8 +4,8 @@ import { loadSettingsStore } from '$lib/stores/settingsStore';
 // The terminal font preference (family + size), persisted like the other UI prefs:
 // tauri-plugin-store canonical, localStorage mirror for the first frame. TerminalView
 // subscribes and re-styles every open terminal live.
-const FAMILY_LOCAL_KEY = 'omnyssh-font-family';
-const SIZE_LOCAL_KEY = 'omnyssh-font-size';
+const FAMILY_LOCAL_KEY = 'easyssh-font-family';
+const SIZE_LOCAL_KEY = 'easyssh-font-size';
 const FAMILY_STORE_KEY = 'fontFamily';
 const SIZE_STORE_KEY = 'fontSize';
 

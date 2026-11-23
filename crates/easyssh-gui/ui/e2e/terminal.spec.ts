@@ -66,7 +66,7 @@ async function boot(page: Page): Promise<void> {
               sessionChannel[sid] = chId;
               const open = (): number => {
                 // A shell prompt proves the streamed output renders + flips status to connected.
-                if (!win.__silent) setTimeout(() => sendToChannel(chId, 'omnyssh-ready> '), 0);
+                if (!win.__silent) setTimeout(() => sendToChannel(chId, 'easyssh-ready> '), 0);
                 return sid;
               };
               // A test can hold the open, as a slow connect does, until it calls __release.
@@ -136,7 +136,7 @@ test('host-first: spawn a terminal from a card, run a command, see output, then 
   // The tab row appears and the terminal renders the streamed prompt.
   await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
   await expect(page.locator('.xterm')).toBeVisible();
-  await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('easyssh-ready');
 
   // Run a command: focus the terminal input, type, press Enter -> canned output streams back.
   await page.locator('.xterm-helper-textarea').focus();
@@ -160,13 +160,13 @@ test('action-first: the Terminal spawner opens the host picker, then a live term
   await page.getByRole('dialog').getByText('web-1', { exact: true }).click();
 
   await expect(page.getByRole('button', { name: 'web-1 · 终端', exact: true })).toBeVisible();
-  await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('easyssh-ready');
 });
 
 test('dismissing the host picker hands the keyboard back to the terminal', async ({ page }) => {
   await boot(page);
   await page.getByTitle('在 web-1 打开 sh').click();
-  await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('easyssh-ready');
   await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
 
   await page.getByRole('button', { name: '终端', exact: true }).click();
@@ -191,7 +191,7 @@ test('a terminal that opens under the palette leaves the keyboard to it', async 
   await expect(query).toBeFocused();
 
   await page.evaluate(() => (window as unknown as { __release: () => void }).__release());
-  await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('easyssh-ready');
   // Two frames, so the terminal's own focus pass has run.
   await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
 
@@ -204,7 +204,7 @@ test('a terminal that opens under the palette leaves the keyboard to it', async 
 test('toggling the theme re-themes a live terminal (§5.1)', async ({ page }) => {
   await boot(page);
   await page.getByTitle('在 web-1 打开 sh').click();
-  await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('easyssh-ready');
 
   // xterm paints its scrollable viewport inline with theme.background; find that
   // element's computed colour rather than assume a class (robust across versions).
@@ -300,7 +300,7 @@ test('a remote exit after output keeps the tab, takes no input, and Enter closes
   // What the screen shows can still be copied.
   await selectPrompt(page);
   await page.keyboard.press('Control+Shift+C');
-  await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+  await expect.poll(() => copied(page)).toEqual(['easyssh-ready>']);
 
   // Tab keeps the keyboard on the terminal, so Enter still closes the tab.
   await page.keyboard.press('Tab');
@@ -368,7 +368,7 @@ async function bootWithClipboard(page: Page): Promise<void> {
   });
   await boot(page);
   await page.getByTitle('在 web-1 打开 sh').click();
-  await expect(page.locator('.xterm-rows')).toContainText('omnyssh-ready');
+  await expect(page.locator('.xterm-rows')).toContainText('easyssh-ready');
 }
 
 const copied = (page: Page) =>
@@ -387,12 +387,12 @@ test('Ctrl+Shift+C copies the selection and sends the shell nothing', async ({ p
   await selectPrompt(page);
 
   await page.keyboard.press('Control+Shift+C');
-  await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+  await expect.poll(() => copied(page)).toEqual(['easyssh-ready>']);
   expect(await writes(page)).toEqual([]);
 
   // With a selection, bare Ctrl+C copies too, without sending the interrupt.
   await page.keyboard.press('Control+C');
-  await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>', 'omnyssh-ready>']);
+  await expect.poll(() => copied(page)).toEqual(['easyssh-ready>', 'easyssh-ready>']);
   expect(await writes(page)).toEqual([]);
 
   // A plain click collapses the selection to one cell, so bare Ctrl+C now interrupts.
@@ -442,7 +442,7 @@ test('terminal context menu copies, pastes and returns focus; blank selection di
   await page.locator('.xterm-screen').click({ button: 'right' });
   await expect(menu.getByRole('menuitem', { name: '复制', exact: true })).toBeEnabled();
   await menu.getByRole('menuitem', { name: '复制', exact: true }).click();
-  await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+  await expect.poll(() => copied(page)).toEqual(['easyssh-ready>']);
   await expect(menu).toHaveCount(0);
   await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
   expect(await writes(page)).toEqual([]);
@@ -508,7 +508,7 @@ test('Ctrl+Shift+S toggles streamer mode and sends the shell no ^S', async ({ pa
 
   await page.keyboard.press('Control+Shift+S');
   await expect
-    .poll(() => page.evaluate(() => localStorage.getItem('omnyssh-streamer-mode')))
+    .poll(() => page.evaluate(() => localStorage.getItem('easyssh-streamer-mode')))
     .toBe('true');
   expect(await writes(page)).toEqual([]);
 });
@@ -546,7 +546,7 @@ test.describe('on Linux', () => {
 
     await selectPrompt(page);
     await press('KeyC', false);
-    await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+    await expect.poll(() => copied(page)).toEqual(['easyssh-ready>']);
     expect(await writes(page)).toEqual([[3], [3]]);
   });
 
@@ -609,7 +609,7 @@ test.describe('on Linux', () => {
     await expect(menu.getByRole('menuitem', { name: '复制', exact: true })).toBeEnabled();
     await expect(menu.getByRole('menuitem', { name: '粘贴', exact: true })).toBeDisabled();
     await menu.getByRole('menuitem', { name: '复制', exact: true }).click();
-    await expect.poll(() => copied(page)).toEqual(['omnyssh-ready>']);
+    await expect.poll(() => copied(page)).toEqual(['easyssh-ready>']);
     await expect(menu).toHaveCount(0);
     await expect(page.locator('.xterm-helper-textarea')).toBeFocused();
     expect(await page.evaluate(() => (window as unknown as { __pasted?: number }).__pasted ?? 0)).toBe(0);

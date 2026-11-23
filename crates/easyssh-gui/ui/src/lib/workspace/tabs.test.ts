@@ -15,7 +15,7 @@ const backend = { get: vi.fn(), set: vi.fn(), save: vi.fn() };
 vi.mock('@tauri-apps/plugin-store', () => ({ load: vi.fn(async () => backend) }));
 vi.mock('$lib/ipc/commands', () => ({ settingsStorePath: vi.fn(async () => 'settings.json') }));
 
-const LOCAL_KEY = 'omnyssh-open-tabs';
+const LOCAL_KEY = 'easyssh-open-tabs';
 
 function terminal(hostName: string): Session {
   return { id: 1, kind: 'terminal', hostName, status: 'connected' };

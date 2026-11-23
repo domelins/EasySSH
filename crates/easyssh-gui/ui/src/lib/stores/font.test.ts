@@ -44,8 +44,8 @@ describe('terminal font store', () => {
     const font = await freshFont();
     font.setFamily('Consolas');
     font.setSize(16);
-    expect(localStorage.getItem('omnyssh-font-family')).toBe('Consolas');
-    expect(localStorage.getItem('omnyssh-font-size')).toBe('16');
+    expect(localStorage.getItem('easyssh-font-family')).toBe('Consolas');
+    expect(localStorage.getItem('easyssh-font-size')).toBe('16');
     await vi.waitFor(() => {
       expect(backend.set).toHaveBeenCalledWith('fontFamily', 'Consolas');
       expect(backend.set).toHaveBeenCalledWith('fontSize', 16);
@@ -54,8 +54,8 @@ describe('terminal font store', () => {
   });
 
   it('seeds from the mirror before hydrate', async () => {
-    localStorage.setItem('omnyssh-font-family', 'Fira Code');
-    localStorage.setItem('omnyssh-font-size', '18');
+    localStorage.setItem('easyssh-font-family', 'Fira Code');
+    localStorage.setItem('easyssh-font-size', '18');
     const font = await freshFont();
     let value = { family: '', size: 0 };
     font.subscribe((f) => (value = f))();

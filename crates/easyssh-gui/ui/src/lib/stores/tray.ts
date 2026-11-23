@@ -11,7 +11,7 @@ export interface TrayBehavior {
   closeToTray: boolean;
 }
 
-const LOCAL_KEY = 'omnyssh-tray';
+const LOCAL_KEY = 'easyssh-tray';
 const STORE_KEY = 'tray';
 const OFF: TrayBehavior = { minimizeToTray: false, closeToTray: false };
 

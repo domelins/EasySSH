@@ -8,7 +8,7 @@ import { hosts } from './hosts';
 // It is a pure display transform — the real address still drives every connection. The
 // pref persists like the other UI-chrome prefs (tauri-plugin-store + a localStorage
 // mirror for first paint, tech-gui.md §4.3), matching the sidebar-collapse shape.
-const LOCAL_KEY = 'omnyssh-streamer-mode';
+const LOCAL_KEY = 'easyssh-streamer-mode';
 const STORE_KEY = 'streamerMode';
 
 function mirrored(): boolean {
