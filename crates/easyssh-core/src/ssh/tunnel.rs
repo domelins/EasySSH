@@ -770,9 +770,16 @@ mod tests {
     async fn a_port_in_use_fails_the_whole_tunnel_and_binds_nothing() {
         let taken = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let busy = taken.local_addr().expect("addr").port();
-        let free = TcpListener::bind("127.0.0.1:0").await.expect("bind");
-        let spare = free.local_addr().expect("addr").port();
-        drop(free);
+        // Pick a spare port outside OS ephemeral ranges so nothing steals it
+        // between probing and checking release.
+        let mut spare = None;
+        for port in 30_000..31_000 {
+            if TcpListener::bind(("127.0.0.1", port)).await.is_ok() {
+                spare = Some(port);
+                break;
+            }
+        }
+        let spare = spare.expect("free loopback port in 30000..31000");
 
         let forwards = [
             rule(None, spare, "localhost", 80),

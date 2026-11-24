@@ -6,7 +6,7 @@
 //! the server stands in for the network, so a test can cut it.
 
 use std::net::SocketAddr;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicU16, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, Once};
 use std::time::Duration;
 
@@ -185,7 +185,7 @@ struct Link {
 
 impl Link {
     async fn to(server: SocketAddr) -> Arc<Self> {
-        let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = reserve_port().await;
         let link = Arc::new(Self {
             port: listener.local_addr().expect("addr").port(),
             server,
@@ -214,9 +214,11 @@ impl Link {
     }
 
     /// Severs every connection and stops answering.
-    fn cut(&self) {
-        if let Some(relay) = self.relay.lock().unwrap().take() {
+    async fn cut(&self) {
+        let relay = self.relay.lock().unwrap().take();
+        if let Some(relay) = relay {
             relay.abort();
+            let _ = relay.await;
         }
     }
 
@@ -237,10 +239,28 @@ impl Link {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/// A loopback port nothing listens on right now.
+/// Binds a loopback port outside OS ephemeral ranges (Linux 32768–60999,
+/// macOS/Windows 49152–65535) with a process-unique cursor so parallel tests
+/// and outgoing sockets cannot steal a port between probe, bind and release.
+async fn reserve_port() -> TcpListener {
+    const BASE: u16 = 20_000;
+    const SPAN: u16 = 10_000;
+    static NEXT: AtomicU16 = AtomicU16::new(0);
+
+    let seed = (std::process::id() as u16).wrapping_mul(131) % SPAN;
+    for _ in 0..SPAN {
+        let offset = NEXT.fetch_add(1, Ordering::Relaxed) % SPAN;
+        let port = BASE + (seed + offset) % SPAN;
+        if let Ok(listener) = TcpListener::bind(("127.0.0.1", port)).await {
+            return listener;
+        }
+    }
+    panic!("no free loopback port found in {BASE}..{}", BASE + SPAN);
+}
+
+/// A loopback port nothing listens on right now, outside OS ephemeral ranges.
 async fn free_port() -> u16 {
-    let probe = TcpListener::bind("127.0.0.1:0").await.expect("bind");
-    probe.local_addr().expect("addr").port()
+    reserve_port().await.local_addr().expect("addr").port()
 }
 
 fn forward(local: u16, target: u16) -> LocalForward {
@@ -426,7 +446,7 @@ async fn a_dropped_connection_comes_back_with_its_ports() {
     statuses.until("flaky", |s| *s == TunnelStatus::Up).await;
     assert_eq!(round_trip(local, "before").await, "before");
 
-    link.cut();
+    link.cut().await;
     let status = statuses
         .until("flaky", |s| matches!(s, TunnelStatus::Retrying(_)))
         .await;

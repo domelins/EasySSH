@@ -10,8 +10,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ## Unreleased
 
 ### Changes
-- **The rename to EasySSH is complete.** The crates are `easyssh-core`, `easyssh` and `easyssh-gui`; the terminal app is `easy` (man page `easy.1`); the desktop app and its installers are `EasySSH` (Windows installer `EasySSH_1.1.6_x64-setup.exe`), and the Linux packages register as `easy-ssh`. Release archives are named `easy-<target>` and `EasySSH-<target>`.
-- **Configuration and identifiers now use EasySSH.** The config directory is `~/.config/easyssh` (`~/Library/Application Support/easyssh` on macOS, `%APPDATA%\easyssh\` on Windows), the portable directory is `easyssh-data/`, environment variables use the `EASYSSH_` prefix (e.g. `EASYSSH_CONFIG_DIR`), and the desktop app identifier is `com.timhartmann.easyssh`. Settings and hosts from earlier versions are not migrated automatically.
+- **The rename to EasySSH is complete.** The crates are `easyssh-core`, `easyssh` and `easyssh-gui`; the terminal app is `easy` (man page `easy.1`); the desktop app and its installers are `EasySSH` (Windows installer `EasySSH-x86_64-setup.exe`), and the Linux packages register as `easy-ssh`. Release archives are named `easy-<target>` and `EasySSH-<target>`.
+- **Configuration and identifiers now use EasySSH.** The config directory is `~/.config/easyssh` (`~/Library/Application Support/easyssh` on macOS, `%APPDATA%\easyssh\` on Windows), the portable directory is `easyssh-data/`, environment variables use the `EASYSSH_` prefix (e.g. `EASYSSH_CONFIG_DIR`), and the desktop app identifier is `com.domelins.easyssh`. Settings and hosts from earlier versions are not migrated automatically.
 
 ---
 
