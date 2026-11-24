@@ -18,7 +18,7 @@ name = "easy"
 path = "src/main.rs"
 
 [dependencies]
-easyssh-core = { path = "../easyssh-core", version = "1.1.6" }
+easyssh-core = { path = "../easyssh-core", version = "1.1.7" }
 
 # TUI
 ratatui = "0.29"
