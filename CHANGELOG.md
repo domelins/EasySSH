@@ -7,6 +7,15 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## 1.1.8 — 2026-11-27
+
+### Features
+- **Hosts can now be renamed in place.** Editing a host lets you change its name directly while preserving stored passwords, identity keys, proxy jumps, `~/.ssh/config` shadow mapping, dashboard custom order, favorites, recent history, workspace layouts, and open tabs.
+- **Duplicating a host carries over its username and password.** Choosing "Duplicate host" pre-fills both the username and the saved login password verbatim into the new host form.
+- **Scrollbar-free mouse-wheel scrolling for crowded host lists and tab bars.** Native scrollbars are hidden on the top host tab strip, per-host terminal tab strip, sidebar host tree, dashboard host table, command palette, and host group manager; vertical mouse-wheel input scrolls tab strips horizontally.
+
+---
+
 ## 1.1.7 — 2026-11-24
 
 ### Changes
