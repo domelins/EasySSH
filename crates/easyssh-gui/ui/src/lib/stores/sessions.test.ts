@@ -57,4 +57,15 @@ describe('sessions store', () => {
     expect(sessionStatusDot.closed).toBe('off');
     sessions.close(s.id);
   });
+
+  it('renameHost updates matching sessions without affecting other hosts', () => {
+    const a = sessions.spawn('terminal', 'web-1');
+    const b = sessions.spawn('terminal', 'db-1');
+    sessions.renameHost('web-1', 'web-prod');
+    const list = get(sessions);
+    expect(list.find((s) => s.id === a.id)?.hostName).toBe('web-prod');
+    expect(list.find((s) => s.id === b.id)?.hostName).toBe('db-1');
+    sessions.close(a.id);
+    sessions.close(b.id);
+  });
 });

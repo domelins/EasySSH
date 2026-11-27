@@ -135,6 +135,10 @@ pub struct HostInputDto {
     pub local_forwards: Vec<LocalForwardDto>,
     pub tunnel_autostart: bool,
     pub forward_agent: bool,
+    // Set when editing an existing host so `save_host` can rename it in place
+    // without losing backend-only secrets or SSH-config adoption metadata.
+    #[serde(default)]
+    pub previous_name: Option<String>,
 }
 
 /// What this desktop allows the tray (tech-gui.md §4.2 `set_tray_behavior`): an icon
@@ -809,6 +813,7 @@ mod tests {
             local_forwards: vec![],
             tunnel_autostart: false,
             forward_agent: false,
+            previous_name: None,
         }
     }
 
@@ -865,6 +870,7 @@ mod tests {
             local_forwards: vec![],
             tunnel_autostart: false,
             forward_agent: false,
+            previous_name: None,
         });
         assert!(host.identity_file.is_none());
         assert!(host.password.is_none());

@@ -17,6 +17,8 @@
   import { filterHostCards, hostStatusLabel, systemLabel, type HostCollection } from './hostExplorer';
   import { hostGroupUpdates, deleteHostGroup, renameHostGroup, validateHostGroupName } from './hostGroups';  import { dashboardView, type CardSort } from '$lib/stores/dashboardView';
   import { spawnSession } from '$lib/stores/navigation';
+  import { activeEntity } from '$lib/stores/activeEntity';
+  import { sessions } from '$lib/stores/sessions';
   import { workspaceLayouts } from '$lib/workspace/store';
   import { streamerMode, displayHostname } from '$lib/stores/streamer';
   import { hosts } from '$lib/stores/hosts';
@@ -35,7 +37,7 @@
   } from '$lib/ipc/commands';
   import { isGroupHotkey, isRefreshHotkey } from '$lib/stores/ui';
   import { beginKeySetup, dismissKeySetup } from '$lib/stores/keySetup';
-  import { emptyForm, formFromHost, type HostFormFields } from './hostForm';
+  import { duplicateForm, emptyForm, formFromHost, type HostFormFields } from './hostForm';
   import { clampToScroller, dropTarget, scrollParent, scrollStep, swallowClick } from './cardDrag';
   import HostEditor from './HostEditor.svelte';
   import HostGroupManager from './HostGroupManager.svelte';
@@ -374,10 +376,22 @@
   }
 
   async function submit(input: HostInputDto, previousName: string | undefined): Promise<void> {
-    if (!previousName && get(hosts).some((host) => host.name === input.name)) {
+    const renamed = previousName !== undefined && previousName !== input.name;
+    if ((!previousName || renamed) && get(hosts).some((host) => host.name === input.name)) {
       throw new Error(`已存在名为“${input.name}”的主机`);
     }
-    await saveHost(input);
+    await saveHost(previousName ? { ...input, previousName } : input);
+    if (renamed) {
+      const oldHost = get(hosts).find((host) => host.name === previousName);
+      const oldKey = oldHost ? keyOf(oldHost) : JSON.stringify([previousName]);
+      const newKey = JSON.stringify([input.name]);
+      dashboardView.renameHost(previousName, input.name, oldKey, newKey);
+      workspaceLayouts.rename(previousName, input.name);
+      sessions.renameHost(previousName, input.name);
+      activeEntity.renameHost(previousName, input.name);
+      if (selectedHostKey === oldKey) selectedHostKey = newKey;
+      selectedKeys = selectedKeys.map((k) => (k === oldKey ? newKey : k));
+    }
     await reloadHosts();
     dialog = null;
   }
@@ -418,12 +432,25 @@
     await reloadHosts();
   }
 
-  /** A copy of a host for the Add form: a fresh unique name, and no stored secret. */
-  function duplicateForm(host: HostDto): HostFormFields {
-    const names = new Set($hosts.map((h) => h.name));
-    let name = `${host.name}-copy`;
-    for (let n = 2; names.has(name); n += 1) name = `${host.name}-copy${n}`;
-    return { ...formFromHost(host), name, password: '' };
+  /** Open the Add form seeded from `host`, copying both username and saved password. */
+  async function openDuplicate(host: HostDto): Promise<void> {
+    menuKey = null;
+    let password = '';
+    if (host.hasPassword) {
+      try {
+        password = (await hostPassword(host.name)) ?? '';
+      } catch (error) {
+        lastError.set(message(error));
+      }
+    }
+    dialog = {
+      kind: 'add',
+      initial: duplicateForm(
+        host,
+        $hosts.map((h) => h.name),
+        password
+      )
+    };
   }
 
   async function setupKey(host: HostDto): Promise<void> {
@@ -679,7 +706,7 @@
       </div>
     {/if}
 
-    <div class="min-h-0 flex-1 overflow-auto">
+    <div class="no-scrollbar min-h-0 flex-1 overflow-auto">
       {#if visibleCards.length}
         <table class="w-full min-w-[52rem] table-fixed border-separate border-spacing-0 text-left text-xs">
           <thead class="sticky top-0 z-10 bg-surface text-[0.6875rem] text-muted">
@@ -836,7 +863,7 @@
                             </div>
                           {/if}
                           <div class="flex flex-wrap gap-1">
-                            <button type="button" class="{actionButton} border border-default text-muted hover:text-accent" aria-label="复制 {card.host.name}" onclick={() => { menuKey = null; dialog = { kind: 'add', initial: duplicateForm(card.host) }; }}><Icon name="copy" size={12} /> 复制主机</button>
+                            <button type="button" class="{actionButton} border border-default text-muted hover:text-accent" aria-label="复制 {card.host.name}" onclick={() => void openDuplicate(card.host)}><Icon name="copy" size={12} /> 复制主机</button>
                             {#if card.host.source === 'manual'}
                               {#if !card.host.hasKey || card.host.passwordAuthDisabled === false}
                                 <button type="button" class="{actionButton} border border-default text-muted hover:text-accent" aria-label="为 {card.host.name} 配置 SSH 密钥" onclick={() => { menuKey = null; dialog = { kind: 'keySetup', host: card.host, rerun: card.host.hasKey }; }}><Icon name="key" size={12} /> 配置密钥</button>

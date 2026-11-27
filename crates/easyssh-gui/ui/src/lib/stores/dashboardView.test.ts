@@ -148,4 +148,15 @@ describe('dashboard view prefs', () => {
     await view.hydrate();
     expect(get(view)).toEqual({ ...DEFAULTS, hostGroups: ['db'], collapsed: ['db'], favorites: ['a'], recentHosts: ['b'] });
   });
+
+  it('renameHost moves order, favorites and recentHosts to the new name and key', async () => {
+    const view = await fresh();
+    view.setOrder(['["web"]', '["db"]']);
+    view.toggleFavorite('["web"]');
+    view.markRecent('web');
+    view.renameHost('web', 'web-prod', '["web"]', '["web-prod"]');
+    expect(get(view).order).toEqual(['["web-prod"]', '["db"]']);
+    expect(get(view).favorites).toEqual(['["web-prod"]']);
+    expect(get(view).recentHosts).toEqual(['web-prod']);
+  });
 });

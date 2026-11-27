@@ -151,7 +151,7 @@
             disabled={saving}
           ><Icon name="plus" size={13} /></button>
         </form>
-        <div class="min-h-0 flex-1 overflow-y-auto p-1.5">
+        <div class="no-scrollbar min-h-0 flex-1 overflow-y-auto p-1.5">
           {#each sortedGroups as group (group)}
             <div class="group mb-0.5 flex items-center rounded-md {selectedGroup === group ? 'bg-surface-inset text-accent' : 'text-muted hover:bg-surface-hover'}">
               <button
@@ -204,7 +204,7 @@
             <p class="py-2 text-center text-xs text-faint">选择或创建一个分组</p>
           {/if}
         </div>
-        <div class="min-h-0 flex-1 overflow-y-auto p-2">
+        <div class="no-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
           {#if selectedGroup}
             {#each draftHosts as host, index (`${host.name}:${host.hostname}:${index}`)}
               <label class="mb-1 flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 hover:bg-surface-hover">

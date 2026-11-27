@@ -97,10 +97,7 @@
     return `${bracketed(maskAddress(raw.slice(0, i).replace(/^\[(.*)\]$/, '$1')))}${raw.slice(i)}`;
   }
 
-  // The name is the on-disk key; a rename can't carry backend-only secrets across the
-  // boundary (§3.4), so on edit it is immutable — rename by delete + re-add. Focus the
-  // first editable field accordingly.
-  onMount(() => (mode === 'add' ? nameEl : hostnameMasked ? userEl : hostnameEl)?.focus());
+  onMount(() => nameEl?.focus());
 
   async function save(): Promise<void> {
     const result = formToInput(fields);
@@ -156,14 +153,12 @@
         </p>
       {/if}
       <label class={label}>
-        <span>名称 {mode === 'edit' ? '（固定）' : ''}</span>
+        <span>名称</span>
         <input
           bind:this={nameEl}
           bind:value={fields.name}
-          class="{field} {mode === 'edit' ? 'cursor-not-allowed text-muted' : ''}"
+          class={field}
           placeholder="web-prod-1"
-          readonly={mode === 'edit'}
-          title={mode === 'edit' ? '如需重命名，请删除该主机后重新添加' : undefined}
         />
       </label>
 

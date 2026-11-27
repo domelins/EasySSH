@@ -78,6 +78,11 @@ function createSessions() {
     },
     close(id: number): void {
       update((list) => list.filter((s) => s.id !== id));
+    },
+    /** Keep open or parked tabs aligned when a host is renamed. */
+    renameHost(from: string, to: string): void {
+      if (from === to) return;
+      update((list) => list.map((s) => (s.hostName === from ? { ...s, hostName: to } : s)));
     }
   };
 }

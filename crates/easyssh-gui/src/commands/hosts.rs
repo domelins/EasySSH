@@ -92,11 +92,23 @@ pub async fn save_host(
     state: State<'_, GuiState>,
 ) -> Result<(), CommandError> {
     check_forwards(&input.local_forwards).map_err(|message| CommandError { message })?;
+    let previous = input
+        .previous_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|name| !name.is_empty());
+    let renaming = previous.is_some_and(|prev| prev != input.name);
+    if renaming && state.host_by_name(&input.name).is_some() {
+        return Err(CommandError {
+            message: format!("已存在名为“{}”的主机", input.name),
+        });
+    }
+    let lookup_name = previous.unwrap_or(&input.name);
     // The parsed import is the only record of its bastion and key path, and neither
     // crosses the boundary (§3.4), so read them off the cache before the write moves
     // to a blocking task.
     let imported = state
-        .host_by_name(&input.name)
+        .host_by_name(lookup_name)
         .filter(|h| h.source == HostSource::SshConfig);
     persist(move |hosts| upsert(hosts, input, imported)).await
 }
@@ -184,12 +196,31 @@ pub fn host_password(
 /// SSH-config rename origin, `IdentitiesOnly`, and a monitoring mode the payload
 /// left out. Editing e.g. notes therefore never drops a stored secret or a recorded
 /// key setup. A provided secret still overwrites the old one.
-fn upsert(hosts: &mut Vec<Host>, input: HostInputDto, imported: Option<Host>) {
+fn upsert(
+    hosts: &mut Vec<Host>,
+    input: HostInputDto,
+    imported: Option<Host>,
+) -> Result<(), CommandError> {
     // An omitted monitoring mode means "unchanged", not "back to SSH" — losing it
     // would silently start logging in to a device chosen for reachability only.
     let monitoring_given = input.monitoring.is_some();
+    let previous_name = input
+        .previous_name
+        .as_deref()
+        .map(str::trim)
+        .filter(|name| !name.is_empty())
+        .map(str::to_string);
     let mut host = Host::from(input);
-    match hosts.iter().position(|h| h.name == host.name) {
+    let renaming = previous_name
+        .as_deref()
+        .is_some_and(|prev| prev != host.name);
+    if renaming && hosts.iter().any(|h| h.name == host.name) {
+        return Err(CommandError {
+            message: format!("已存在名为“{}”的主机", host.name),
+        });
+    }
+    let lookup_name = previous_name.as_deref().unwrap_or(&host.name);
+    match hosts.iter().position(|h| h.name == lookup_name) {
         Some(i) => {
             let existing = &hosts[i];
             if !monitoring_given {
@@ -218,14 +249,15 @@ fn upsert(hosts: &mut Vec<Host>, input: HostInputDto, imported: Option<Host>) {
                 host.identities_only = imported.identities_only;
                 // Which `~/.ssh/config` entry this copy stands in for. Inert while the
                 // names match — `merge_hosts` already drops the import on the name — but
-                // it is what keeps the import hidden once the copy is renamed in the TUI,
-                // and what another host's `ProxyJump` alias resolves through. The TUI
-                // records the same thing when it adopts (app/host.rs).
-                host.original_ssh_host = Some(host.name.clone());
+                // it is what keeps the import hidden once the copy is renamed, and what
+                // another host's `ProxyJump` alias resolves through. The TUI records the
+                // same thing when it adopts (app/host.rs).
+                host.original_ssh_host = Some(imported.name);
             }
             hosts.push(host);
         }
     }
+    Ok(())
 }
 
 /// Drop the host named `name` from the manual list. A missing name is a no-op — the
@@ -237,22 +269,25 @@ fn remove(hosts: &mut Vec<Host>, name: &str) {
 /// Load the manual host list, apply `mutate`, and write it back off the async worker
 /// (parsing + atomic write are blocking I/O). `save_hosts` re-filters to manual, so
 /// SSH-config imports are never persisted (tech-gui.md §4.2).
-async fn persist(mutate: impl FnOnce(&mut Vec<Host>) + Send + 'static) -> Result<(), CommandError> {
+async fn persist(
+    mutate: impl FnOnce(&mut Vec<Host>) -> Result<(), CommandError> + Send + 'static,
+) -> Result<(), CommandError> {
     tauri::async_runtime::spawn_blocking(move || {
-        let mut hosts = load_hosts()?;
-        mutate(&mut hosts);
-        save_hosts(&hosts)
+        let mut hosts = load_hosts().map_err(|e| CommandError {
+            message: format!("{e:#}"),
+        })?;
+        mutate(&mut hosts)?;
+        save_hosts(&hosts).map_err(|e| CommandError {
+            // `{:#}` keeps the whole anyhow chain: the outer "Failed to write …" alone
+            // leaves the user without the OS reason (a full disk, a denied directory)
+            // that is the only thing they can act on.
+            message: format!("{e:#}"),
+        })
     })
     .await
     .map_err(|e| CommandError {
         message: format!("主机保存任务失败：{e}"),
     })?
-    .map_err(|e| CommandError {
-        // `{:#}` keeps the whole anyhow chain: the outer "Failed to write …" alone
-        // leaves the user without the OS reason (a full disk, a denied directory)
-        // that is the only thing they can act on.
-        message: format!("{e:#}"),
-    })
 }
 
 /// What an import did: how many hosts came in, how many were already known, how many
@@ -562,13 +597,14 @@ mod tests {
             local_forwards: vec![],
             tunnel_autostart: false,
             forward_agent: false,
+            previous_name: None,
         }
     }
 
     #[test]
     fn upsert_appends_a_new_manual_host() {
         let mut hosts = vec![];
-        upsert(&mut hosts, input("web"), None);
+        upsert(&mut hosts, input("web"), None).expect("upsert");
         assert_eq!(hosts.len(), 1);
         assert_eq!(hosts[0].name, "web");
         assert_eq!(hosts[0].source, HostSource::Manual);
@@ -586,7 +622,7 @@ mod tests {
         let mut edit = input("web");
         edit.hostname = "new.example.com".to_string();
         edit.notes = Some("new".to_string());
-        upsert(&mut hosts, edit, None);
+        upsert(&mut hosts, edit, None).expect("upsert");
         assert_eq!(hosts.len(), 1, "edit is in-place, not an append");
         assert_eq!(hosts[0].hostname, "new.example.com");
         assert_eq!(hosts[0].notes.as_deref(), Some("new"));
@@ -608,7 +644,7 @@ mod tests {
             source: HostSource::Manual,
             ..Host::default()
         }];
-        upsert(&mut hosts, input("web"), None);
+        upsert(&mut hosts, input("web"), None).expect("upsert");
         let h = &hosts[0];
         assert!(h.identities_only);
         assert_eq!(h.password.as_deref(), Some("keep-me"));
@@ -617,6 +653,50 @@ mod tests {
         assert_eq!(h.key_setup_date.as_deref(), Some("2026-01-01"));
         assert_eq!(h.password_auth_disabled, Some(true));
         assert_eq!(h.original_ssh_host.as_deref(), Some("web-old"));
+    }
+
+    #[test]
+    fn upsert_renames_manual_host_in_place_and_preserves_secrets() {
+        let mut hosts = vec![
+            Host {
+                name: "web".to_string(),
+                password: Some("keep-me".to_string()),
+                identity_file: Some("/keys/id".to_string()),
+                proxy_jump: Some("bastion".to_string()),
+                identities_only: true,
+                key_setup_date: Some("2026-01-01".to_string()),
+                password_auth_disabled: Some(true),
+                original_ssh_host: Some("web-ssh".to_string()),
+                source: HostSource::Manual,
+                ..Host::default()
+            },
+            host_with("db", "10.0.0.2"),
+        ];
+        let mut edit = input("web-prod");
+        edit.previous_name = Some("web".to_string());
+        upsert(&mut hosts, edit, None).expect("rename");
+
+        assert_eq!(hosts.len(), 2);
+        assert_eq!(hosts[0].name, "web-prod");
+        assert_eq!(hosts[0].password.as_deref(), Some("keep-me"));
+        assert_eq!(hosts[0].identity_file.as_deref(), Some("/keys/id"));
+        assert_eq!(hosts[0].proxy_jump.as_deref(), Some("bastion"));
+        assert!(hosts[0].identities_only);
+        assert_eq!(hosts[0].key_setup_date.as_deref(), Some("2026-01-01"));
+        assert_eq!(hosts[0].password_auth_disabled, Some(true));
+        assert_eq!(hosts[0].original_ssh_host.as_deref(), Some("web-ssh"));
+        assert_eq!(hosts[1].name, "db");
+    }
+
+    #[test]
+    fn upsert_rejects_renaming_onto_an_existing_host_name() {
+        let mut hosts = vec![host_with("web", "10.0.0.1"), host_with("db", "10.0.0.2")];
+        let mut edit = input("db");
+        edit.previous_name = Some("web".to_string());
+        let err = upsert(&mut hosts, edit, None).expect_err("clash");
+        assert!(err.message.contains("db"), "{}", err.message);
+        assert_eq!(hosts[0].name, "web");
+        assert_eq!(hosts[1].name, "db");
     }
 
     #[test]
@@ -636,7 +716,7 @@ mod tests {
         let mut hosts = vec![];
         let mut edit = input("internal");
         edit.notes = Some("adopted".to_string());
-        upsert(&mut hosts, edit, Some(imported));
+        upsert(&mut hosts, edit, Some(imported)).expect("adopt");
 
         assert_eq!(hosts.len(), 1);
         let h = &hosts[0];
@@ -660,6 +740,29 @@ mod tests {
     }
 
     #[test]
+    fn renaming_an_ssh_config_host_still_shadows_its_original_import() {
+        let imported = Host {
+            name: "internal".to_string(),
+            hostname: "10.0.0.9".to_string(),
+            proxy_jump: Some("public-proxy".to_string()),
+            identity_file: Some("/keys/id_ed25519".to_string()),
+            identities_only: true,
+            source: HostSource::SshConfig,
+            ..Host::default()
+        };
+        let mut hosts = vec![];
+        let mut edit = input("internal-prod");
+        edit.previous_name = Some("internal".to_string());
+        upsert(&mut hosts, edit, Some(imported)).expect("rename import");
+
+        assert_eq!(hosts.len(), 1);
+        assert_eq!(hosts[0].name, "internal-prod");
+        assert_eq!(hosts[0].original_ssh_host.as_deref(), Some("internal"));
+        assert_eq!(hosts[0].proxy_jump.as_deref(), Some("public-proxy"));
+        assert_eq!(hosts[0].identity_file.as_deref(), Some("/keys/id_ed25519"));
+    }
+
+    #[test]
     fn an_explicit_identity_wins_over_the_imported_one() {
         let imported = Host {
             name: "internal".to_string(),
@@ -670,7 +773,7 @@ mod tests {
         let mut hosts = vec![];
         let mut edit = input("internal");
         edit.identity_file = Some("/keys/typed-by-hand".to_string());
-        upsert(&mut hosts, edit, Some(imported));
+        upsert(&mut hosts, edit, Some(imported)).expect("upsert");
         assert_eq!(
             hosts[0].identity_file.as_deref(),
             Some("/keys/typed-by-hand")
@@ -687,7 +790,7 @@ mod tests {
             ..Host::default()
         }];
 
-        upsert(&mut hosts, input("fw"), None);
+        upsert(&mut hosts, input("fw"), None).expect("upsert");
 
         // Silently reverting to SSH would start logging in to a device the user
         // deliberately put on a reachability probe.
@@ -707,7 +810,7 @@ mod tests {
 
         let mut back_to_ssh = input("fw");
         back_to_ssh.monitoring = Some(MonitorModeDto::Ssh);
-        upsert(&mut hosts, back_to_ssh, None);
+        upsert(&mut hosts, back_to_ssh, None).expect("upsert");
 
         assert_eq!(hosts[0].monitoring, MonitorMode::Ssh);
     }
@@ -722,7 +825,7 @@ mod tests {
         }];
         let mut edit = input("web");
         edit.password = Some("rotated".to_string());
-        upsert(&mut hosts, edit, None);
+        upsert(&mut hosts, edit, None).expect("upsert");
         assert_eq!(hosts[0].password.as_deref(), Some("rotated"));
     }
 
@@ -766,7 +869,7 @@ mod tests {
             tunnel_autostart: true,
             ..Host::default()
         }];
-        upsert(&mut hosts, input("nas"), None);
+        upsert(&mut hosts, input("nas"), None).expect("upsert");
         assert!(hosts[0].local_forwards.is_empty());
         assert!(!hosts[0].tunnel_autostart);
     }
@@ -779,12 +882,12 @@ mod tests {
             forward_agent: true,
             ..Host::default()
         }];
-        upsert(&mut hosts, input("lab"), None);
+        upsert(&mut hosts, input("lab"), None).expect("upsert");
         assert!(!hosts[0].forward_agent);
 
         let mut on = input("lab");
         on.forward_agent = true;
-        upsert(&mut hosts, on, None);
+        upsert(&mut hosts, on, None).expect("upsert");
         assert!(hosts[0].forward_agent);
     }
 

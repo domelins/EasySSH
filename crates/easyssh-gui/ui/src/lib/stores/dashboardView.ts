@@ -132,6 +132,22 @@ function createDashboardView() {
         { ...current, recentHosts: [name, ...current.recentHosts.filter((host) => host !== name)].slice(0, 12) },
         true
       ),
+    /** Carry custom order, favorites and recent history over when a host is renamed. */
+    renameHost: (fromName: string, toName: string, fromKey: string, toKey: string) => {
+      if (fromName === toName && fromKey === toKey) return;
+      const replace = (list: string[], from: string, to: string): string[] => [
+        ...new Set(list.map((item) => (item === from ? to : item)))
+      ];
+      apply(
+        {
+          ...current,
+          order: replace(current.order, fromKey, toKey),
+          favorites: replace(current.favorites, fromKey, toKey),
+          recentHosts: replace(current.recentHosts, fromName, toName)
+        },
+        true
+      );
+    },
     setShowMetrics: (showMetrics: boolean) => apply({ ...current, showMetrics }, true),
     /** Reconcile with the canonical tauri-plugin-store value (called from the layout's onMount). */
     async hydrate(): Promise<void> {

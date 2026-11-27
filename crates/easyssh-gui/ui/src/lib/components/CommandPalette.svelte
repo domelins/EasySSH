@@ -173,7 +173,7 @@
         />
       </div>
 
-      <ul bind:this={listEl} class="max-h-[min(24rem,50vh)] overflow-y-auto p-2">
+      <ul bind:this={listEl} class="no-scrollbar max-h-[min(24rem,50vh)] overflow-y-auto p-2">
         {#if items.length === 0}
           <li class="px-3 py-6 text-center text-sm text-muted">{emptyMessage}</li>
         {:else}

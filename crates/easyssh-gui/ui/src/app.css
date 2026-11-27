@@ -243,3 +243,13 @@ textarea {
   background: var(--accent);
   color: var(--accent-fg);
 }
+
+/* Hide scrollbars while preserving wheel and trackpad scrolling. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

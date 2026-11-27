@@ -88,6 +88,16 @@ export function createWorkspaceLayouts(initial: Map<string, WorkspaceLayout>) {
       next.delete(hostName);
       apply(next, true);
     },
+    /** Move a host's saved layout to its new name when renamed. */
+    rename: (from: string, to: string): void => {
+      if (from === to) return;
+      const saved = current.get(from);
+      if (!saved) return;
+      const next = new Map(current);
+      next.delete(from);
+      next.set(to, saved);
+      apply(next, true);
+    },
     /** Reconcile with the canonical tauri-plugin-store value (called on mount). */
     async hydrate(): Promise<void> {
       try {

@@ -147,7 +147,7 @@
       ><Icon name="folder" size={12} /> 分组</button>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto py-2">
+    <div class="no-scrollbar min-h-0 flex-1 overflow-y-auto py-2">
       <div class="space-y-0.5 px-2">
         <button
           type="button"

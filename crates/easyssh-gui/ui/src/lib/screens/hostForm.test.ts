@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { HostDto } from '$lib/bindings';
-import { emptyForm, emptyForwardRow, formFromHost, formToInput, tagsOf, toggleTag, type HostFormFields } from './hostForm';
+import {
+  duplicateForm,
+  emptyForm,
+  emptyForwardRow,
+  formFromHost,
+  formToInput,
+  tagsOf,
+  toggleTag,
+  type HostFormFields
+} from './hostForm';
 
 function fields(partial: Partial<HostFormFields>): HostFormFields {
   return { ...emptyForm(), ...partial };
@@ -293,5 +302,18 @@ describe('group chips', () => {
     expect(toggleTag('', 'prod')).toBe('prod');
     // Turning a chip on twice is idempotent.
     expect(toggleTag(toggleTag('', 'prod'), 'prod')).toBe('');
+  });
+});
+
+describe('duplicateForm', () => {
+  it('picks a unique -copy name and carries over username and password verbatim', () => {
+    const source = host({ name: 'web', user: 'deploy', hostname: '10.0.0.1', port: 2222, hasPassword: true });
+    const copy = duplicateForm(source, ['web', 'web-copy'], ' p@ss word ');
+    expect(copy.name).toBe('web-copy2');
+    expect(copy.user).toBe('deploy');
+    expect(copy.password).toBe(' p@ss word ');
+    const submitted = formToInput(copy);
+    expect(submitted.ok && submitted.input.user).toBe('deploy');
+    expect(submitted.ok && submitted.input.password).toBe(' p@ss word ');
   });
 });

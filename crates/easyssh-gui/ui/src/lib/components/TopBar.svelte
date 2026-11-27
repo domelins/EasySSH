@@ -12,6 +12,7 @@
   import { palette } from '$lib/stores/palette';
   import { streamerMode } from '$lib/stores/streamer';
   import { support } from '$lib/stores/support';
+  import { horizontalWheel } from '$lib/wheelScroll';
 
   let transferOpen = $state(false);
 
@@ -125,7 +126,8 @@
   <nav
     aria-label="已打开会话"
     data-tauri-drag-region
-    class="ml-2 flex min-w-0 flex-1 items-end gap-0.5 self-stretch overflow-x-auto"
+    class="no-scrollbar ml-2 flex min-w-0 flex-1 items-end gap-0.5 self-stretch overflow-x-auto"
+    onwheel={horizontalWheel}
   >
     {#each hostEntries as entry (entry.hostName)}
       {@const active = entry.rep

@@ -22,6 +22,7 @@
   import RemoteExplorer from '$lib/components/RemoteExplorer.svelte';
   import MonitorPanel from '$lib/components/MonitorPanel.svelte';
   import Splitter from '$lib/components/Splitter.svelte';
+  import { horizontalWheel } from '$lib/wheelScroll';
 
   let {
     hostName,
@@ -130,7 +131,12 @@
         <span class="max-w-40 truncate text-[0.6875rem] font-semibold text-fg" title={hostName}>{hostName}</span>
       </div>
 
-      <div class="flex min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto" role="tablist" aria-label="终端标签">
+      <div
+        class="no-scrollbar flex min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto"
+        role="tablist"
+        aria-label="终端标签"
+        onwheel={horizontalWheel}
+      >
         {#each terminals as terminal, i (terminal.id)}
           {@const selected = terminal.id === activeTerminal}
           <div

@@ -16,7 +16,7 @@ export type ActiveEntity =
   | { kind: 'host'; hostName: string };
 
 function createActiveEntity() {
-  const { subscribe, set } = writable<ActiveEntity>({ kind: 'dashboard' });
+  const { subscribe, set, update } = writable<ActiveEntity>({ kind: 'dashboard' });
   return {
     subscribe,
     selectDashboard: () => set({ kind: 'dashboard' }),
@@ -24,7 +24,13 @@ function createActiveEntity() {
     selectSnippets: () => set({ kind: 'snippets' }),
     selectSettings: () => set({ kind: 'settings' }),
     activateSession: (id: number) => set({ kind: 'session', id }),
-    activateHost: (hostName: string) => set({ kind: 'host', hostName })
+    activateHost: (hostName: string) => set({ kind: 'host', hostName }),
+    renameHost: (from: string, to: string) => {
+      if (from === to) return;
+      update((current) =>
+        current.kind === 'host' && current.hostName === from ? { kind: 'host', hostName: to } : current
+      );
+    }
   };
 }
 

@@ -87,6 +87,19 @@ export function formFromHost(h: HostDto): HostFormFields {
   };
 }
 
+/** Seed the Add form as a copy of `h`: pick a fresh unique name and carry over the
+ *  username and stored password so duplicating a host keeps its login credentials. */
+export function duplicateForm(
+  h: HostDto,
+  existingNames: Iterable<string>,
+  password = ''
+): HostFormFields {
+  const names = new Set(existingNames);
+  let name = `${h.name}-copy`;
+  for (let n = 2; names.has(name); n += 1) name = `${h.name}-copy${n}`;
+  return { ...formFromHost(h), name, password };
+}
+
 // Digits with an optional leading `+`, matching Rust's `u16::parse`; the range check
 // covers 0 and overflow.
 function parsePort(raw: string): number | undefined {
@@ -200,7 +213,9 @@ export function formToInput(f: HostFormFields): HostFormResult {
   if (typeof localForwards === 'string') return { ok: false, error: localForwards };
 
   const identityFile = f.identityFile.trim();
-  const password = f.password.trim();
+  // Password is preserved verbatim (matching backend Host::from) so copied secrets
+  // with leading/trailing spaces are never silently altered.
+  const password = f.password;
   const notes = f.notes.trim();
   const tags = splitCsv(f.tags);
   return {
